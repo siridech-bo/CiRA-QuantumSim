@@ -80,10 +80,12 @@ export class BlochScene {
     const radius = 1;
     const offsetX = -(nuclei.length - 1) / 2 * SPHERE_SPACING;
     this.arrows = [];
+    this.centers = [];
     nuclei.forEach((n, i) => {
       const sphere = createBlochSphere(radius, n.symbol, n.color);
       sphere.position.x = offsetX + i * SPHERE_SPACING;
       this.scene.add(sphere);
+      this.centers.push(new THREE.Vector3(sphere.position.x, 0, 0));
 
       const arrow = new THREE.ArrowHelper(
         new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 1, n.color, 0.22, 0.14
@@ -92,15 +94,36 @@ export class BlochScene {
       this.arrows.push(arrow);
     });
 
+    // J-coupling connector lines between sphere centers (toggled by setCoupling).
+    this.couplingLines = [];
+    const pairs = [[0, 1], [0, 2], [1, 2]];
+    pairs.forEach(([a, b]) => {
+      const mat = new THREE.LineDashedMaterial({ color: 0x777777, dashSize: 0.12, gapSize: 0.1, transparent: true, opacity: 0.5 });
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        this.centers[a].clone().add(new THREE.Vector3(0, -radius - 0.15, 0)),
+        this.centers[b].clone().add(new THREE.Vector3(0, -radius - 0.15, 0)),
+      ]);
+      const line = new THREE.Line(geo, mat);
+      line.computeLineDistances();
+      this.scene.add(line);
+      this.couplingLines.push(line);
+    });
+
     window.addEventListener('resize', () => this._onResize());
   }
 
-  // M = [Mx, My, Mz] in physics coords; map to Three.js (y = up = z-axis).
-  update(spins) {
-    spins.forEach((s, i) => {
-      const [Mx, My, Mz] = s.M;
-      const len = Math.hypot(Mx, My, Mz);
-      const dir = new THREE.Vector3(Mx, Mz, -My); // physics z -> three y, physics y -> -three z
+  // Show/hide the J-coupling connector lines.
+  setCoupling(on) {
+    for (const l of this.couplingLines) l.visible = on;
+  }
+
+  // blochVectors: array of { x, y, z } in PHYSICS coords (each in [-1,1]).
+  // Map to Three.js display axes: physics z -> three y (up), physics y -> -three z,
+  // physics x -> three x. (Keeps a right-handed view consistent with the old code.)
+  update(blochVectors) {
+    blochVectors.forEach((b, i) => {
+      const len = Math.hypot(b.x, b.y, b.z);
+      const dir = new THREE.Vector3(b.x, b.z, -b.y);
       if (len > 1e-6) dir.normalize();
       this.arrows[i].setDirection(dir);
       this.arrows[i].setLength(Math.max(0.05, len), 0.22, 0.14);

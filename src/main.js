@@ -1,18 +1,34 @@
-// Wires the physics engine, 3D scene, FID plot, and UI controls together.
-import { SpinSystem, SPINQ_PARAMS } from './physics.js';
+// Wires the REAL quantum density-matrix engine, 3D scene, FID plot, live
+// spectrum, and 8x8 |ρ| heatmap to the UI controls.
+import { QuantumSpinSystem, SPINQ_PARAMS } from './quantum.js';
 import { BlochScene } from './scene.js';
 import { FidPlot } from './fid.js';
+import { Spectrum } from './spectrum.js';
+import { DensityHeatmap } from './heatmap.js';
 
-const system = new SpinSystem();
+const system = new QuantumSpinSystem({ relaxation: true, coupling: true });
 const scene = new BlochScene(document.getElementById('scene-container'), SPINQ_PARAMS.nuclei);
 const fid = new FidPlot(document.getElementById('fid-canvas'));
+
+// Fixed dwell time for FID sampling / spectrum. 1 ms → ±500 Hz bandwidth,
+// enough to resolve the 12–30 Hz display offsets and 42/220 Hz J-splittings.
+const DWELL = 1e-3;
+const spectrum = new Spectrum(document.getElementById('spectrum-canvas'), { dwell: DWELL, fftSize: 1024 });
+const heatmap = new DensityHeatmap(document.getElementById('heatmap-canvas'));
 
 const state = {
   playing: false,
   speed: 1.0,
   relaxation: true,
-  fidDecimator: 0,
+  coupling: true,
+  sampleAccum: 0,     // sim-time accumulator for fixed-dwell FID sampling
 };
+
+// Cap simulation time advanced per animation frame. The internal RK4 sub-step
+// tightens with the Hamiltonian's fastest frequency (~50 µs when J is on), so
+// advancing too much sim-time per frame would blow the frame budget. ~8 ms of
+// sim per frame keeps ~30 fps smooth while the FID/precession still animate.
+const MAX_SIM_PER_FRAME = 0.008;
 
 // ---- UI wiring --------------------------------------------------------------
 
@@ -25,10 +41,11 @@ playBtn.addEventListener('click', () => {
 document.getElementById('btn-reset').addEventListener('click', () => {
   system.reset();
   fid.clear();
+  spectrum.clear();
   state.playing = false;
+  state.sampleAccum = 0;
   playBtn.textContent = '▶ Play';
-  scene.update(system.spins);
-  fid.draw();
+  refresh();
 });
 
 const speed = document.getElementById('speed');
@@ -40,6 +57,14 @@ speed.addEventListener('input', () => {
 
 document.getElementById('relax').addEventListener('change', (e) => {
   state.relaxation = e.target.checked;
+  system.setRelaxation(state.relaxation);
+});
+
+const couplingToggle = document.getElementById('coupling');
+couplingToggle.addEventListener('change', (e) => {
+  state.coupling = e.target.checked;
+  system.setCoupling(state.coupling);   // rebuilds H
+  scene.setCoupling(state.coupling);
 });
 
 function currentTarget() {
@@ -51,9 +76,35 @@ document.querySelectorAll('button.pulse').forEach((btn) => {
   btn.addEventListener('click', () => {
     const angle = parseFloat(btn.dataset.angle) * Math.PI / 180;
     system.applyPulse(currentTarget(), angle, btn.dataset.axis);
-    scene.update(system.spins);
+    refresh();
   });
 });
+
+// Encoding demo: s -> θ = arcsin(√s) -> Rx(θ) on the current target.
+const encodeS = document.getElementById('encode-s');
+const encodeTheta = document.getElementById('encode-theta');
+function updateThetaLabel() {
+  const s = parseFloat(encodeS.value);
+  const theta = Math.asin(Math.sqrt(Math.max(0, Math.min(1, s))));
+  encodeTheta.textContent = `θ = ${theta.toFixed(3)} rad`;
+}
+encodeS.addEventListener('input', updateThetaLabel);
+updateThetaLabel();
+
+document.getElementById('btn-encode').addEventListener('click', () => {
+  const s = parseFloat(encodeS.value);
+  system.encode(s, currentTarget());
+  refresh();
+});
+
+// ---- render helpers ---------------------------------------------------------
+
+function refresh() {
+  scene.update(system.blochVectors());
+  fid.draw();
+  spectrum.draw();
+  heatmap.draw(system.rhoAbs());
+}
 
 // ---- Animation loop ---------------------------------------------------------
 
@@ -64,18 +115,20 @@ function frame(now) {
   last = now;
 
   if (state.playing) {
-    const dtSim = dtReal * state.speed;
-    system.step(dtSim, state.relaxation);
+    // Requested sim-time this frame, capped for the frame budget.
+    const dtSim = Math.min(MAX_SIM_PER_FRAME, dtReal * state.speed);
+    system.step(dtSim);
 
-    // Sample FID at a steady cadence regardless of frame rate.
-    state.fidDecimator += dtSim;
-    while (state.fidDecimator >= 0.004) {
-      fid.push(system.fid());
-      state.fidDecimator -= 0.004;
+    // Sample FID + spectrum at the FIXED dwell time regardless of frame rate.
+    state.sampleAccum += dtSim;
+    while (state.sampleAccum >= DWELL) {
+      const s = system.fid();
+      fid.push(s);
+      spectrum.push(s);
+      state.sampleAccum -= DWELL;
     }
 
-    scene.update(system.spins);
-    fid.draw();
+    refresh();
   }
 
   scene.render();
@@ -83,6 +136,6 @@ function frame(now) {
 }
 
 // Initial paint.
-scene.update(system.spins);
-fid.draw();
+scene.setCoupling(state.coupling);
+refresh();
 requestAnimationFrame(frame);
