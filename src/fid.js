@@ -1,5 +1,6 @@
 // Lightweight scrolling FID trace on a 2D canvas (dependency-free for the MVP;
 // swap for Chart.js/Plotly and add a live spectrum in V2).
+import { plotColors } from './theme.js';
 
 export class FidPlot {
   constructor(canvas, maxPoints = 480) {
@@ -30,7 +31,7 @@ export class FidPlot {
     ctx.clearRect(0, 0, w, h);
 
     // midline
-    ctx.strokeStyle = '#30363d';
+    ctx.strokeStyle = plotColors().line;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, mid);

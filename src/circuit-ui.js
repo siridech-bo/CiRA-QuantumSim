@@ -10,6 +10,7 @@
 // clicking a control cell then a target cell; the connector is drawn across the
 // column. This module is pure DOM/canvas — it never touches physics directly.
 // =============================================================================
+import { plotColors } from './theme.js';
 
 const QUBIT_LABELS = ['q0 ¹H', 'q1 ³¹P', 'q2 ¹⁹F'];
 const N_QUBITS = 3;
@@ -303,6 +304,7 @@ export class Histogram {
 
   draw() {
     const { ctx, canvas } = this;
+    const col = plotColors();
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
     const N = 8;
@@ -310,7 +312,7 @@ export class Histogram {
     const plotW = w - padL - padR, plotH = h - padB - padT;
     const bw = plotW / N;
     // baseline
-    ctx.strokeStyle = '#30363d';
+    ctx.strokeStyle = col.line;
     ctx.beginPath(); ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
     ctx.font = '9px ui-monospace, monospace';
     ctx.textAlign = 'center';
@@ -319,20 +321,20 @@ export class Histogram {
       const bh = p * plotH;
       const x = padL + b * bw;
       // bar
-      ctx.fillStyle = p > 0.001 ? '#58a6ff' : '#21324a';
+      ctx.fillStyle = p > 0.001 ? col.accent : col.empty;
       ctx.fillRect(x + 2, h - padB - bh, bw - 4, bh);
       // value label
       if (p > 0.02) {
-        ctx.fillStyle = '#c9d1d9';
+        ctx.fillStyle = col.text;
         ctx.fillText(p.toFixed(2), x + bw / 2, h - padB - bh - 3);
       }
       // basis label |q0q1q2>
-      ctx.fillStyle = '#8b949e';
+      ctx.fillStyle = col.text;
       const bits = b.toString(2).padStart(3, '0');
       ctx.fillText(bits, x + bw / 2, h - padB + 12);
     }
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#8b949e';
+    ctx.fillStyle = col.text;
     ctx.fillText('|q0 q1 q2⟩', padL, padT + 2);
   }
 }

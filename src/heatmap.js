@@ -2,6 +2,7 @@
 // heatmap.js — 8x8 |ρ| density-matrix heatmap on a 2D canvas.
 // Consumes rhoAbs() (plain 8x8 array of magnitudes). Brighter = larger |ρ_ij|.
 // =============================================================================
+import { plotColors } from './theme.js';
 
 export class DensityHeatmap {
   constructor(canvas) {
@@ -42,7 +43,7 @@ export class DensityHeatmap {
     }
 
     // grid label
-    ctx.fillStyle = '#8b949e';
+    ctx.fillStyle = plotColors().text;
     ctx.font = '10px system-ui, sans-serif';
     ctx.fillText('|ρ| (8×8)', x0, y0 - 3);
   }

@@ -7,6 +7,7 @@
 // =============================================================================
 
 import { create, all } from 'mathjs';
+import { plotColors } from './theme.js';
 const math = create(all);
 
 export class Spectrum {
@@ -65,11 +66,12 @@ export class Spectrum {
 
   draw() {
     const { ctx, canvas } = this;
+    const col = plotColors();
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
     // baseline
-    ctx.strokeStyle = '#30363d';
+    ctx.strokeStyle = col.line;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, h - 16);
@@ -78,7 +80,7 @@ export class Spectrum {
 
     const res = this.compute();
     if (!res) {
-      ctx.fillStyle = '#8b949e';
+      ctx.fillStyle = col.text;
       ctx.font = '12px system-ui, sans-serif';
       ctx.fillText(`accumulating FID… (${this.buf.length}/${this.fftSize})`, 10, h / 2);
       return;
@@ -100,12 +102,12 @@ export class Spectrum {
     const yOf = (m) => (h - 16) - (m / maxMag) * (h - 26);
 
     // frequency grid + labels
-    ctx.fillStyle = '#8b949e';
+    ctx.fillStyle = col.text;
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'center';
     for (let f = -Math.floor(fView / 100) * 100; f <= fView; f += 100) {
       const x = xOf(f);
-      ctx.strokeStyle = '#21262d';
+      ctx.strokeStyle = col.line;
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h - 16); ctx.stroke();
       ctx.fillText(`${f}`, x, h - 4);
     }
@@ -113,7 +115,7 @@ export class Spectrum {
     ctx.fillText('Hz', w - 20, h - 4);
 
     // spectrum trace
-    ctx.strokeStyle = '#58a6ff';
+    ctx.strokeStyle = col.accent;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     let started = false;

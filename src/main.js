@@ -8,6 +8,7 @@ import { DensityHeatmap } from './heatmap.js';
 import { compileCircuit } from './gates.js';
 import { CircuitRunner } from './runner.js';
 import { CircuitUI, Histogram } from './circuit-ui.js';
+import { invalidatePlotColors } from './theme.js';
 
 const system = new QuantumSpinSystem({ relaxation: true, coupling: true });
 const scene = new BlochScene(document.getElementById('scene-container'), SPINQ_PARAMS.nuclei);
@@ -45,6 +46,7 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
   scene.setBackground(SCENE_BG[theme]);
+  invalidatePlotColors();   // plots re-read CSS colors on next draw
   try { localStorage.setItem('nmr-theme', theme); } catch (e) { /* ignore */ }
 }
 
@@ -52,6 +54,7 @@ applyTheme(localStorage.getItem('nmr-theme') || 'dark');
 themeToggle.addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   applyTheme(next);
+  refresh();                // redraw all plots immediately with new colors
 });
 
 // ---- UI wiring --------------------------------------------------------------

@@ -9,7 +9,6 @@
   --p: #50C878;
   --f: #FF8C00;
   --accent: #4A90D9;
-  --plot: #0a0d12;          /* signal canvases — dark in both themes */
 }
 
 html[data-theme="dark"] {
@@ -24,6 +23,12 @@ html[data-theme="dark"] {
   --btn-hover: #30363d;
   --btn-active: #3c444d;
   --shadow: rgba(0,0,0,0.4);
+  /* signal plots */
+  --plot: #0a0d12;
+  --plot-line: #30363d;
+  --plot-text: #b6c2cf;
+  --plot-empty: #21324a;
+  --code-text: #9fd0ff;
 }
 
 html[data-theme="light"] {
@@ -38,6 +43,12 @@ html[data-theme="light"] {
   --btn-hover: #e7ebf0;
   --btn-active: #dbe1e8;
   --shadow: rgba(140,149,159,0.25);
+  /* signal plots — bright to match day mode */
+  --plot: #ffffff;
+  --plot-line: #ccd4dd;
+  --plot-text: #3a4048;
+  --plot-empty: #d3e2f5;
+  --code-text: #0550ae;
 }
 
 * { box-sizing: border-box; }
@@ -282,7 +293,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   padding: 8px 10px;
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
-  color: #9fd0ff;
+  color: var(--code-text);
   margin: 0;
   max-height: 200px;
   overflow: auto;
