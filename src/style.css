@@ -42,24 +42,24 @@ html[data-theme="light"] {
 
 * { box-sizing: border-box; }
 
-html, body { height: 100%; }
+html, body { height: 100%; overflow: hidden; }
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
-  overflow: hidden;
 }
 
 /* ===== App shell: fixed sidebars, flexible center, full height ===== */
 #app-shell {
   display: grid;
-  grid-template-columns: 270px 1fr 400px;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: 270px minmax(0, 1fr) 400px;
+  grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     "topbar topbar topbar"
     "left   center right";
   height: 100vh;
+  overflow: hidden;
 }
 
 /* ===== Top bar ===== */

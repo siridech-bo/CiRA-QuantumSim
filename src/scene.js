@@ -110,6 +110,14 @@ export class BlochScene {
     });
 
     window.addEventListener('resize', () => this._onResize());
+    // The grid layout isn't final when this runs at module load, so the initial
+    // clientWidth/Height can be wrong (leaving dead space below the canvas).
+    // A ResizeObserver keeps the canvas exactly filling its panel whenever the
+    // container's size settles or changes.
+    if (typeof ResizeObserver !== 'undefined') {
+      this._ro = new ResizeObserver(() => this._onResize());
+      this._ro.observe(container);
+    }
   }
 
   // Show/hide the J-coupling connector lines.
@@ -142,6 +150,7 @@ export class BlochScene {
 
   _onResize() {
     const w = this.container.clientWidth, h = this.container.clientHeight;
+    if (w === 0 || h === 0) return;   // panel not laid out yet
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
