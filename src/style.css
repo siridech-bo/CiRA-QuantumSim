@@ -18,9 +18,13 @@ body {
   color: var(--text);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
+
+/* The scene + signal row keeps a comfortable minimum height so the 3D view and
+   plots stay visible; the circuit editor + controls flow below and the page
+   scrolls when the viewport is short. */
+main { min-height: 52vh; }
 
 header {
   padding: 10px 18px;
@@ -102,3 +106,110 @@ button:active { background: #3c444d; }
 label { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 4px; }
 input[type="range"] { accent-color: var(--h); }
 #speed-val { color: var(--muted); font-size: 12px; min-width: 34px; }
+
+#histogram-canvas {
+  width: 100%;
+  height: auto;
+  background: #0a0d12;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ---- Circuit editor panel ------------------------------------------------ */
+#circuit-panel {
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  padding: 10px 18px 14px;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+.circuit-head { display: flex; align-items: baseline; gap: 12px; }
+.circuit-head h2 { font-size: 14px; margin: 0 0 6px; color: var(--text); font-weight: 600; }
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.gate-btn {
+  min-width: 34px;
+  padding: 5px 9px;
+  font-size: 13px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  background: #1b2230;
+  border: 1px solid var(--border);
+}
+.gate-btn.sel { background: var(--h); color: #fff; border-color: var(--h); }
+
+.circuit-body { display: flex; gap: 16px; align-items: flex-start; }
+
+.circuit-grid {
+  display: grid;
+  grid-template-columns: 66px repeat(var(--cols), 40px);
+  gap: 4px;
+  flex-shrink: 0;
+}
+.q-label {
+  display: flex; align-items: center;
+  font-size: 12px; color: var(--muted);
+  font-family: ui-monospace, monospace;
+  height: 40px;
+}
+.q-cell {
+  position: relative;
+  height: 40px; width: 40px;
+  border: 1px dashed #2b333d;
+  border-radius: 4px;
+  background: #0e131a;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.q-cell:hover { border-color: var(--h); }
+.q-cell.filled { border-style: solid; }
+.q-cell.pending { border-color: var(--f); box-shadow: 0 0 0 1px var(--f) inset; }
+.q-cell.playing { background: #17324d; border-color: var(--h); }
+
+.gate-chip {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  background: #21324a; color: #cfe4ff;
+  border: 1px solid var(--h);
+  border-radius: 4px;
+  padding: 2px 4px;
+  min-width: 26px; text-align: center;
+  white-space: nowrap;
+  z-index: 2;
+}
+.gate-chip.two { background: var(--h); color: #fff; }
+.ctrl-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--h); z-index: 2;
+}
+.v-conn {
+  position: absolute; left: 50%; width: 2px; background: var(--h);
+  transform: translateX(-50%); z-index: 1;
+}
+.v-conn.down { top: 50%; height: 50%; }
+.v-conn.up { top: 0; height: 50%; }
+.v-conn.mid { top: 0; height: 100%; }
+
+.circuit-side { flex: 1; min-width: 0; }
+.circuit-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.circuit-side h3 { font-size: 12px; color: var(--muted); margin: 4px 0; font-weight: 600; }
+.qasm {
+  background: #0a0d12;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  color: #9fd0ff;
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre;
+}

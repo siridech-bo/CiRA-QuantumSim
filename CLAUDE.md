@@ -15,9 +15,28 @@ earlier classical single-vector Bloch MVP (Option B) has been **removed**
 This is an educational **side project** for teaching at KMITL — explicitly *not* on the
 QRC research critical path. Keep scope tight.
 
-Physics is validated by `test/physics.test.mjs` (`npm test`, node assert). **Any change to
-`src/quantum.js` must keep all tests green** — they assert Tr(ρ)=1, Hermiticity, positivity,
-unitary purity conservation, exact T1/T2 rates, and emergent J-coupling FFT splitting.
+Physics is validated by `test/physics.test.mjs` and `test/gates.test.mjs` (`npm test` runs
+both, node assert). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
+green** — physics.test asserts Tr(ρ)=1, Hermiticity, positivity, unitary purity, exact
+T1/T2 rates, and emergent J-coupling FFT splitting; gates.test asserts every gate's compiled
+pulse sequence matches its ideal unitary to >0.999 fidelity, CZ/CNOT correctness, and that
+real decoherence lowers fidelity (slow gates more than fast).
+
+### Quantum circuit editor (real pulse sequences)
+A SpinQ-style gate editor compiles gates to PHYSICALLY REAL pulse sequences that run on the
+same Lindblad engine — never abstract matrices applied as the physics. Modules:
+- `src/gates.js` — compiler: gate → timed primitives (`rf` finite selective pulse, `vz`
+  virtual-Z, `delay` free evolution, `ipulse` hard refocusing) + ideal unitary + duration.
+  Single-qubit = finite RF pulses integrated under H_sys+H_rf; Rz = virtual-Z; **two-qubit
+  CZ/CNOT = real J-coupling free evolution for t=1/(2J) with spectator refocusing + vz shift
+  corrections**. So CZ(¹H,³¹P) genuinely takes ~11.9 ms and decoheres more than CZ(¹H,¹⁹F).
+- `src/ideal-sim.js` — statevector reference simulator; **validation only, never the app's
+  physics path**.
+- `src/runner.js` — executes a compiled schedule against the live engine in scaled wall-clock
+  time so the spheres/FID/spectrum/heatmap/histogram animate as each gate fires.
+- `src/circuit-ui.js` — palette + grid + QASM view + playhead + `Histogram`.
+Invariant: gates must remain REAL pulses/evolution. Do not shortcut Rx/Ry or the two-qubit
+entangling core with `applyUnitary`; `applyUnitary` is for `virtualZ` and tests only.
 
 ## Architecture (planned)
 

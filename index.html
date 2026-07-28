@@ -39,8 +39,35 @@
 
       <h2>Density matrix |ρ|</h2>
       <canvas id="heatmap-canvas" width="220" height="220"></canvas>
+
+      <h2>Projection probability</h2>
+      <canvas id="histogram-canvas" width="480" height="160"></canvas>
     </section>
   </main>
+
+  <section id="circuit-panel">
+    <div class="circuit-head">
+      <h2>Quantum Circuit Editor</h2>
+      <span class="subtitle">gates compile to real RF pulses + J-coupling delays and run on the live engine</span>
+    </div>
+
+    <div id="gate-palette" class="palette"></div>
+
+    <div class="circuit-body">
+      <div id="circuit-grid" class="circuit-grid"></div>
+      <div class="circuit-side">
+        <div class="circuit-controls">
+          <button id="btn-run-circuit">▶ Run</button>
+          <button id="btn-step-circuit">⏭ Step</button>
+          <button id="btn-reset-circuit">↺ Reset</button>
+          <button id="btn-clear-circuit">✕ Clear</button>
+          <span class="mono">Duration: <span id="circuit-duration">0.00 ms</span></span>
+        </div>
+        <h3>QASM</h3>
+        <pre id="qasm-view" class="qasm"></pre>
+      </div>
+    </div>
+  </section>
 
   <footer id="controls">
     <div class="control-group">

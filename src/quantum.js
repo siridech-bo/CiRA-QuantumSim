@@ -230,6 +230,13 @@ export class QuantumSpinSystem {
     this.coupling = opts.coupling !== undefined ? opts.coupling : true;
     this.relaxation = opts.relaxation !== undefined ? opts.relaxation : true;
 
+    // Default RF nutation rate omega1 (rad/s) for compiled selective pulses.
+    // omega1/2π = 8 kHz ⇒ a 90° pulse is t_90 = (π/2)/omega1 ≈ 31 µs: short
+    // enough that off-resonance (chemical-shift) error over the pulse is tiny,
+    // yet long enough to carry real timing + decoherence. Matches gates.js
+    // DEFAULT_OMEGA1 so compiled schedules and the engine agree.
+    this.defaultOmega1 = opts.omega1 !== undefined ? opts.omega1 : TWO_PI * 8000;
+
     // Precompute collapse operators c and c†c per the Lindblad spec.
     //   c1_k = sqrt(1/T1_k) · R^(k)                        (amplitude relaxation, Mz→+1)
     //   c2_k = sqrt(Γφ_k/2) · σz^(k),  Γφ_k = max(0, 1/T2_k − 1/(2 T1_k))
@@ -432,6 +439,114 @@ export class QuantumSpinSystem {
     this._hermitize();
   }
 
+  // -------------------------------------------------------------------------
+  // applyUnitary(U) — apply an EXACT instantaneous unitary: ρ → U ρ U†.
+  // U is a flat 8x8 (Float64Array, interleaved [re,im]). Used by virtualZ and
+  // by tests/verification. No relaxation (instantaneous).
+  // -------------------------------------------------------------------------
+  applyUnitary(U) {
+    const Udag = daggerF(U);
+    const UR = mmul(U, this.rhoM);
+    this.rhoM = mmul(UR, Udag);
+    this._hermitize();
+  }
+
+  // -------------------------------------------------------------------------
+  // virtualZ(spin, angle) — the standard hardware Z gate: an EXACT instantaneous
+  // z-rotation exp(−i(angle/2)σz^(spin)) applied as ρ → U ρ U†. This is a
+  // "frame change" (no real RF), so it is instantaneous and error-free.
+  // -------------------------------------------------------------------------
+  virtualZ(spin, angle) {
+    const rot2 = singleRot(angle, 'z');
+    const blocks = [I2, I2, I2];
+    blocks[spin] = rot2;
+    let Un = blocks[0];
+    for (let s = 1; s < N_SPINS; s++) Un = kron(Un, blocks[s]);
+    this.applyUnitary(toFlat(Un));
+  }
+
+  // -------------------------------------------------------------------------
+  // rfPulse({ spin, phase | axis, angle, omega1 }) — a FINITE-DURATION selective
+  // RF pulse integrated under the FULL Lindblad generator (H_system + H_rf).
+  //
+  // H_rf = omega1 · (cosφ · σx^(spin) + sinφ · σy^(spin)) / 2  acts ONLY on the
+  // target spin's channel. Because the nuclei are heteronuclear (each has its
+  // own RF channel / carrier), addressing a single spin's operators is naturally
+  // selective — no leakage to the others. The pulse duration is
+  //   t_p = |angle| / omega1
+  // and ρ is integrated for t_p under H_system + H_rf using the SAME RK4 Lindblad
+  // stepper (collapse operators active iff `this.relaxation`). J-coupling and the
+  // chemical-shift offsets in H_system are ON during the pulse (real physics), so
+  // a real pulse carries genuine timing + decoherence, yet is near-ideal because
+  // omega1 (a few kHz) ≫ the offsets/couplings (tens–hundreds of Hz).
+  //
+  // A per-substep callback (onTick) can be supplied by the runner to animate the
+  // live signal while the pulse fires.
+  // -------------------------------------------------------------------------
+  rfPulse({ spin, phase, axis, angle, omega1, onTick } = {}) {
+    if (angle === 0) return 0;
+    if (phase === undefined) {
+      if (axis === 'x') phase = 0;
+      else if (axis === 'y') phase = Math.PI / 2;
+      else phase = 0;
+    }
+    const w1 = omega1 !== undefined ? omega1 : this.defaultOmega1;
+    // A negative angle = same pulse with opposite phase.
+    const a = Math.abs(angle);
+    const ph = angle < 0 ? phase + Math.PI : phase;
+    const tp = a / w1;
+
+    // Build H_rf = (w1/2)(cosφ σx + sinφ σy) on the target spin (flat 8x8).
+    const cx = Math.cos(ph), sy = Math.sin(ph);
+    const Hrf = zerosF();
+    for (let n = 0; n < MLEN; n++) Hrf[n] = 0.5 * w1 * (cx * SXk[spin][n] + sy * SYk[spin][n]);
+
+    // Integrate under H_system + H_rf for tp using RK4 (temporarily swap H).
+    // The RF term dominates the Hamiltonian frequency (omega1/2π ~ kHz ≫ the
+    // Hz-scale offsets/couplings), so the system sub-step (~0.5 ms) is FAR too
+    // coarse — omega1·h must be ≪ 1 for RK4 stability. Use a pulse sub-step
+    // ≤ 1/(100·(omega1/2π)); with omega1/2π=3 kHz that's ~3.3 µs.
+    const Hsave = this.H;
+    const subSave = this.subStep;
+    this.H = axpyF(this.H, Hrf, 1);   // H_total = H_system + H_rf
+    this.subStep = Math.min(this.subStep, 1 / (100 * (w1 / TWO_PI)));
+    try {
+      this._evolve(tp, onTick);
+    } finally {
+      this.H = Hsave;                 // restore the system Hamiltonian
+      this.subStep = subSave;
+    }
+    return tp;
+  }
+
+  // -------------------------------------------------------------------------
+  // _evolve(dt, onTick) — like step() but invokes onTick(subDt) after each
+  // internal RK4 sub-step so a runner can sample the live signal at fine grain.
+  // Uses whatever this.H currently is (so rfPulse can inject H_rf). Relaxation
+  // follows this.relaxation.
+  // -------------------------------------------------------------------------
+  _evolve(dt, onTick) {
+    const SUB = this.subStep;
+    const withRelax = this.relaxation;
+    let remaining = dt;
+    while (remaining > 1e-12) {
+      const h = Math.min(SUB, remaining);
+      this._rk4(h, withRelax);
+      this.t += h;
+      remaining -= h;
+      if (onTick) onTick(h);
+    }
+    this._hermitize();
+  }
+
+  // Computational-basis populations: length-8 array of Re(ρ[b][b]),
+  // b = 4·q0 + 2·q1 + q2 (probabilities of |q0 q1 q2⟩). Σ = Tr ρ = 1.
+  populations() {
+    const p = new Array(DIM);
+    for (let b = 0; b < DIM; b++) p[b] = this.rhoM[IDX(b, b)];
+    return p;
+  }
+
   // QRC encoding: s∈[0,1] ⇒ θ = arcsin(√s) ⇒ applyPulse(target, θ, 'x'); return θ.
   encode(s, target = 'all') {
     const clamped = Math.max(0, Math.min(1, s));
@@ -507,5 +622,11 @@ export class QuantumSpinSystem {
   }
 }
 
-// Export a few internals for testing (eigenvalues, hermiticity checks).
-export const _internal = { math, DIM, N_SPINS };
+// Export a few internals for testing (eigenvalues, hermiticity checks) and for
+// building/embedding operators (gates compiler, ideal-unitary reconstruction).
+export const _internal = {
+  math, DIM, N_SPINS, MLEN, IDX,
+  zerosF, mmul, daggerF, axpyF, scaleF, cloneF, toFlat, kron, embed,
+  singleRot, trace, traceProd,
+  I2, SX, SY, SZ, SXk, SYk, SZk,
+};

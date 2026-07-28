@@ -5,6 +5,9 @@ import { BlochScene } from './scene.js';
 import { FidPlot } from './fid.js';
 import { Spectrum } from './spectrum.js';
 import { DensityHeatmap } from './heatmap.js';
+import { compileCircuit } from './gates.js';
+import { CircuitRunner } from './runner.js';
+import { CircuitUI, Histogram } from './circuit-ui.js';
 
 const system = new QuantumSpinSystem({ relaxation: true, coupling: true });
 const scene = new BlochScene(document.getElementById('scene-container'), SPINQ_PARAMS.nuclei);
@@ -15,6 +18,7 @@ const fid = new FidPlot(document.getElementById('fid-canvas'));
 const DWELL = 1e-3;
 const spectrum = new Spectrum(document.getElementById('spectrum-canvas'), { dwell: DWELL, fftSize: 1024 });
 const heatmap = new DensityHeatmap(document.getElementById('heatmap-canvas'));
+const histogram = new Histogram(document.getElementById('histogram-canvas'));
 
 const state = {
   playing: false,
@@ -22,6 +26,7 @@ const state = {
   relaxation: true,
   coupling: true,
   sampleAccum: 0,     // sim-time accumulator for fixed-dwell FID sampling
+  circuitMode: false, // true while a compiled circuit is running/stepping
 };
 
 // Cap simulation time advanced per animation frame. The internal RK4 sub-step
@@ -104,7 +109,86 @@ function refresh() {
   fid.draw();
   spectrum.draw();
   heatmap.draw(system.rhoAbs());
+  histogram.set(system.populations());
 }
+
+// ---- Circuit editor + runner ------------------------------------------------
+// The circuit UI builds a `circuit` model; compileCircuit → timed schedule;
+// CircuitRunner drives it against the SAME live engine so the Bloch spheres,
+// FID, spectrum, heatmap and histogram animate as each gate fires. A playhead
+// highlights the executing column.
+
+let compiled = null;
+
+const circuitUI = new CircuitUI({
+  palette: document.getElementById('gate-palette'),
+  grid: document.getElementById('circuit-grid'),
+  qasm: document.getElementById('qasm-view'),
+  duration: document.getElementById('circuit-duration'),
+}, {
+  onChange: (circuit) => {
+    compiled = circuit.length ? compileCircuit(circuit) : null;
+    circuitUI.setDuration(compiled ? compiled.durationSeconds : 0);
+  },
+});
+
+const runner = new CircuitRunner(system, {
+  onSample: (s) => { fid.push(s); spectrum.push(s); },
+  onColumn: (colIdx) => circuitUI.setPlayColumn(colIdx),
+  onDone: () => {
+    state.circuitMode = false;
+    refresh();
+  },
+});
+
+function startCircuit() {
+  if (!compiled) return;
+  // Reset the engine to |000⟩ and clear traces before a fresh run.
+  system.reset();
+  system.setRelaxation(state.relaxation);
+  // Coupling is owned by the compiler during the run; leave engine as-is (the
+  // runner forces coupling ON for two-qubit delays and restores it after).
+  fid.clear();
+  spectrum.clear();
+  runner.load(compiled);
+  runner.start();
+  state.circuitMode = true;
+  state.playing = false;          // pause the manual free-run while circuit runs
+  playBtn.textContent = '▶ Play';
+  refresh();
+}
+
+document.getElementById('btn-run-circuit').addEventListener('click', startCircuit);
+
+document.getElementById('btn-step-circuit').addEventListener('click', () => {
+  if (!compiled) return;
+  if (!state.circuitMode || runner.done) {
+    system.reset();
+    system.setRelaxation(state.relaxation);
+    fid.clear(); spectrum.clear();
+    runner.load(compiled);
+    state.circuitMode = true;
+  }
+  runner.step();
+  refresh();
+});
+
+document.getElementById('btn-reset-circuit').addEventListener('click', () => {
+  runner.pause();
+  runner.reset();
+  state.circuitMode = false;
+  circuitUI.setPlayColumn(-1);
+  system.reset();
+  fid.clear(); spectrum.clear();
+  refresh();
+});
+
+document.getElementById('btn-clear-circuit').addEventListener('click', () => {
+  runner.pause();
+  state.circuitMode = false;
+  circuitUI.clear();
+  circuitUI.setPlayColumn(-1);
+});
 
 // ---- Animation loop ---------------------------------------------------------
 
@@ -114,7 +198,12 @@ function frame(now) {
   const dtReal = Math.min(0.05, (now - last) / 1000); // clamp long gaps
   last = now;
 
-  if (state.playing) {
+  // Circuit playback takes priority over the manual free-run. Advance the
+  // compiled schedule in scaled wall-clock time (dtReal · speed sim-seconds).
+  if (state.circuitMode && runner.running) {
+    runner.advance(dtReal * state.speed);
+    refresh();
+  } else if (state.playing) {
     // Requested sim-time this frame, capped for the frame budget.
     const dtSim = Math.min(MAX_SIM_PER_FRAME, dtReal * state.speed);
 
