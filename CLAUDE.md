@@ -7,11 +7,17 @@ reservoir (real spin physics, not gate-model abstraction). It models the 3-spin 
 of a SPINQ Gemini Lab machine (¹H, ³¹P, ¹⁹F) with Bloch spheres, FID, live spectrum,
 J-couplings, and a quantum-reservoir-computing (QRC) encoding demo.
 
-**Status: greenfield.** As of this file's creation the repo contains only
-[NMR_3D_Visualizer_Spec.md](NMR_3D_Visualizer_Spec.md) — the full design spec. No code,
-build tooling, or git repo exists yet. Read the spec before doing anything; it is the
-source of truth. This is an educational **side project** for teaching at KMITL — it is
-explicitly *not* on the QRC research critical path. Keep scope tight.
+**Status: real quantum engine built (Option A, in-browser).** The app now runs a genuine
+**8×8 density-matrix Lindblad simulation** in pure JS (math.js) — no Python backend. The
+earlier classical single-vector Bloch MVP (Option B) has been **removed**
+(`src/physics.js` is gone). Read [NMR_3D_Visualizer_Spec.md](NMR_3D_Visualizer_Spec.md)
+(design) and [README.md](README.md) (current architecture) before changing physics.
+This is an educational **side project** for teaching at KMITL — explicitly *not* on the
+QRC research critical path. Keep scope tight.
+
+Physics is validated by `test/physics.test.mjs` (`npm test`, node assert). **Any change to
+`src/quantum.js` must keep all tests green** — they assert Tr(ρ)=1, Hermiticity, positivity,
+unitary purity conservation, exact T1/T2 rates, and emergent J-coupling FFT splitting.
 
 ## Architecture (planned)
 
