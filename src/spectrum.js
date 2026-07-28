@@ -89,7 +89,12 @@ export class Spectrum {
     // Display only the central band where our display offsets + multiplets live.
     const fMax = 0.5 / this.dwell;          // Nyquist
     const fView = Math.min(300, fMax);      // Hz half-window to display
-    const maxMag = Math.max(1e-9, ...mag);
+    // Absolute noise floor. Real FID peaks are O(10–100); equilibrium noise is
+    // ~1e-14. Normalizing to max(FLOOR, peak) means a silent (equilibrium)
+    // window divides tiny noise by FLOOR and stays flat, while any genuine
+    // signal (peak >> FLOOR) auto-scales normally.
+    const NOISE_FLOOR = 0.5;
+    const maxMag = Math.max(NOISE_FLOOR, ...mag);
 
     const xOf = (f) => ((f + fView) / (2 * fView)) * w;
     const yOf = (m) => (h - 16) - (m / maxMag) * (h - 26);
