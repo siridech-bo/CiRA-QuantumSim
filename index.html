@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NMR Spin Physics 3D Visualizer</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>NMR Spin Physics 3D Visualizer</h1>
+    <span class="subtitle">SPINQ Gemini Lab · ¹H · ³¹P · ¹⁹F — classical Bloch (Option B, MVP)</span>
+  </header>
+
+  <main>
+    <section id="scene-panel">
+      <div id="scene-container"></div>
+    </section>
+
+    <section id="signal-panel">
+      <h2>FID Signal</h2>
+      <canvas id="fid-canvas" width="480" height="220"></canvas>
+      <div class="legend">
+        <span class="swatch" style="background:#4A90D9"></span>real (ΣMy)
+        <span class="swatch" style="background:#FF8C00"></span>imag (ΣMx)
+      </div>
+    </section>
+  </main>
+
+  <footer id="controls">
+    <div class="control-group">
+      <button id="btn-play">▶ Play</button>
+      <button id="btn-reset">↺ Reset</button>
+    </div>
+
+    <div class="control-group">
+      <label>Speed <input id="speed" type="range" min="0.1" max="4" step="0.1" value="1" /></label>
+      <span id="speed-val">1.0×</span>
+    </div>
+
+    <div class="control-group">
+      <span class="group-label">Pulse:</span>
+      <button class="pulse" data-angle="90"  data-axis="x">90°x</button>
+      <button class="pulse" data-angle="90"  data-axis="y">90°y</button>
+      <button class="pulse" data-angle="180" data-axis="x">180°x</button>
+    </div>
+
+    <div class="control-group">
+      <span class="group-label">Target:</span>
+      <label><input type="radio" name="target" value="0" /> ¹H</label>
+      <label><input type="radio" name="target" value="1" /> ³¹P</label>
+      <label><input type="radio" name="target" value="2" /> ¹⁹F</label>
+      <label><input type="radio" name="target" value="all" checked /> All</label>
+    </div>
+
+    <div class="control-group">
+      <label><input id="relax" type="checkbox" checked /> Relaxation (T1/T2)</label>
+    </div>
+  </footer>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
