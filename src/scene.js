@@ -117,6 +117,11 @@ export class BlochScene {
     for (const l of this.couplingLines) l.visible = on;
   }
 
+  // Set the 3D scene background (follows the app's light/dark theme).
+  setBackground(hex) {
+    this.scene.background = new THREE.Color(hex);
+  }
+
   // blochVectors: array of { x, y, z } in PHYSICS coords (each in [-1,1]).
   // Map to Three.js display axes: physics z -> three y (up), physics y -> -three z,
   // physics x -> three x. (Keeps a right-handed view consistent with the old code.)

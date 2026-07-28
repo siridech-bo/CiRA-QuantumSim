@@ -35,6 +35,25 @@ const state = {
 // sim per frame keeps ~30 fps smooth while the FID/precession still animate.
 const MAX_SIM_PER_FRAME = 0.008;
 
+// ---- Theme (day / night) ----------------------------------------------------
+// Chrome is themed via CSS variables on <html data-theme>; the 3D scene
+// background is switched here to match. Preference persists in localStorage.
+const SCENE_BG = { dark: 0x0d1117, light: 0xeef1f5 };
+const themeToggle = document.getElementById('theme-toggle');
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
+  scene.setBackground(SCENE_BG[theme]);
+  try { localStorage.setItem('nmr-theme', theme); } catch (e) { /* ignore */ }
+}
+
+applyTheme(localStorage.getItem('nmr-theme') || 'dark');
+themeToggle.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+});
+
 // ---- UI wiring --------------------------------------------------------------
 
 const playBtn = document.getElementById('btn-play');
