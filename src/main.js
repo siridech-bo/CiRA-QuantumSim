@@ -117,11 +117,13 @@ function frame(now) {
   if (state.playing) {
     // Requested sim-time this frame, capped for the frame budget.
     const dtSim = Math.min(MAX_SIM_PER_FRAME, dtReal * state.speed);
-    system.step(dtSim);
 
-    // Sample FID + spectrum at the FIXED dwell time regardless of frame rate.
+    // Advance in fixed DWELL-sized steps, sampling the FID/spectrum AFTER each
+    // step so every point is a distinct instant. (Stepping the whole frame at
+    // once and then sampling repeatedly pushes identical values → a staircase.)
     state.sampleAccum += dtSim;
     while (state.sampleAccum >= DWELL) {
+      system.step(DWELL);
       const s = system.fid();
       fid.push(s);
       spectrum.push(s);
