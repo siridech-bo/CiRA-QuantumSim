@@ -41,7 +41,33 @@ const state = {
   coupling: true,
   sampleAccum: 0,     // sim-time accumulator for fixed-dwell FID sampling
   circuitMode: false, // true while a compiled circuit is running/stepping
+  stepBudget: 8,      // max engine steps per frame (self-calibrated per molecule)
 };
+
+// Size the per-frame engine-step budget to a compute target by MEASURING the
+// actual cost of a step for the active molecule (homonuclear real-offset
+// molecules need µs sub-steps ⇒ a step is far costlier). Keeps the tab
+// responsive on any molecule/hardware; heteronuclear stays fast (capped by
+// MAX_SIM_PER_FRAME), homonuclear degrades to slow-but-smooth instead of hanging.
+function calibrateStepBudget() {
+  const TARGET_MS = 12;
+  try {
+    const probe = new QuantumSpinSystem({ molecule, relaxation: state.relaxation, coupling: state.coupling });
+    probe.applyPulse('all', Math.PI / 2, 'x');
+    probe.step(view.dwell);                    // warm up JIT (discard)
+    const t0 = performance.now();
+    probe.step(view.dwell);
+    let perStep = performance.now() - t0;
+    if (perStep < 8) {                          // fast molecule: average a few warm steps
+      const t1 = performance.now();
+      for (let i = 0; i < 4; i++) probe.step(view.dwell);
+      perStep = (performance.now() - t1) / 4;
+    }                                          // slow molecule: trust the single measurement
+    state.stepBudget = Math.max(1, Math.min(64, Math.floor(TARGET_MS / Math.max(perStep, 0.05))));
+  } catch (e) {
+    state.stepBudget = 8;
+  }
+}
 
 // Cap simulation time advanced per animation frame. The internal RK4 sub-step
 // tightens with the Hamiltonian's fastest frequency (~50 µs when J is on), so
@@ -299,6 +325,7 @@ function loadMolecule(id) {
   view = viewParams(molecule);
   spectrum.setDwell(view.dwell);
   spectrum.setView(view.viewHz);
+  calibrateStepBudget();
 
   // Rebuild the runner around the new engine (with the molecule's dwell).
   runner.pause();
@@ -350,20 +377,29 @@ function frame(now) {
     runner.advance(dtReal * state.speed);
     refresh();
   } else if (state.playing) {
-    // Requested sim-time this frame, capped for the frame budget.
-    const dtSim = Math.min(MAX_SIM_PER_FRAME, dtReal * state.speed);
+    // Cap engine steps per frame. Homonuclear molecules use a tiny adaptive dwell
+    // (~15 µs) to resolve their kHz shifts; without a cap the loop below would run
+    // hundreds of heavy steps per frame and freeze the tab. Larger systems get a
+    // smaller budget (each step costs more). Sim-time then advances slower in
+    // wall-clock for homonuclear molecules — inherent to their fast dynamics — but
+    // the UI stays responsive.
+    const stepBudget = state.stepBudget;
+    const dtSim = Math.min(MAX_SIM_PER_FRAME, dtReal * state.speed, stepBudget * view.dwell);
 
     // Advance in fixed DWELL-sized steps, sampling the FID/spectrum AFTER each
-    // step so every point is a distinct instant. (Stepping the whole frame at
-    // once and then sampling repeatedly pushes identical values → a staircase.)
+    // step so every point is a distinct instant. The `steps < stepBudget` guard
+    // hard-bounds the work per frame no matter the dwell/speed.
     state.sampleAccum += dtSim;
-    while (state.sampleAccum >= view.dwell) {
+    let steps = 0;
+    while (state.sampleAccum >= view.dwell && steps < stepBudget) {
       system.step(view.dwell);
       const s = system.fid();
       fid.push(s);
       spectrum.push(s);
       state.sampleAccum -= view.dwell;
+      steps++;
     }
+    if (steps >= stepBudget) state.sampleAccum = 0;   // drop backlog, don't accrue
 
     refresh();
   }
@@ -374,5 +410,6 @@ function frame(now) {
 
 // Initial paint.
 scene.setCoupling(state.coupling);
+calibrateStepBudget();
 refresh();
 requestAnimationFrame(frame);
