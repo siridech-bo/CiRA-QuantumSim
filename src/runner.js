@@ -14,9 +14,6 @@
 // coupling, independent of the UI J toggle). Relaxation follows the engine flag.
 // =============================================================================
 
-import { _internal } from './quantum.js';
-const { MLEN, SXk, SYk } = _internal;
-
 const DWELL = 1e-3;   // FID sample interval (match main.js)
 
 export class CircuitRunner {
@@ -145,9 +142,12 @@ export class CircuitRunner {
     if (op.kind === 'rf') {
       // Build H_rf and add to the engine Hamiltonian for the pulse's duration.
       // Tighten the sub-step for RF stability (omega1·h ≪ 1); see quantum.js.
-      const ctx = { Hsave: this.system.H, subSave: this.system.subStep };
-      const Hrf = _buildHrfFlat(op);
+      const ctx = { Hsave: this.system.H, subSave: this.system.subStep, diagSave: this.system._Hdiagonal };
+      const Hrf = _buildHrfFlat(this.system, op);
       this.system.H = this._addHrf(this.system.H, Hrf);
+      // H_rf breaks the diagonal-H fast path → engine falls back to the dense
+      // commutator for the pulse's duration.
+      this.system._Hdiagonal = false;
       this.system.subStep = Math.min(this.system.subStep, 1 / (100 * (op.omega1 / (2 * Math.PI))));
       return ctx;
     }
@@ -164,6 +164,7 @@ export class CircuitRunner {
     if (op.kind === 'rf') {
       this.system.H = ctx.Hsave;   // restore system Hamiltonian
       this.system.subStep = ctx.subSave;
+      this.system._Hdiagonal = ctx.diagSave;
     } else if (op.kind === 'delay') {
       if (ctx && ctx.prevCoupling === false) this.system.setCoupling(false);
     }
@@ -195,12 +196,14 @@ export class CircuitRunner {
   }
 }
 
-// H_rf = (omega1/2)(cosφ σx + sinφ σy) on op.spin, as a flat 8x8.
-function _buildHrfFlat(op) {
+// H_rf = (omega1/2)(cosφ σx + sinφ σy) on op.spin, as a flat 2^n×2^n, using the
+// ENGINE's embedded operators (so it works for any molecule / n).
+function _buildHrfFlat(system, op) {
+  const MLEN = system.mlen;
   const Hrf = new Float64Array(MLEN);
   const cx = Math.cos(op.phase), sy = Math.sin(op.phase);
   const w1 = op.omega1;
-  const X = SXk[op.spin], Y = SYk[op.spin];
+  const X = system.SXk[op.spin], Y = system.SYk[op.spin];
   for (let n = 0; n < MLEN; n++) Hrf[n] = 0.5 * w1 * (cx * X[n] + sy * Y[n]);
   return Hrf;
 }

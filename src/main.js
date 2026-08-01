@@ -1,6 +1,8 @@
 // Wires the REAL quantum density-matrix engine, 3D scene, FID plot, live
-// spectrum, and 8x8 |ρ| heatmap to the UI controls.
-import { QuantumSpinSystem, SPINQ_PARAMS } from './quantum.js';
+// spectrum, and |ρ| heatmap to the UI controls. The engine, scene, circuit grid
+// and histogram are all molecule-driven and rebuilt on a molecule switch.
+import { QuantumSpinSystem } from './quantum.js';
+import { getMolecule, listMolecules, defaultMolecule } from './molecules.js';
 import { BlochScene } from './scene.js';
 import { FidPlot } from './fid.js';
 import { Spectrum } from './spectrum.js';
@@ -10,8 +12,15 @@ import { CircuitRunner } from './runner.js';
 import { CircuitUI, Histogram } from './circuit-ui.js';
 import { invalidatePlotColors } from './theme.js';
 
-const system = new QuantumSpinSystem({ relaxation: true, coupling: true });
-const scene = new BlochScene(document.getElementById('scene-container'), SPINQ_PARAMS.nuclei);
+// Active molecule + engine (both reassigned by loadMolecule()).
+let molecule = defaultMolecule();
+let system = new QuantumSpinSystem({ molecule, relaxation: true, coupling: true });
+
+// Bloch-scene nuclei descriptor { symbol, color } from a molecule.
+function sceneNuclei(mol) { return mol.nuclei.map((n) => ({ symbol: n.label, color: n.color })); }
+function qubitLabels(mol) { return mol.nuclei.map((n, i) => `q${i} ${n.label}`); }
+
+const scene = new BlochScene(document.getElementById('scene-container'), sceneNuclei(molecule));
 const fid = new FidPlot(document.getElementById('fid-canvas'));
 
 // Fixed dwell time for FID sampling / spectrum. 1 ms → ±500 Hz bandwidth,
@@ -19,7 +28,7 @@ const fid = new FidPlot(document.getElementById('fid-canvas'));
 const DWELL = 1e-3;
 const spectrum = new Spectrum(document.getElementById('spectrum-canvas'), { dwell: DWELL, fftSize: 1024 });
 const heatmap = new DensityHeatmap(document.getElementById('heatmap-canvas'));
-const histogram = new Histogram(document.getElementById('histogram-canvas'));
+const histogram = new Histogram(document.getElementById('histogram-canvas'), molecule.nuclei.length);
 
 const state = {
   playing: false,
@@ -95,9 +104,26 @@ couplingToggle.addEventListener('change', (e) => {
 });
 
 function currentTarget() {
-  const val = document.querySelector('input[name="target"]:checked').value;
+  const el = document.querySelector('input[name="target"]:checked');
+  if (!el) return 'all';
+  const val = el.value;
   return val === 'all' ? 'all' : parseInt(val, 10);
 }
+
+// Build the "Target nucleus" radio row for the active molecule's nuclei + All.
+function buildTargetRadios(mol) {
+  const host = document.getElementById('target-radios');
+  host.innerHTML = '';
+  mol.nuclei.forEach((n, i) => {
+    const label = document.createElement('label');
+    label.innerHTML = `<input type="radio" name="target" value="${i}" /> ${n.label}`;
+    host.appendChild(label);
+  });
+  const all = document.createElement('label');
+  all.innerHTML = `<input type="radio" name="target" value="all" checked /> All`;
+  host.appendChild(all);
+}
+buildTargetRadios(molecule);
 
 document.querySelectorAll('button.pulse').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -148,13 +174,14 @@ const circuitUI = new CircuitUI({
   qasm: document.getElementById('qasm-view'),
   duration: document.getElementById('circuit-duration'),
 }, {
+  qubitLabels: qubitLabels(molecule),
   onChange: (circuit) => {
-    compiled = circuit.length ? compileCircuit(circuit) : null;
+    compiled = circuit.length ? compileCircuit(circuit, molecule) : null;
     circuitUI.setDuration(compiled ? compiled.durationSeconds : 0);
   },
 });
 
-const runner = new CircuitRunner(system, {
+let runner = new CircuitRunner(system, {
   onSample: (s) => { fid.push(s); spectrum.push(s); },
   onColumn: (colIdx) => circuitUI.setPlayColumn(colIdx),
   onDone: () => {
@@ -211,6 +238,84 @@ document.getElementById('btn-clear-circuit').addEventListener('click', () => {
   circuitUI.clear();
   circuitUI.setPlayColumn(-1);
 });
+
+// ---- Molecule picker --------------------------------------------------------
+// Populates a dropdown from listMolecules(); on change, loadMolecule() rebuilds
+// the engine, scene spheres, circuit grid, histogram, target radios and readout,
+// clears FID/spectrum/circuit, resets and re-renders. Existing controls stay.
+
+const molSelect = document.getElementById('molecule-select');
+const molReadout = document.getElementById('molecule-readout');
+const appSubtitle = document.getElementById('app-subtitle');
+
+function populateMoleculePicker() {
+  molSelect.innerHTML = '';
+  for (const m of listMolecules()) {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = `${m.name} — ${m.n} qubit${m.n === 1 ? '' : 's'}`;
+    molSelect.appendChild(opt);
+  }
+  molSelect.value = molecule.id;
+}
+
+// Small readout of the active molecule: nuclei, J value(s), citation.
+function renderMoleculeReadout(mol) {
+  const nuc = mol.nuclei.map((n) => n.label).join(' · ');
+  const n = mol.nuclei.length;
+  const js = [];
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++)
+      if (mol.J[i][j] !== 0)
+        js.push(`J(${mol.nuclei[i].label}-${mol.nuclei[j].label}) = ${mol.J[i][j]} Hz`);
+  molReadout.innerHTML =
+    `<div class="mol-nuclei">${nuc}</div>` +
+    `<div class="mol-j">${js.join('<br>')}</div>` +
+    `<div class="mol-cite">${mol.source}</div>`;
+  if (appSubtitle) appSubtitle.textContent = `${mol.name} — real ${n}-spin density-matrix (Lindblad) engine`;
+}
+
+function loadMolecule(id) {
+  molecule = getMolecule(id);
+
+  // Rebuild the engine from the new molecule (preserve the current toggles).
+  system = new QuantumSpinSystem({ molecule, relaxation: state.relaxation, coupling: state.coupling });
+
+  // Rebuild the runner around the new engine.
+  runner.pause();
+  runner = new CircuitRunner(system, {
+    onSample: (s) => { fid.push(s); spectrum.push(s); },
+    onColumn: (colIdx) => circuitUI.setPlayColumn(colIdx),
+    onDone: () => { state.circuitMode = false; refresh(); },
+  });
+  state.circuitMode = false;
+
+  // Rebuild the scene spheres/arrows/coupling-lines (disposes old meshes).
+  scene.setMolecule(sceneNuclei(molecule));
+  scene.setCoupling(state.coupling);
+
+  // Rebuild circuit grid rows + target radios + histogram bars.
+  circuitUI.setMolecule(qubitLabels(molecule));   // clears placed gates → onChange fires
+  buildTargetRadios(molecule);
+  histogram.setQubits(molecule.nuclei.length);
+
+  // Clear traces + reset state, re-render.
+  compiled = null;
+  circuitUI.setDuration(0);
+  fid.clear();
+  spectrum.clear();
+  system.reset();
+  state.playing = false;
+  state.sampleAccum = 0;
+  playBtn.textContent = '▶ Play';
+
+  renderMoleculeReadout(molecule);
+  refresh();
+}
+
+populateMoleculePicker();
+renderMoleculeReadout(molecule);
+molSelect.addEventListener('change', () => loadMolecule(molSelect.value));
 
 // ---- Animation loop ---------------------------------------------------------
 

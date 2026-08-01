@@ -12,8 +12,9 @@
 // =============================================================================
 import { plotColors } from './theme.js';
 
-const QUBIT_LABELS = ['q0 ¹H', 'q1 ³¹P', 'q2 ¹⁹F'];
-const N_QUBITS = 3;
+// Default qubit labels (3-spin SpinQ demo). A molecule switch replaces these
+// via setMolecule(labels).
+const DEFAULT_QUBIT_LABELS = ['q0 ¹H', 'q1 ³¹P', 'q2 ¹⁹F'];
 const N_COLS = 12;
 
 // Palette: single-qubit + two-qubit gates. `angle:true` ⇒ prompt for an angle.
@@ -39,9 +40,25 @@ export class CircuitUI {
     //   { name, targets:[...spins], angle, col }. Single-qubit occupies 1 row.
     this.gates = [];              // flat list of placements
     this.playCol = -1;
+    // Qubit count / labels come from the active molecule; default = 3-spin demo.
+    this.qubitLabels = (callbacks.qubitLabels || DEFAULT_QUBIT_LABELS).slice();
+    this.nQubits = this.qubitLabels.length;
     this._buildPalette();
     this._buildGrid();
     this.render();
+  }
+
+  // Rebuild the grid for a new molecule (labels = ['q0 ¹H', 'q1 ³¹P', ...]).
+  // Clears any placed gates (they may reference removed qubit rows).
+  setMolecule(labels) {
+    this.qubitLabels = labels.slice();
+    this.nQubits = labels.length;
+    this.gates = [];
+    this.pendingControl = null;
+    this.playCol = -1;
+    this._buildGrid();
+    this.render();
+    this._emit();
   }
 
   // ---- circuit model → columns (for the compiler) ---------------------------
@@ -130,11 +147,11 @@ export class CircuitUI {
     grid.innerHTML = '';
     grid.style.setProperty('--cols', N_COLS);
     this.cells = [];
-    for (let q = 0; q < N_QUBITS; q++) {
+    for (let q = 0; q < this.nQubits; q++) {
       // row label
       const lbl = document.createElement('div');
       lbl.className = 'q-label';
-      lbl.textContent = QUBIT_LABELS[q];
+      lbl.textContent = this.qubitLabels[q];
       grid.appendChild(lbl);
       for (let c = 0; c < N_COLS; c++) {
         const cell = document.createElement('div');
@@ -248,12 +265,12 @@ export class CircuitUI {
   _paintPlayhead() {
     this.cells.forEach((cell) => cell.classList.remove('playing'));
     if (this.playCol < 0) return;
-    for (let q = 0; q < N_QUBITS; q++) this._cellAt(q, this.playCol).classList.add('playing');
+    for (let q = 0; q < this.nQubits; q++) this._cellAt(q, this.playCol).classList.add('playing');
   }
 
   // ---- QASM text view -------------------------------------------------------
   _renderQasm() {
-    const lines = ['OPENQASM 2.0;', 'include "qelib1.inc";', 'qreg q[3];', ''];
+    const lines = ['OPENQASM 2.0;', 'include "qelib1.inc";', `qreg q[${this.nQubits}];`, ''];
     for (const col of this.toCircuit()) {
       for (const g of col) {
         lines.push(this._qasmLine(g));
@@ -290,14 +307,25 @@ export class CircuitUI {
 }
 
 // ---------------------------------------------------------------------------
-// Projection-probability histogram: 8 bars for |q0 q1 q2⟩ populations.
+// Projection-probability histogram: 2^n bars for |q0 … q(n−1)⟩ populations.
+// n is inferred from the probs array length (2, 4, 8, …); labels stay legible
+// for small n.
 // ---------------------------------------------------------------------------
 export class Histogram {
-  constructor(canvas) {
+  constructor(canvas, nQubits = 3) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.probs = new Array(8).fill(0);
-    this.probs[0] = 1; // |000⟩
+    this.nQubits = nQubits;
+    this.probs = new Array(1 << nQubits).fill(0);
+    this.probs[0] = 1; // |0…0⟩
+  }
+
+  // Rebuild for a new qubit count (resets to |0…0⟩).
+  setQubits(nQubits) {
+    this.nQubits = nQubits;
+    this.probs = new Array(1 << nQubits).fill(0);
+    this.probs[0] = 1;
+    this.draw();
   }
 
   set(probs) { this.probs = probs; this.draw(); }
@@ -307,14 +335,16 @@ export class Histogram {
     const col = plotColors();
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-    const N = 8;
+    const N = this.probs.length;
+    const nBits = Math.round(Math.log2(N));
     const padL = 8, padB = 24, padT = 8, padR = 8;
     const plotW = w - padL - padR, plotH = h - padB - padT;
     const bw = plotW / N;
     // baseline
     ctx.strokeStyle = col.line;
     ctx.beginPath(); ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
-    ctx.font = '9px ui-monospace, monospace';
+    // Shrink bit-label font as N grows so labels stay legible.
+    const labelFont = N <= 8 ? 9 : N <= 16 ? 8 : 6.5;
     ctx.textAlign = 'center';
     for (let b = 0; b < N; b++) {
       const p = Math.max(0, Math.min(1, this.probs[b]));
@@ -322,19 +352,23 @@ export class Histogram {
       const x = padL + b * bw;
       // bar
       ctx.fillStyle = p > 0.001 ? col.accent : col.empty;
-      ctx.fillRect(x + 2, h - padB - bh, bw - 4, bh);
-      // value label
-      if (p > 0.02) {
+      ctx.fillRect(x + 2, h - padB - bh, Math.max(1, bw - 4), bh);
+      // value label (only when there's room)
+      if (p > 0.02 && N <= 16) {
         ctx.fillStyle = col.text;
+        ctx.font = `${labelFont}px ui-monospace, monospace`;
         ctx.fillText(p.toFixed(2), x + bw / 2, h - padB - bh - 3);
       }
-      // basis label |q0q1q2>
+      // basis label |q0…>
       ctx.fillStyle = col.text;
-      const bits = b.toString(2).padStart(3, '0');
+      ctx.font = `${labelFont}px ui-monospace, monospace`;
+      const bits = b.toString(2).padStart(nBits, '0');
       ctx.fillText(bits, x + bw / 2, h - padB + 12);
     }
     ctx.textAlign = 'left';
     ctx.fillStyle = col.text;
-    ctx.fillText('|q0 q1 q2⟩', padL, padT + 2);
+    ctx.font = '9px ui-monospace, monospace';
+    const qs = Array.from({ length: nBits }, (_, i) => `q${i}`).join(' ');
+    ctx.fillText(`|${qs}⟩`, padL, padT + 2);
   }
 }

@@ -140,36 +140,14 @@ export class BlochScene {
     this.controls.enableDamping = true;
     this.controls.target.set(0, 0, 0);
 
-    // Build one sphere + bold arrow per nucleus, centered as a row.
-    const radius = 1;
-    const offsetX = -(nuclei.length - 1) / 2 * SPHERE_SPACING;
+    // Group that holds all molecule meshes (spheres, arrows, coupling lines) so
+    // a molecule switch can dispose + rebuild them cleanly (no GPU leaks).
+    this._molGroup = null;
     this.arrows = [];
     this.centers = [];
-    nuclei.forEach((n, i) => {
-      const sphere = createBlochSphere(radius, n.symbol, n.color);
-      sphere.position.x = offsetX + i * SPHERE_SPACING;
-      this.scene.add(sphere);
-      this.centers.push(new THREE.Vector3(sphere.position.x, 0, 0));
-
-      const arrow = new BoldArrow(n.color);
-      sphere.add(arrow.obj);
-      this.arrows.push(arrow);
-    });
-
-    // J-coupling connector lines between sphere centers (toggled by setCoupling).
     this.couplingLines = [];
-    const pairs = [[0, 1], [0, 2], [1, 2]];
-    pairs.forEach(([a, b]) => {
-      const mat = new THREE.LineDashedMaterial({ color: 0x777777, dashSize: 0.12, gapSize: 0.1, transparent: true, opacity: 0.5 });
-      const geo = new THREE.BufferGeometry().setFromPoints([
-        this.centers[a].clone().add(new THREE.Vector3(0, -radius - 0.15, 0)),
-        this.centers[b].clone().add(new THREE.Vector3(0, -radius - 0.15, 0)),
-      ]);
-      const line = new THREE.Line(geo, mat);
-      line.computeLineDistances();
-      this.scene.add(line);
-      this.couplingLines.push(line);
-    });
+    this._couplingOn = true;
+    this.setMolecule(nuclei);
 
     window.addEventListener('resize', () => this._onResize());
     // The grid layout isn't final when this runs at module load, so the initial
@@ -182,8 +160,82 @@ export class BlochScene {
     }
   }
 
+  // ---- (Re)build the spheres/arrows/coupling-lines for a molecule's nuclei.
+  // Disposes any previous molecule meshes first to avoid GPU-memory leaks.
+  // nuclei: array of { symbol, color } (from a molecule's nuclei labels/colors).
+  setMolecule(nuclei) {
+    this._disposeMolecule();
+
+    const group = new THREE.Group();
+    const radius = 1;
+    const n = nuclei.length;
+    const offsetX = -(n - 1) / 2 * SPHERE_SPACING;
+
+    this.arrows = [];
+    this.centers = [];
+    nuclei.forEach((nu, i) => {
+      const sphere = createBlochSphere(radius, nu.symbol, nu.color);
+      sphere.position.x = offsetX + i * SPHERE_SPACING;
+      group.add(sphere);
+      this.centers.push(new THREE.Vector3(sphere.position.x, 0, 0));
+
+      const arrow = new BoldArrow(nu.color);
+      sphere.add(arrow.obj);
+      this.arrows.push(arrow);
+    });
+
+    // J-coupling connector lines between EVERY pair of sphere centers.
+    this.couplingLines = [];
+    for (let a = 0; a < n; a++)
+      for (let b = a + 1; b < n; b++) {
+        const mat = new THREE.LineDashedMaterial({ color: 0x777777, dashSize: 0.12, gapSize: 0.1, transparent: true, opacity: 0.5 });
+        const geo = new THREE.BufferGeometry().setFromPoints([
+          this.centers[a].clone().add(new THREE.Vector3(0, -radius - 0.15, 0)),
+          this.centers[b].clone().add(new THREE.Vector3(0, -radius - 0.15, 0)),
+        ]);
+        const line = new THREE.Line(geo, mat);
+        line.computeLineDistances();
+        line.visible = this._couplingOn;
+        group.add(line);
+        this.couplingLines.push(line);
+      }
+
+    this.scene.add(group);
+    this._molGroup = group;
+
+    // Frame the camera so the whole row fits regardless of n (2..7).
+    const span = (n - 1) * SPHERE_SPACING + 2 * (radius + 1);
+    const dist = Math.max(6, span * 0.75);
+    this.camera.position.set(0, 2.2, dist);
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+    this._onResize();
+  }
+
+  // Dispose all geometries/materials/textures under the current molecule group.
+  _disposeMolecule() {
+    if (!this._molGroup) return;
+    this._molGroup.traverse((obj) => {
+      if (obj.geometry) obj.geometry.dispose();
+      const mat = obj.material;
+      if (mat) {
+        const mats = Array.isArray(mat) ? mat : [mat];
+        for (const m of mats) {
+          if (m.map) m.map.dispose();   // CanvasTexture on label sprites
+          m.dispose();
+        }
+      }
+    });
+    this.scene.remove(this._molGroup);
+    this._molGroup = null;
+    this.arrows = [];
+    this.centers = [];
+    this.couplingLines = [];
+  }
+
   // Show/hide the J-coupling connector lines.
   setCoupling(on) {
+    this._couplingOn = on;
     for (const l of this.couplingLines) l.visible = on;
   }
 

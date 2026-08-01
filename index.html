@@ -23,7 +23,7 @@
         <span class="logo">⚛</span>
         <div class="brand-text">
           <h1>NMR Spin Physics 3D Visualizer</h1>
-          <span class="subtitle">SPINQ Gemini Lab · ¹H · ³¹P · ¹⁹F — real 3-spin density-matrix (Lindblad) engine</span>
+          <span class="subtitle" id="app-subtitle">real n-spin density-matrix (Lindblad) engine</span>
         </div>
       </div>
       <div class="topbar-actions">
@@ -34,6 +34,12 @@
     <!-- ===== Left sidebar: manual pulse + input controls ===== -->
     <aside id="sidebar-left">
       <h2 class="side-title">Controls</h2>
+
+      <div class="side-group">
+        <div class="side-label">Molecule</div>
+        <select id="molecule-select" class="mol-select"></select>
+        <div id="molecule-readout" class="mol-readout"></div>
+      </div>
 
       <div class="side-group">
         <div class="side-label">Playback</div>
@@ -56,12 +62,7 @@
           <button class="pulse" data-angle="180" data-axis="x">180°x</button>
         </div>
         <div class="side-label sub">Target nucleus</div>
-        <div class="radio-row">
-          <label><input type="radio" name="target" value="0" /> ¹H</label>
-          <label><input type="radio" name="target" value="1" /> ³¹P</label>
-          <label><input type="radio" name="target" value="2" /> ¹⁹F</label>
-          <label><input type="radio" name="target" value="all" checked /> All</label>
-        </div>
+        <div class="radio-row" id="target-radios"></div>
       </div>
 
       <div class="side-group">

@@ -15,8 +15,25 @@ earlier classical single-vector Bloch MVP (Option B) has been **removed**
 This is an educational **side project** for teaching at KMITL — explicitly *not* on the
 QRC research critical path. Keep scope tight.
 
-Physics is validated by `test/physics.test.mjs` and `test/gates.test.mjs` (`npm test` runs
-both, node assert). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
+### Molecule library (n-spin, multi-molecule)
+The engine is now **molecule-driven and generalized to arbitrary n spins** (2ⁿ density
+matrix), not fixed to 3. `src/molecules.js` is the registry: each `Molecule` has nuclei
+(label/isotope/color/display-offset/T1/T2), an n×n J-matrix (Hz), field, `addressing`
+('hetero'), and `couplingModel` ('weak'), with a cited source. Shipped molecules:
+`spinq3` (the original ¹H/³¹P/¹⁹F 3-spin demo, **default**), `dmp` (real SpinQ Gemini
+¹H·³¹P sample, J=697.4 Hz, arXiv:2101.10017), `chloroform` (¹H·¹³C, J=215.5 Hz).
+**Verified literature numbers only** — display offsets are cosmetic (real hetero offsets=0),
+J/T1/T2 are real. The left-sidebar molecule picker calls `loadMolecule(id)` which rebuilds
+engine + scene (n spheres) + circuit grid (n rows) + target radios + histogram (2ⁿ bars).
+- Backward compat: `new QuantumSpinSystem()` (no args) = the `spinq3` molecule, identical to
+  before — this is why the legacy suites pass unchanged. Don't break it.
+- Perf: weak-coupling H is diagonal, so free-evolution uses an **O(dim²) elementwise
+  commutator** (numerically identical to dense). Real-time target n≤~5. Statevector relax-off
+  fast path (n=6–7) and homonuclear/soft-pulse support are **not built yet** — see
+  [docs/multi-molecule-extension-plan.md](docs/multi-molecule-extension-plan.md) Phases 2–3.
+
+Physics is validated by `test/physics.test.mjs`, `test/gates.test.mjs`, and
+`test/molecules.test.mjs` (`npm test` runs all three, node assert). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
 green** — physics.test asserts Tr(ρ)=1, Hermiticity, positivity, unitary purity, exact
 T1/T2 rates, and emergent J-coupling FFT splitting; gates.test asserts every gate's compiled
 pulse sequence matches its ideal unitary to >0.999 fidelity, CZ/CNOT correctness, and that

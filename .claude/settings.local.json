@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:link.aps.org)",
+      "Read(//c/Users/bmwsb/.claude/projects/d--CiRA-QuantumSim/4123718e-136b-4a41-a751-1b1f368b2cef/tool-results/**)",
+      "Bash(python -c ' *)",
+      "WebSearch",
+      "WebFetch(domain:arxiv.org)"
+    ]
+  }
+}
