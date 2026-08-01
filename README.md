@@ -33,11 +33,17 @@ the same version from a CDN via the import map), then serve the folder over HTTP
 
 ```powershell
 npm install
-# then serve statically:
-python -m http.server 8000   # or: npx serve .
+# then serve statically (caching disabled → no stale-module issues):
+python serve.py 8000
 ```
 
 Then open <http://localhost:8000/>.
+
+> **Use `serve.py`, not `python -m http.server`.** The plain server sends no
+> `Cache-Control` header, so Chrome caches JS modules and can run a stale mix
+> (symptom: the molecule switches but the display doesn't). `serve.py` sends
+> `no-store` on every response. If you're mid-session on the plain server, do a
+> one-time **DevTools → right-click reload → "Empty Cache and Hard Reload"**.
 
 ## Tests
 
