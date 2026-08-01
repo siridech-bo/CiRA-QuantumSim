@@ -7,21 +7,32 @@
 // The engine (src/quantum.js) and gate compiler (src/gates.js) read EVERYTHING
 // from a Molecule — no physics constants are hardcoded elsewhere.
 //
-// SCOPE (Phase 1): heteronuclear, weak-coupling ONLY. `addressing:'hetero'`,
-// `couplingModel:'weak'`. Homonuclear systems + soft selective pulses + the full
-// isotropic (flip-flop) J Hamiltonian are a LATER phase — see
-// docs/multi-molecule-extension-plan.md §Phase 2. Do NOT add them here.
+// SCOPE (Phase 1+2): heteronuclear AND homonuclear, weak-coupling. Homonuclear
+// molecules set `addressing:'homo'` and use their REAL chemical-shift offsets
+// directly (the engine's rotating-frame detunings) — see the OFFSET CONVENTION
+// note below. Both shipped homonuclear molecules are `couplingModel:'weak'`
+// (verified |Δν| >> |J|); the engine ALSO supports `couplingModel:'full'`
+// (isotropic flip-flop J) for future strongly-coupled molecules, but no shipped
+// molecule uses it. Selective soft (shaped) pulses realize single-qubit gates on
+// homonuclear molecules — see src/quantum.js softPulse() and src/gates.js.
 //
-// DISPLAY-OFFSET CONVENTION (important): real heteronuclear rotating-frame
-// offsets are 0 Hz (each nucleus sits on its own RF channel / carrier, on
-// resonance). The app substitutes small DISPLAY offsets (offsetHz) so the Bloch
-// vectors visibly precess in the 3D scene and the FID/spectrum show structure.
-// These offsets are a VISUALIZATION parameter ONLY — the REAL physics (J, T1,
-// T2) uses the verified literature numbers. Each molecule marks its offsets as
-// display-only below.
+// OFFSET CONVENTION (important — differs by addressing):
+//   * HETERONUCLEAR (addressing:'hetero'): real rotating-frame offsets are 0 Hz
+//     (each nucleus sits on its own RF channel / carrier, on resonance). The app
+//     substitutes small DISPLAY offsets (offsetHz) so the Bloch vectors visibly
+//     precess in the 3D scene and the FID/spectrum show structure. These offsets
+//     are a VISUALIZATION parameter ONLY — the REAL physics (J, T1, T2) uses the
+//     verified literature numbers.
+//   * HOMONUCLEAR (addressing:'homo'): all spins are the SAME nucleus (all ¹³C)
+//     sharing ONE RF channel, distinguished ONLY by chemical shift. The offsetHz
+//     values here are the REAL chemical-shift offsets (Hz) from the cited papers.
+//     A HARD pulse rotates ALL spins at once; selectivity (single-qubit
+//     addressing) comes from frequency-selective SOFT pulses tuned to a target
+//     spin's resonance. These offsets are REAL PHYSICS, not display cosmetics.
 //
 // Molecule shape:
-//   { id, name, description, field_T, addressing:'hetero', couplingModel:'weak',
+//   { id, name, description, field_T,
+//     addressing:'hetero'|'homo', couplingModel:'weak'|'full',
 //     nuclei:[{ label, isotope, color, offsetHz, T1, T2 }],
 //     J: <n×n symmetric Hz matrix, diagonal 0>, source:'<citation>' }
 // =============================================================================
@@ -117,9 +128,88 @@ const CHLOROFORM = {
 };
 
 // ---------------------------------------------------------------------------
+// 4) ¹³C-alanine — 3-qubit HOMONUCLEAR (all ¹³C). Weakly coupled liquid.
+//    Distinct carbons: C1 = carbonyl (COOH), C2 = Cα, C3 = methyl (CH3). All
+//    share ONE ¹³C channel (125.77 MHz); addressed only by chemical shift.
+//    REAL chemical-shift offsets (Hz, NOT display cosmetics — homonuclear
+//    addressing depends on them):
+//      C1 = −4320,  C2 = 0,  C3 = +15793
+//    REAL scalar couplings (Hz): J(C1-C2)=34.94, J(C2-C3)=53.81, J(C1-C3)=1.21.
+//    T1 (s): 20.3, 2.8, 1.5;  T2 (s): 1.3, 0.41, 0.81.
+//    Weak coupling valid: |Δν| (thousands of Hz) >> |J| (tens of Hz).
+//    Source: Kim et al., Phys. Rev. A 66, 022311 (2002),
+//    arXiv:quant-ph/0108068 (¹³C at 125.77 MHz).
+// ---------------------------------------------------------------------------
+const ALANINE = {
+  id: 'alanine',
+  name: '¹³C-alanine (3× ¹³C, homonuclear)',
+  description: 'Homonuclear 3-qubit ¹³C system (C1 carbonyl, C2 Cα, C3 methyl). '
+    + 'Single-qubit gates use frequency-selective soft pulses.',
+  field_T: 11.74,   // 125.77 MHz ¹³C ≈ 11.74 T
+  addressing: 'homo',
+  couplingModel: 'weak',   // verified weak: |Δν| >> |J|
+  nuclei: [
+    // offsetHz are REAL ¹³C chemical-shift offsets (Hz), not display values.
+    // Distinct carbon-ish colors so the three ¹³C spheres are distinguishable.
+    { label: 'C1', isotope: '13C', color: 0x9AA0A6, offsetHz: -4320,  T1: 20.3, T2: 1.3  },
+    { label: 'C2', isotope: '13C', color: 0xB0785A, offsetHz: 0,      T1: 2.8,  T2: 0.41 },
+    { label: 'C3', isotope: '13C', color: 0x6FA8B0, offsetHz: 15793,  T1: 1.5,  T2: 0.81 },
+  ],
+  J: jMatrix(3, [
+    { i: 0, j: 1, J: 34.94 },
+    { i: 1, j: 2, J: 53.81 },
+    { i: 0, j: 2, J: 1.21 },
+  ]),
+  source: 'Kim et al., Phys. Rev. A 66, 022311 (2002), arXiv:quant-ph/0108068.',
+};
+
+// ---------------------------------------------------------------------------
+// 5) Crotonic acid — 4-qubit HOMONUCLEAR (all ¹³C). Weakly coupled liquid.
+//    Carbons: C1 = COOH, C2, C3, C4 = CH3. One ¹³C channel (500 MHz ¹H spectro-
+//    meter). REAL chemical-shift offsets (Hz):
+//      C1 = 21468.9,  C2 = 15255.6,  C3 = 18668.0,  C4 = 2190.4
+//    REAL couplings (Hz): J12=72.4, J13=−1.3, J14=7.0, J23=70.3, J24=−1.6,
+//    J34=41.3.
+//    T2 (s): C1=0.84, C2=0.92, C3=0.66, C4=0.79 (source arXiv:1710.03646).
+//    T1 (s): NOT PUBLISHED — the values below (C1=10, C2=3, C3=3, C4=2) are
+//    UNPUBLISHED ENGINEERING ESTIMATES for the relaxation animation ONLY, NOT
+//    from any source. Tests fit T2 strictly and treat T1 loosely/skip.
+//    Weak coupling valid: |Δν| (thousands of Hz) >> |J| (tens of Hz).
+//    Source: Peng et al., Phys. Rev. Lett. 100, 140501 (2008), arXiv:0704.1181
+//    (500 MHz); T2 from arXiv:1710.03646.
+// ---------------------------------------------------------------------------
+const CROTONIC = {
+  id: 'crotonic',
+  name: 'Crotonic acid (4× ¹³C, homonuclear)',
+  description: 'Homonuclear 4-qubit ¹³C system (C1 COOH, C2, C3, C4 CH3). '
+    + 'Single-qubit gates use frequency-selective soft pulses.',
+  field_T: 11.74,   // 500 MHz ¹H ⇒ ~125.7 MHz ¹³C ≈ 11.74 T
+  addressing: 'homo',
+  couplingModel: 'weak',   // verified weak: |Δν| >> |J|
+  nuclei: [
+    // offsetHz are REAL ¹³C chemical-shift offsets (Hz), not display values.
+    { label: 'C1', isotope: '13C', color: 0x9AA0A6, offsetHz: 21468.9, T1: 10, T2: 0.84 },
+    { label: 'C2', isotope: '13C', color: 0xB0785A, offsetHz: 15255.6, T1: 3,  T2: 0.92 },
+    { label: 'C3', isotope: '13C', color: 0x6FA8B0, offsetHz: 18668.0, T1: 3,  T2: 0.66 },
+    { label: 'C4', isotope: '13C', color: 0xC7B15A, offsetHz: 2190.4,  T1: 2,  T2: 0.79 },
+  ],
+  // T1 above are UNPUBLISHED ESTIMATES (not from a source) — see block comment.
+  J: jMatrix(4, [
+    { i: 0, j: 1, J: 72.4 },
+    { i: 0, j: 2, J: -1.3 },
+    { i: 0, j: 3, J: 7.0 },
+    { i: 1, j: 2, J: 70.3 },
+    { i: 1, j: 3, J: -1.6 },
+    { i: 2, j: 3, J: 41.3 },
+  ]),
+  source: 'Peng et al., PRL 100, 140501 (2008), arXiv:0704.1181; T2 from arXiv:1710.03646. '
+    + 'T1 are unpublished estimates.',
+};
+
+// ---------------------------------------------------------------------------
 // Registry + accessors.
 // ---------------------------------------------------------------------------
-const REGISTRY = [SPINQ3, DMP, CHLOROFORM];
+const REGISTRY = [SPINQ3, DMP, CHLOROFORM, ALANINE, CROTONIC];
 const BY_ID = new Map(REGISTRY.map((m) => [m.id, m]));
 
 // The default molecule id (the existing 3-spin demo).
@@ -138,9 +228,54 @@ export function getMolecule(id) {
 // Convenience: the default molecule record.
 export function defaultMolecule() { return getMolecule(DEFAULT_MOLECULE_ID); }
 
-// List all molecules with id, name, and qubit count (for the UI picker).
+// List all molecules with id, name, qubit count, and addressing (for the UI).
 export function listMolecules() {
-  return REGISTRY.map((m) => ({ id: m.id, name: m.name, n: m.nuclei.length }));
+  return REGISTRY.map((m) => ({
+    id: m.id, name: m.name, n: m.nuclei.length, addressing: m.addressing,
+  }));
 }
 
-export { SPINQ3, DMP, CHLOROFORM };
+// Convenience predicate: is this molecule homonuclear (shared RF channel)?
+export function isHomonuclear(mol) { return mol.addressing === 'homo'; }
+
+// Largest |offset| (Hz) across a molecule's nuclei — drives adaptive dwell /
+// spectrum window (homonuclear real offsets can reach ~21 kHz).
+export function maxAbsOffsetHz(mol) {
+  return mol.nuclei.reduce((mx, nu) => Math.max(mx, Math.abs(nu.offsetHz)), 0);
+}
+
+// Adaptive FID/spectrum view parameters for a molecule. Homonuclear real
+// offsets are large (up to ~21 kHz) so the fixed 1 ms dwell / ±300 Hz window
+// would ALIAS. We shrink the dwell so Nyquist (0.5/dwell) covers the largest
+// offset + multiplet, and widen the spectrum half-window to match.
+//   * heteronuclear (offsets ~tens of Hz): keep dwell=1 ms, view=±300 Hz.
+//   * homonuclear: dwell = min(1 ms, 1/(4·maxAbsOffset)); view = maxAbsOffset +
+//     maxJ + margin. Fast 3D precession for high-shift spins is physically
+//     honest (the speed slider mitigates it).
+// Returns { dwell (s), viewHz (Hz half-window) }.
+export function viewParams(mol) {
+  const maxOff = maxAbsOffsetHz(mol);
+  const maxJ = maxAbsJHz(mol);
+  const BASE_DWELL = 1e-3;      // 1 ms  → ±500 Hz Nyquist
+  const BASE_VIEW = 300;        // ±300 Hz display window (heteronuclear)
+  if (mol.addressing !== 'homo' || maxOff <= 250) {
+    return { dwell: BASE_DWELL, viewHz: BASE_VIEW };
+  }
+  // Homonuclear: dwell so Nyquist ≳ maxOff (factor 4 gives headroom for the
+  // multiplet + apodization); never coarser than 1 ms.
+  const dwell = Math.min(BASE_DWELL, 1 / (4 * maxOff));
+  const viewHz = maxOff + maxJ + 500;   // +500 Hz margin for the multiplet
+  return { dwell, viewHz };
+}
+
+// Largest |J| (Hz) across a molecule's coupling matrix.
+export function maxAbsJHz(mol) {
+  let mx = 0;
+  const n = mol.nuclei.length;
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++)
+      mx = Math.max(mx, Math.abs(mol.J[i][j]));
+  return mx;
+}
+
+export { SPINQ3, DMP, CHLOROFORM, ALANINE, CROTONIC };

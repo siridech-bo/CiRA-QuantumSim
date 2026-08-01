@@ -32,8 +32,27 @@ engine + scene (n spheres) + circuit grid (n rows) + target radios + histogram (
   fast path (n=6–7) and homonuclear/soft-pulse support are **not built yet** — see
   [docs/multi-molecule-extension-plan.md](docs/multi-molecule-extension-plan.md) Phases 2–3.
 
-Physics is validated by `test/physics.test.mjs`, `test/gates.test.mjs`, and
-`test/molecules.test.mjs` (`npm test` runs all three, node assert). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
+### Homonuclear molecules + selective soft pulses (Phase 2)
+`addressing:'homo'` molecules (all same nucleus, e.g. all-¹³C) share one RF channel and
+are distinguished only by chemical shift — their `offsetHz` are REAL chemical shifts (not
+display cosmetics). Shipped: `alanine` (3×¹³C, quant-ph/0108068) and `crotonic` (4×¹³C,
+arXiv:0704.1181). Single-qubit gates on homo molecules compile to `soft` ops →
+`QuantumSpinSystem.softPulse()`: a finite Gaussian pulse on a **shared channel (drives ALL
+spins, Σₖσₓ/σᵧ)** integrated under the full Hamiltonian. **Selectivity is EMERGENT** — a
+spectator at detuning Δ is only weakly excited when the pulse bandwidth (~1/T) ≪ |Δ| — NOT
+hard-wired to the target. (A prior version drove only the target spin, faking selectivity;
+QA caught it. The regression test in homonuclear.test.mjs asserts a short/broadband pulse
+LOSES selectivity — keep it.) Honest fidelity: alanine >0.99, crotonic ~0.965–0.984
+(coupling-during-pulse error; real NMR-QC uses refocusing/optimal control — out of scope).
+Homonuclear **two-qubit gates are disabled** (`HOMO_TWO_QUBIT_ENABLED=false`) — selective
+refocusing couldn't clear the fidelity bar; don't silently enable them. `couplingModel:'full'`
+(isotropic flip-flop `Σ2πJ(IxIx+IyIy+IzIz)`) is implemented for future strongly-coupled
+molecules but both shipped homo molecules are weak. FID dwell / spectrum window adapt per
+molecule (homo real offsets reach ~21 kHz).
+
+Physics is validated by `test/physics.test.mjs`, `test/gates.test.mjs`,
+`test/molecules.test.mjs`, and `test/homonuclear.test.mjs` (`npm test` runs all four, node
+assert; the homonuclear suite is slow — crotonic is dim-16 with finite-pulse integration). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
 green** — physics.test asserts Tr(ρ)=1, Hermiticity, positivity, unitary purity, exact
 T1/T2 rates, and emergent J-coupling FFT splitting; gates.test asserts every gate's compiled
 pulse sequence matches its ideal unitary to >0.999 fidelity, CZ/CNOT correctness, and that

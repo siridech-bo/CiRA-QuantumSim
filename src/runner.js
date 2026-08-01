@@ -14,18 +14,23 @@
 // coupling, independent of the UI J toggle). Relaxation follows the engine flag.
 // =============================================================================
 
-const DWELL = 1e-3;   // FID sample interval (match main.js)
+const DEFAULT_DWELL = 1e-3;   // FID sample interval (match main.js default)
 
 export class CircuitRunner {
   // system: QuantumSpinSystem. callbacks: {
   //   onSample(fidSample), onTick(state), onColumn(colIdx), onDone(), onGate(gate)
   // }
-  constructor(system, callbacks = {}) {
+  // opts.dwell: FID sampling interval (s). Homonuclear molecules use a shorter
+  // adaptive dwell (main.js computes it); heteronuclear keep 1 ms.
+  constructor(system, callbacks = {}, opts = {}) {
     this.system = system;
     this.cb = callbacks;
+    this.dwell = opts.dwell || DEFAULT_DWELL;
     this.compiled = null;      // { schedule, durationSeconds, columns }
     this.reset();
   }
+
+  setDwell(dwell) { this.dwell = dwell || DEFAULT_DWELL; }
 
   load(compiled) {
     this.compiled = compiled;
@@ -71,6 +76,24 @@ export class CircuitRunner {
       if (op.kind === 'ipulse') {
         // Instantaneous (hard) refocusing pulse — exact unitary, no time.
         this.system.applyPulse(op.spin, op.angle, op.axis);
+        this._advanceOp();
+        continue;
+      }
+
+      if (op.kind === 'soft') {
+        // Frequency-selective SOFT pulse (homonuclear). The engine's softPulse()
+        // manages its own Gaussian envelope + rotating-frame internally, so it
+        // must run ATOMICALLY (cannot be chunked like a constant-amplitude rf).
+        // We run it whole here, streaming FID samples every DWELL via onTick, and
+        // charge its full duration against the sim clock/budget in one go. (Soft
+        // pulses are ~ms; running one per frame keeps animation smooth enough.)
+        const T = this.system.softPulse({
+          spin: op.spin, phase: op.phase, angle: op.angle,
+          onTick: (dt) => this._softTick(dt),
+        });
+        this.simTime += T;
+        budget -= T;
+        if (this.cb.onTick) this.cb.onTick(this.system);
         this._advanceOp();
         continue;
       }
@@ -175,18 +198,28 @@ export class CircuitRunner {
   _runChunk(op, chunk) {
     let remaining = chunk;
     while (remaining > 1e-12) {
-      const toNextSample = DWELL - this.sampleAccum;
+      const toNextSample = this.dwell - this.sampleAccum;
       const h = Math.min(remaining, toNextSample, this.system.subStep * 4);
       // Step the engine (RK4 internal substeps); use step() which subdivides.
       this.system.step(h);
       remaining -= h;
       this.sampleAccum += h;
-      if (this.sampleAccum >= DWELL - 1e-12) {
+      if (this.sampleAccum >= this.dwell - 1e-12) {
         this.sampleAccum = 0;
         if (this.cb.onSample) this.cb.onSample(this.system.fid());
       }
     }
     if (this.cb.onTick) this.cb.onTick(this.system);
+  }
+
+  // FID sampling during an atomic soft pulse: accumulate sub-step time and push
+  // a sample every DWELL (mirrors _runChunk's sampling cadence).
+  _softTick(dt) {
+    this.sampleAccum += dt;
+    if (this.sampleAccum >= this.dwell - 1e-12) {
+      this.sampleAccum = 0;
+      if (this.cb.onSample) this.cb.onSample(this.system.fid());
+    }
   }
 
   _addHrf(H, Hrf) {

@@ -2,12 +2,12 @@
 // spectrum, and |ρ| heatmap to the UI controls. The engine, scene, circuit grid
 // and histogram are all molecule-driven and rebuilt on a molecule switch.
 import { QuantumSpinSystem } from './quantum.js';
-import { getMolecule, listMolecules, defaultMolecule } from './molecules.js';
+import { getMolecule, listMolecules, defaultMolecule, viewParams, isHomonuclear } from './molecules.js';
 import { BlochScene } from './scene.js';
 import { FidPlot } from './fid.js';
 import { Spectrum } from './spectrum.js';
 import { DensityHeatmap } from './heatmap.js';
-import { compileCircuit } from './gates.js';
+import { compileCircuit, HOMO_TWO_QUBIT_ENABLED } from './gates.js';
 import { CircuitRunner } from './runner.js';
 import { CircuitUI, Histogram } from './circuit-ui.js';
 import { invalidatePlotColors } from './theme.js';
@@ -19,14 +19,18 @@ let system = new QuantumSpinSystem({ molecule, relaxation: true, coupling: true 
 // Bloch-scene nuclei descriptor { symbol, color } from a molecule.
 function sceneNuclei(mol) { return mol.nuclei.map((n) => ({ symbol: n.label, color: n.color })); }
 function qubitLabels(mol) { return mol.nuclei.map((n, i) => `q${i} ${n.label}`); }
+// Two-qubit gates allowed for this molecule? (Disabled for homonuclear.)
+function twoQubitOK(mol) { return !isHomonuclear(mol) || HOMO_TWO_QUBIT_ENABLED; }
 
 const scene = new BlochScene(document.getElementById('scene-container'), sceneNuclei(molecule));
 const fid = new FidPlot(document.getElementById('fid-canvas'));
 
-// Fixed dwell time for FID sampling / spectrum. 1 ms → ±500 Hz bandwidth,
-// enough to resolve the 12–30 Hz display offsets and 42/220 Hz J-splittings.
-const DWELL = 1e-3;
-const spectrum = new Spectrum(document.getElementById('spectrum-canvas'), { dwell: DWELL, fftSize: 1024 });
+// ADAPTIVE dwell / spectrum window (per molecule). Heteronuclear: 1 ms / ±300 Hz.
+// Homonuclear real offsets reach ~21 kHz, so dwell shrinks (avoids aliasing) and
+// the spectrum window widens to show the real multiplets. See molecules.viewParams.
+let view = viewParams(molecule);
+const spectrum = new Spectrum(document.getElementById('spectrum-canvas'),
+  { dwell: view.dwell, fftSize: 1024, viewHz: view.viewHz });
 const heatmap = new DensityHeatmap(document.getElementById('heatmap-canvas'));
 const histogram = new Histogram(document.getElementById('histogram-canvas'), molecule.nuclei.length);
 
@@ -175,6 +179,7 @@ const circuitUI = new CircuitUI({
   duration: document.getElementById('circuit-duration'),
 }, {
   qubitLabels: qubitLabels(molecule),
+  twoQubitEnabled: twoQubitOK(molecule),
   onChange: (circuit) => {
     compiled = circuit.length ? compileCircuit(circuit, molecule) : null;
     circuitUI.setDuration(compiled ? compiled.durationSeconds : 0);
@@ -188,7 +193,7 @@ let runner = new CircuitRunner(system, {
     state.circuitMode = false;
     refresh();
   },
-});
+}, { dwell: view.dwell });
 
 function startCircuit() {
   if (!compiled) return;
@@ -268,11 +273,20 @@ function renderMoleculeReadout(mol) {
     for (let j = i + 1; j < n; j++)
       if (mol.J[i][j] !== 0)
         js.push(`J(${mol.nuclei[i].label}-${mol.nuclei[j].label}) = ${mol.J[i][j]} Hz`);
+  const homo = isHomonuclear(mol);
+  const addr = homo ? 'homonuclear' : 'heteronuclear';
+  const addrNote = homo
+    ? 'shared RF channel — single-qubit gates use frequency-selective soft pulses'
+    : 'separate RF channels per nucleus — hard pulses address each spin';
   molReadout.innerHTML =
     `<div class="mol-nuclei">${nuc}</div>` +
+    `<div class="mol-addr"><span class="addr-tag ${homo ? 'homo' : 'hetero'}">${addr}</span> ${addrNote}</div>` +
     `<div class="mol-j">${js.join('<br>')}</div>` +
+    (homo ? '<div class="mol-note">Two-qubit gates (CNOT/CZ) are experimental for '
+      + 'homonuclear molecules and disabled in this build.</div>' : '') +
     `<div class="mol-cite">${mol.source}</div>`;
-  if (appSubtitle) appSubtitle.textContent = `${mol.name} — real ${n}-spin density-matrix (Lindblad) engine`;
+  if (appSubtitle) appSubtitle.textContent =
+    `${mol.name} — real ${n}-spin ${addr} density-matrix (Lindblad) engine`;
 }
 
 function loadMolecule(id) {
@@ -281,13 +295,18 @@ function loadMolecule(id) {
   // Rebuild the engine from the new molecule (preserve the current toggles).
   system = new QuantumSpinSystem({ molecule, relaxation: state.relaxation, coupling: state.coupling });
 
-  // Rebuild the runner around the new engine.
+  // Recompute the adaptive FID/spectrum view for the new molecule.
+  view = viewParams(molecule);
+  spectrum.setDwell(view.dwell);
+  spectrum.setView(view.viewHz);
+
+  // Rebuild the runner around the new engine (with the molecule's dwell).
   runner.pause();
   runner = new CircuitRunner(system, {
     onSample: (s) => { fid.push(s); spectrum.push(s); },
     onColumn: (colIdx) => circuitUI.setPlayColumn(colIdx),
     onDone: () => { state.circuitMode = false; refresh(); },
-  });
+  }, { dwell: view.dwell });
   state.circuitMode = false;
 
   // Rebuild the scene spheres/arrows/coupling-lines (disposes old meshes).
@@ -295,7 +314,7 @@ function loadMolecule(id) {
   scene.setCoupling(state.coupling);
 
   // Rebuild circuit grid rows + target radios + histogram bars.
-  circuitUI.setMolecule(qubitLabels(molecule));   // clears placed gates → onChange fires
+  circuitUI.setMolecule(qubitLabels(molecule), twoQubitOK(molecule));   // clears placed gates → onChange fires
   buildTargetRadios(molecule);
   histogram.setQubits(molecule.nuclei.length);
 
@@ -338,12 +357,12 @@ function frame(now) {
     // step so every point is a distinct instant. (Stepping the whole frame at
     // once and then sampling repeatedly pushes identical values → a staircase.)
     state.sampleAccum += dtSim;
-    while (state.sampleAccum >= DWELL) {
-      system.step(DWELL);
+    while (state.sampleAccum >= view.dwell) {
+      system.step(view.dwell);
       const s = system.fid();
       fid.push(s);
       spectrum.push(s);
-      state.sampleAccum -= DWELL;
+      state.sampleAccum -= view.dwell;
     }
 
     refresh();

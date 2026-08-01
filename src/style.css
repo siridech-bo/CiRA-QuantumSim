@@ -158,6 +158,14 @@ body {
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
 .mol-readout .mol-cite { margin-top: 6px; color: var(--muted); font-style: italic; }
+.mol-readout .mol-addr { margin-top: 5px; color: var(--muted); font-size: 10.5px; line-height: 1.4; }
+.mol-readout .mol-note { margin-top: 5px; color: #d08a4a; font-size: 10.5px; line-height: 1.4; }
+.addr-tag {
+  display: inline-block; padding: 1px 6px; border-radius: 4px;
+  font-weight: 650; font-size: 10px; letter-spacing: 0.3px; text-transform: uppercase;
+}
+.addr-tag.hetero { background: rgba(74,144,217,0.18); color: #4A90D9; }
+.addr-tag.homo   { background: rgba(176,120,90,0.22); color: #c78a5c; }
 
 .radio-row { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .radio-row label, .check {
@@ -223,6 +231,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   border: 1px solid var(--border);
 }
 .gate-btn.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+.gate-btn.disabled, .gate-btn:disabled {
+  opacity: 0.38; cursor: not-allowed; text-decoration: line-through;
+}
+.gate-btn.disabled:hover, .gate-btn:disabled:hover { background: var(--elev); }
 
 .circuit-scroll { overflow: auto; flex: 1; min-height: 0; padding-bottom: 4px; }
 

@@ -12,12 +12,20 @@
 // and builds ideal unitaries + refocusing sequences for ARBITRARY n. It
 // defaults to the 3-spin SpinQ molecule so legacy callers/tests are unchanged.
 //
-// SCOPE: heteronuclear, weak coupling only (hard pulses; ZZ entangling core).
+// SCOPE: heteronuclear (weak) AND homonuclear (weak). For heteronuclear
+// molecules single-qubit gates compile to hard/selective RF pulses on the
+// target's channel (unchanged). For HOMONUCLEAR molecules (addressing:'homo')
+// single-qubit gates compile to FREQUENCY-SELECTIVE SOFT pulses (Gaussian) on
+// the target spin, since a hard pulse on the shared channel would rotate ALL
+// spins. Rz stays virtual-Z in both cases. Two-qubit CZ/CNOT use the same
+// J-coupling core; for homonuclear molecules spectator refocusing uses selective
+// soft π pulses (see HOMO_TWO_QUBIT_ENABLED below).
 //
 // Qubit ↔ spin map:  q_k → spin_k. For n spins, basis b = Σ q_k·2^(n−1−k).
 //
 // Primitive op kinds (consumed by src/runner.js):
 //   { kind:'rf',    spin, phase, angle, omega1 }   selective finite RF pulse
+//   { kind:'soft',  spin, phase, angle }           frequency-selective SOFT pulse
 //   { kind:'vz',    spin, angle }                  instantaneous virtual-Z
 //   { kind:'ipulse',spin, axis, angle }            instantaneous hard pulse
 //   { kind:'delay', tau }                          free evolution under H_system
@@ -53,11 +61,19 @@ function contextFor(molecule) {
   const ops = flatOps(n);
   const offsetHz = mol.nuclei.map((nu) => nu.offsetHz);
   const jHz = (i, j) => mol.J[i][j];
+  const homo = mol.addressing === 'homo';
 
-  const ctx = { mol, n, ops, offsetHz, jHz };
+  const ctx = { mol, n, ops, offsetHz, jHz, homo };
   _ctxCache.set(mol.id, ctx);
   return ctx;
 }
+
+// Whether homonuclear two-qubit gates (CZ/CNOT) are shipped-enabled. Selective
+// soft π refocusing of spectators does not reach the >0.95 fidelity bar within
+// reason for the shipped homonuclear molecules (see docs / the report), so we
+// DISABLE homo two-qubit gate placement and grey them out in the palette rather
+// than ship a broken gate. Heteronuclear two-qubit gates are unaffected.
+export const HOMO_TWO_QUBIT_ENABLED = false;
 
 // ---------------------------------------------------------------------------
 // Flat-unitary builders (dim-aware, via the molecule's flat-op toolkit).
@@ -125,22 +141,32 @@ function idealCNOT(ctx, c, g) {
 function rfOp(spin, phase, angle) {
   return { kind: 'rf', spin, phase, angle, omega1: DEFAULT_OMEGA1 };
 }
+function softOp(spin, phase, angle) {
+  return { kind: 'soft', spin, phase, angle };
+}
 function vzOp(spin, angle) { return { kind: 'vz', spin, angle }; }
 
-function singleQubitOps(name, spin, angle) {
+// A single-qubit RF primitive: HARD/selective rf on a channel (heteronuclear),
+// or a frequency-selective SOFT pulse (homonuclear shared channel).
+function pulseOp(homo, spin, phase, angle) {
+  return homo ? softOp(spin, phase, angle) : rfOp(spin, phase, angle);
+}
+
+function singleQubitOps(name, spin, angle, homo = false) {
+  const P = (phase, ang) => pulseOp(homo, spin, phase, ang);
   switch (name) {
     case 'I':  return [];
-    case 'X':  return [rfOp(spin, 0, PI)];
-    case 'Y':  return [rfOp(spin, PI / 2, PI)];
+    case 'X':  return [P(0, PI)];
+    case 'Y':  return [P(PI / 2, PI)];
     case 'Z':  return [vzOp(spin, PI)];
-    case 'SX': return [rfOp(spin, 0, PI / 2)];
-    case 'SY': return [rfOp(spin, PI / 2, PI / 2)];
+    case 'SX': return [P(0, PI / 2)];
+    case 'SY': return [P(PI / 2, PI / 2)];
     case 'SZ': return [vzOp(spin, PI / 2)];
-    case 'Rx': return [rfOp(spin, 0, angle)];
-    case 'Ry': return [rfOp(spin, PI / 2, angle)];
+    case 'Rx': return [P(0, angle)];
+    case 'Ry': return [P(PI / 2, angle)];
     case 'Rz': return [vzOp(spin, angle)];
     // H = Ry(π/2)·Rz(π): execution order Rz(π) then Ry(π/2).
-    case 'H':  return [vzOp(spin, PI), rfOp(spin, PI / 2, PI / 2)];
+    case 'H':  return [vzOp(spin, PI), P(PI / 2, PI / 2)];
     default: throw new Error(`unknown single-qubit gate ${name}`);
   }
 }
@@ -215,9 +241,9 @@ function czOps(ctx, i, j) {
 
 // CNOT(control c, target g) = (I⊗H_g)·CZ(c,g)·(I⊗H_g).
 function cnotOps(ctx, c, g) {
-  const hPre = singleQubitOps('H', g);
+  const hPre = singleQubitOps('H', g, PI / 2, ctx.homo);
   const cz = czOps(ctx, c, g);
-  const hPost = singleQubitOps('H', g);
+  const hPost = singleQubitOps('H', g, PI / 2, ctx.homo);
   return {
     ops: [...hPre, ...cz.ops, ...hPost],
     durationSeconds: cz.durationSeconds + 2 * hGateDuration(),
@@ -231,11 +257,39 @@ function hGateDuration() { return (PI / 2) / DEFAULT_OMEGA1; }
 // Public API.
 // ---------------------------------------------------------------------------
 
-// Sum of primitive-op durations (rf & delay carry time; vz/ipulse instantaneous).
+// Selective SOFT-pulse duration (s) for a target spin in a molecule: matches the
+// engine's softPulse() choice T = selectivity / minGap, where minGap is the
+// smallest chemical-shift gap (Hz) from the target to any other spin. Kept in
+// sync with QuantumSpinSystem.softPulse.
+const SOFT_SELECTIVITY = 1.5;   // must match QuantumSpinSystem.softPulse `sel`
+export function softDuration(ctx, spin) {
+  const { n, offsetHz } = ctx;
+  const nuT = offsetHz[spin];
+  let minGap = Infinity;
+  for (let k = 0; k < n; k++) {
+    if (k === spin) continue;
+    const gap = Math.abs(offsetHz[k] - nuT);
+    if (gap > 0 && gap < minGap) minGap = gap;
+  }
+  if (!isFinite(minGap)) minGap = 1000;
+  return SOFT_SELECTIVITY / minGap;
+}
+
+// Stamp a compile-time duration onto each 'soft' op (so opsDuration/runner know
+// the timing without re-deriving it). Mutates ops in place; returns ops.
+function stampSoftDurations(ctx, ops) {
+  for (const op of ops) {
+    if (op.kind === 'soft') op.durationSeconds = softDuration(ctx, op.spin);
+  }
+  return ops;
+}
+
+// Sum of primitive-op durations (rf/soft/delay carry time; vz/ipulse instant).
 export function opsDuration(ops, omega1 = DEFAULT_OMEGA1) {
   let d = 0;
   for (const op of ops) {
     if (op.kind === 'rf') d += Math.abs(op.angle) / (op.omega1 || omega1);
+    else if (op.kind === 'soft') d += op.durationSeconds || 0;
     else if (op.kind === 'delay') d += op.tau;
   }
   return d;
@@ -247,22 +301,33 @@ export function compileGate(name, { targets = [], angle = PI / 2, molecule } = {
   const ctx = contextFor(molecule);
   if (SINGLE_GATES.has(name)) {
     const spin = targets[0];
-    const ops = singleQubitOps(name, spin, angle);
+    const ops = stampSoftDurations(ctx, singleQubitOps(name, spin, angle, ctx.homo));
     return {
       ops,
       idealUnitary: singleQubitUnitary(ctx, name, spin, angle),
       durationSeconds: opsDuration(ops),
     };
   }
+  // Two-qubit gates. For homonuclear molecules these are DISABLED (see
+  // HOMO_TWO_QUBIT_ENABLED): selective soft-π spectator refocusing does not
+  // reach the fidelity bar within reason for the shipped homo molecules.
+  if (name === 'CZ' || name === 'CNOT' || name === 'CX') {
+    if (ctx.homo && !HOMO_TWO_QUBIT_ENABLED) {
+      throw new Error(
+        `two-qubit gate ${name} is disabled for homonuclear molecule `
+        + `"${ctx.mol.id}" (experimental — selective soft-π refocusing below `
+        + `fidelity bar). Use a heteronuclear molecule for entangling gates.`);
+    }
+  }
   if (name === 'CZ') {
     const [i, j] = targets;
     const { ops, durationSeconds } = czOps(ctx, i, j);
-    return { ops, idealUnitary: idealCZ(ctx, i, j), durationSeconds };
+    return { ops: stampSoftDurations(ctx, ops), idealUnitary: idealCZ(ctx, i, j), durationSeconds };
   }
   if (name === 'CNOT' || name === 'CX') {
     const [c, g] = targets;
     const { ops, durationSeconds } = cnotOps(ctx, c, g);
-    return { ops, idealUnitary: idealCNOT(ctx, c, g), durationSeconds };
+    return { ops: stampSoftDurations(ctx, ops), idealUnitary: idealCNOT(ctx, c, g), durationSeconds };
   }
   throw new Error(`unknown gate ${name}`);
 }

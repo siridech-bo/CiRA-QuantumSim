@@ -43,19 +43,25 @@ export class CircuitUI {
     // Qubit count / labels come from the active molecule; default = 3-spin demo.
     this.qubitLabels = (callbacks.qubitLabels || DEFAULT_QUBIT_LABELS).slice();
     this.nQubits = this.qubitLabels.length;
+    // Whether two-qubit gates (CNOT/CZ) may be placed. Disabled for homonuclear
+    // molecules (selective soft-π refocusing is experimental) — greyed out.
+    this.twoQubitEnabled = callbacks.twoQubitEnabled !== false;
     this._buildPalette();
     this._buildGrid();
     this.render();
   }
 
   // Rebuild the grid for a new molecule (labels = ['q0 ¹H', 'q1 ³¹P', ...]).
-  // Clears any placed gates (they may reference removed qubit rows).
-  setMolecule(labels) {
+  // Clears any placed gates (they may reference removed qubit rows). twoQubit
+  // toggles CNOT/CZ availability (disabled for homonuclear molecules).
+  setMolecule(labels, twoQubitEnabled = true) {
     this.qubitLabels = labels.slice();
     this.nQubits = labels.length;
+    this.twoQubitEnabled = twoQubitEnabled;
     this.gates = [];
     this.pendingControl = null;
     this.playCol = -1;
+    this._buildPalette();     // refresh disabled state on 2-qubit buttons
     this._buildGrid();
     this.render();
     this._emit();
@@ -112,9 +118,16 @@ export class CircuitUI {
       b.className = 'gate-btn';
       b.textContent = g.label || g.name;
       b.dataset.name = g.name;
-      b.title = g.two ? `${g.name}: click control cell, then target cell`
-        : (g.angle ? `${g.name}(θ): prompts for angle` : g.name);
-      b.addEventListener('click', () => this._selectGate(g, b));
+      const disabled = g.two && !this.twoQubitEnabled;
+      if (disabled) {
+        b.classList.add('disabled');
+        b.disabled = true;
+        b.title = `${g.name}: homonuclear 2-qubit gates are experimental / coming soon`;
+      } else {
+        b.title = g.two ? `${g.name}: click control cell, then target cell`
+          : (g.angle ? `${g.name}(θ): prompts for angle` : g.name);
+        b.addEventListener('click', () => this._selectGate(g, b));
+      }
       p.appendChild(b);
     });
   }
