@@ -4,11 +4,12 @@
   "description": "NMR Spin Physics 3D Visualizer — real 3-spin quantum density-matrix Lindblad engine.",
   "type": "module",
   "scripts": {
-    "test": "node test/physics.test.mjs && node test/gates.test.mjs && node test/molecules.test.mjs && node test/homonuclear.test.mjs",
+    "test": "node test/physics.test.mjs && node test/gates.test.mjs && node test/molecules.test.mjs && node test/homonuclear.test.mjs && node test/jc.test.mjs",
     "test:physics": "node test/physics.test.mjs",
     "test:gates": "node test/gates.test.mjs",
     "test:molecules": "node test/molecules.test.mjs",
-    "test:homonuclear": "node test/homonuclear.test.mjs"
+    "test:homonuclear": "node test/homonuclear.test.mjs",
+    "test:jc": "node test/jc.test.mjs"
   },
   "dependencies": {
     "mathjs": "12.4.3"

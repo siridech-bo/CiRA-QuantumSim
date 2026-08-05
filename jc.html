@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Jaynes-Cummings Reservoir — CiRA QuantumSim</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="src/jc.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app-shell">
+    <!-- ===== Top bar ===== -->
+    <header id="topbar">
+      <div class="brand">
+        <span class="logo">⚛</span>
+        <div class="brand-text">
+          <h1>Jaynes-Cummings Qubit-Boson Reservoir</h1>
+          <span class="subtitle" id="app-subtitle">real cavity-QED Lindblad substrate — Fock mode ⊗ qubit</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="substrate-nav">Substrate:
+          <a href="index.html">NMR</a> |
+          <span class="cur">Jaynes-Cummings</span>
+        </span>
+        <button id="theme-toggle" class="icon-btn" title="Toggle light / dark">🌙</button>
+      </div>
+    </header>
+
+    <!-- ===== Left sidebar: controls ===== -->
+    <aside id="sidebar-left">
+      <h2 class="side-title">Controls</h2>
+
+      <div class="side-group">
+        <div class="side-label">Regime</div>
+        <div class="btn-row" id="regime-toggle">
+          <button class="regime-btn primary" data-regime="JC">JC</button>
+          <button class="regime-btn" data-regime="DJC">DJC</button>
+        </div>
+        <div id="regime-desc" class="regime-desc"></div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Playback</div>
+        <div class="btn-row">
+          <button id="btn-play" class="primary">▶ Play</button>
+          <button id="btn-reset">↺ Reset</button>
+        </div>
+        <label class="slider-row">
+          <span>Speed</span>
+          <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1" />
+          <span id="speed-val" class="val">1.0×</span>
+        </label>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Drive & window</div>
+        <label class="slider-row">
+          <span>β</span>
+          <input id="beta" type="range" min="-2" max="2" step="0.05" value="0.5" />
+          <span id="beta-val" class="val mono">0.50</span>
+        </label>
+        <label class="slider-row">
+          <span>dt</span>
+          <input id="dt" type="range" min="1" max="20" step="1" value="10" />
+          <span id="dt-val" class="val mono">10</span>
+        </label>
+        <button id="btn-window" class="full">Inject β for one dt window</button>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Input sequence <span class="tag">QRC</span></div>
+        <label class="slider-row">
+          <span>windows</span>
+          <input id="seq-n" type="range" min="4" max="40" step="1" value="16" />
+          <span id="seq-n-val" class="val mono">16</span>
+        </label>
+        <div class="btn-row">
+          <button id="btn-seq" class="primary">▶ Feed random β sequence</button>
+        </div>
+        <div id="seq-status" class="seq-status"></div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Parameters</div>
+        <label class="slider-row" id="row-chi"><span>χ</span><input id="chi" type="range" min="0" max="3" step="0.05" value="1" /><span id="chi-val" class="val mono">1.00</span></label>
+        <label class="slider-row" id="row-chip"><span>χ′</span><input id="chiP" type="range" min="0" max="3" step="0.05" value="1" /><span id="chiP-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span>κ</span><input id="kappa" type="range" min="0" max="1" step="0.02" value="0.1" /><span id="kappa-val" class="val mono">0.10</span></label>
+        <label class="slider-row"><span>α</span><input id="alpha" type="range" min="0" max="2" step="0.05" value="0" /><span id="alpha-val" class="val mono">0.00</span></label>
+        <label class="slider-row"><span>Δ_a</span><input id="deltaA" type="range" min="-2" max="2" step="0.05" value="1" /><span id="deltaA-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span>Δ_b</span><input id="deltaB" type="range" min="0" max="3" step="0.05" value="1" /><span id="deltaB-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span>Nc</span><input id="Nc" type="range" min="6" max="25" step="1" value="15" /><span id="Nc-val" class="val mono">15</span></label>
+      </div>
+    </aside>
+
+    <!-- ===== Center: 3D + Wigner ===== -->
+    <main id="center">
+      <section id="scene-panel">
+        <div class="panel-head">
+          <h2>Qubit Bloch sphere</h2>
+          <span class="subtitle">reduced qubit ρ (partial trace over the cavity)</span>
+        </div>
+        <div id="scene-container"></div>
+      </section>
+
+      <section id="wigner-panel">
+        <div class="panel-head">
+          <h2>Wigner function W(X,P)</h2>
+          <span class="subtitle">reduced cavity state — <span class="wneg">blue = negative</span> (non-classical)</span>
+          <span class="mono spacer" id="wigner-min">min(W) = —</span>
+        </div>
+        <canvas id="wigner-canvas" width="360" height="360"></canvas>
+      </section>
+    </main>
+
+    <!-- ===== Right sidebar: readouts ===== -->
+    <aside id="sidebar-right">
+      <h2 class="side-title">Readouts</h2>
+
+      <div class="result-block">
+        <h3>Live observables</h3>
+        <div id="obs-readout" class="obs-grid"></div>
+      </div>
+
+      <div class="result-block">
+        <h3>⟨N⟩ / ⟨X⟩ time trace</h3>
+        <canvas id="trace-canvas" width="480" height="150"></canvas>
+      </div>
+
+      <div class="result-block">
+        <h3>Fock populations</h3>
+        <canvas id="fock-canvas" width="480" height="150"></canvas>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="src/jc-main.js"></script>
+</body>
+</html>

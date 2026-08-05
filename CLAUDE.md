@@ -50,9 +50,26 @@ refocusing couldn't clear the fidelity bar; don't silently enable them. `couplin
 molecules but both shipped homo molecules are weak. FID dwell / spectrum window adapt per
 molecule (homo real offsets reach ~21 kHz).
 
+### Second substrate — Jaynes-Cummings qubit-boson reservoir (`jc.html`)
+A separate page/visualizer (NOT part of the NMR app) implementing the QRC reservoir from
+Das/Giorgi/Zambrini PRR 8, 023148 (2026): a qubit ⊗ truncated-Fock cavity (dim ~30), real
+Lindblad master equation with cavity loss `√κ a`, both **JC** `χ(aσ⁺+a†σ⁻)` and dispersive
+**DJC** `χ′a†aσz` Hamiltonians, input encoded as drive amplitude β. Modules: `src/jc.js`
+(`JCReservoir` engine, same flat-complex RK4 style as quantum.js), `src/wigner.js` (exact
+Fock-basis Cahill–Glauber Wigner — note the p-axis sign is set so the Wigner p-marginal
+equals Tr(ρ·P); a regression test guards it), `src/jc-ui.js` (Wigner heatmap / Fock bars /
+trace), `src/jc-main.js`, `src/jc.css`. Reuses `BlochScene` for the qubit sphere and
+`theme.js`. The NMR app and its engine are untouched by this. Validated by
+`test/jc.test.mjs`: invariants, **vacuum Rabi at freq 2χ**, cavity decay `e^(−κt)`, Wigner
+∫=1 + Fock-|1⟩ = −1/π negativity + axis-vs-quadrature match, qubit-Bloch signs (incl. σy),
+DJC ⟨σz⟩ conservation at α=0, and echo-state/fading-memory convergence. The memory-capacity
+benchmark (STM/PC/Mackey-Glass, ridge readout) is deferred to a **separate Python/QuTiP
+script** (not built yet).
+
 Physics is validated by `test/physics.test.mjs`, `test/gates.test.mjs`,
-`test/molecules.test.mjs`, and `test/homonuclear.test.mjs` (`npm test` runs all four, node
-assert; the homonuclear suite is slow — crotonic is dim-16 with finite-pulse integration). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
+`test/molecules.test.mjs`, `test/homonuclear.test.mjs`, and `test/jc.test.mjs` (`npm test`
+runs all five, node assert; the homonuclear suite is slow — crotonic is dim-16 with
+finite-pulse integration). **Any change to `src/quantum.js` or `src/gates.js` must keep all tests
 green** — physics.test asserts Tr(ρ)=1, Hermiticity, positivity, unitary purity, exact
 T1/T2 rates, and emergent J-coupling FFT splitting; gates.test asserts every gate's compiled
 pulse sequence matches its ideal unitary to >0.999 fidelity, CZ/CNOT correctness, and that

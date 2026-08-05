@@ -1,0 +1,87 @@
+/* ==========================================================================
+   jc.css — page-specific styling for the Jaynes-Cummings reservoir visualizer.
+   Reuses the shared shell/theme tokens from style.css; adds the two-row center
+   layout (Bloch sphere + Wigner), the substrate nav link, and JC readouts.
+   ========================================================================== */
+
+:root {
+  --accent2: #FF8C00;      /* second trace color (quadratures) */
+  --wigner-neg: #2b6cff;   /* blue  = negative Wigner (non-classical) */
+  --wigner-pos: #ff3b5c;   /* red   = positive Wigner */
+}
+
+/* Substrate switcher in the top bar. */
+.substrate-nav { font-size: 12px; color: var(--muted); margin-right: 12px; }
+.substrate-nav a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.substrate-nav a:hover { text-decoration: underline; }
+.substrate-nav .cur { color: var(--text); font-weight: 700; }
+.topbar-actions { display: flex; align-items: center; gap: 4px; }
+
+/* Center column: Bloch sphere (top) + Wigner (bottom). */
+#center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+#scene-panel {
+  flex: 1 1 55%;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px 0;
+}
+#scene-panel .panel-head { flex-shrink: 0; }
+#scene-container { flex: 1; min-height: 0; width: 100%; }
+
+#wigner-panel {
+  flex: 1 1 45%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 16px 14px;
+}
+#wigner-panel .panel-head { width: 100%; flex-shrink: 0; }
+#wigner-panel .spacer { margin-left: auto; }
+.wneg { color: var(--wigner-neg); font-weight: 650; }
+#wigner-canvas {
+  background: var(--plot);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 8px;
+  max-width: 100%;
+  max-height: calc(100% - 40px);
+  width: auto; height: auto;
+}
+
+/* Regime toggle. */
+#regime-toggle .regime-btn { flex: 1; font-weight: 650; }
+.regime-desc { margin-top: 8px; font-size: 10.5px; color: var(--muted); line-height: 1.5; }
+.regime-desc code {
+  font-family: ui-monospace, Consolas, monospace; color: var(--code-text);
+  font-size: 10px;
+}
+
+.seq-status { margin-top: 8px; font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; min-height: 14px; }
+
+/* Live observables grid. */
+.obs-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px;
+  font-size: 12px;
+}
+.obs-grid .obs { display: flex; justify-content: space-between; gap: 6px;
+  background: var(--elev); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; }
+.obs-grid .obs .k { color: var(--muted); }
+.obs-grid .obs .v { font-family: ui-monospace, Consolas, monospace; color: var(--text); font-weight: 600; }
+
+#trace-canvas, #fock-canvas {
+  width: 100%; height: auto;
+  background: var(--plot);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Narrow screens: stack (inherits style.css breakpoint behavior). */
+@media (max-width: 1200px) {
+  #scene-panel { height: 50vh; flex: none; }
+  #wigner-panel { flex: none; }
+}

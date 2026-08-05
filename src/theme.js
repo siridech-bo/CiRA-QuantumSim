@@ -15,6 +15,11 @@ export function plotColors() {
     text:   v('--plot-text', '#b6c2cf'),
     empty:  v('--plot-empty', '#21324a'),
     accent: v('--accent', '#4A90D9'),
+    // JC / Wigner extras: a second trace color (quadrature) + the diverging
+    // Wigner endpoints (negative ↔ zero ↔ positive). Zero maps to the plot bg.
+    accent2:  v('--accent2', '#FF8C00'),
+    wignerNeg: v('--wigner-neg', '#2b6cff'),   // blue  = negative (non-classical)
+    wignerPos: v('--wigner-pos', '#ff3b5c'),   // red   = positive
   };
   return cache;
 }
