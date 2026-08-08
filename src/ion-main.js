@@ -15,6 +15,7 @@ import {
   MODULES, ModuleTabs, wireSlider, prepareState,
   excitationPoint, scanGrid, measureAsymmetry, measureFFT,
 } from './ion-ui.js';
+import { MathieuView, ChainView } from './ion-modes-ui.js';
 
 // ---- engine + parameters ----------------------------------------------------
 const params = {
@@ -53,7 +54,7 @@ const truncEl = document.getElementById('trunc-warn');
 
 // ---- app state --------------------------------------------------------------
 const state = {
-  playing: false, speed: 1,
+  playing: false, speed: 1, classical: false,
   stepBudget: 6, dwell: 0.4, sampleAccum: 0,
   scanQueue: null,      // { grid, i, cfg, delta[], pe[] } while scanning δ
 };
@@ -68,6 +69,11 @@ function applyTheme(theme) {
   invalidatePlotColors();
   try { localStorage.setItem('ion-theme', theme); } catch (e) { /* ignore */ }
   refresh(true);
+  // classical views cache no colors of their own — repaint the active one
+  if (state.classical) {
+    if (mathieuView && !document.getElementById('m1-panel').hidden) mathieuView.drawStability();
+    if (chainView && !document.getElementById('m2-panel').hidden) chainView.drawAll();
+  }
 }
 themeToggle.addEventListener('click', () =>
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
@@ -148,12 +154,63 @@ function calibrateStepBudget() {
 // =============================================================================
 // -- module tabs --
 const moduleActions = document.getElementById('module-actions');
+const appShell = document.getElementById('app-shell');
+const levelsPanel = document.getElementById('levels-panel');
+const m1Panel = document.getElementById('m1-panel');
+const m2Panel = document.getElementById('m2-panel');
+
+// Classical M1/M2 views are lazily built on first selection (each does a little
+// upfront work: M1 samples the stability map + derives q*, M2 solves the chain).
+let mathieuView = null, chainView = null;
+function ensureMathieuView() {
+  if (mathieuView) return mathieuView;
+  mathieuView = new MathieuView({
+    stabilityCanvas: document.getElementById('m1-stability'),
+    trajCanvas: document.getElementById('m1-traj'),
+    statusEl: document.getElementById('m1-status'),
+  });
+  wireSlider('m1-q', (v) => mathieuView.setQ(v), (v) => v.toFixed(3));
+  wireSlider('m1-a', (v) => mathieuView.setA(v), (v) => v.toFixed(3));
+  return mathieuView;
+}
+function ensureChainView() {
+  if (chainView) return chainView;
+  chainView = new ChainView({
+    posCanvas: document.getElementById('m2-positions'),
+    barCanvas: document.getElementById('m2-bars'),
+    shapeCanvas: document.getElementById('m2-shape'),
+    statusEl: document.getElementById('m2-status'),
+  });
+  wireSlider('m2-n', (v) => chainView.setN(Math.round(v)), (v) => String(Math.round(v)));
+  return chainView;
+}
+
 const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const m = MODULES[id];
   document.getElementById('module-desc').innerHTML = `<b>${m.name}</b> — ${m.desc}`;
   document.getElementById('break-it').innerHTML = m.breakIt;
   moduleActions.querySelectorAll('[data-for]').forEach((el) =>
     el.style.display = el.dataset.for === id ? '' : 'none');
+
+  const classical = !!m.classical;
+  state.classical = classical;
+  if (classical) { state.playing = false; playBtn.textContent = '▶ Play'; }
+
+  // toggle side-groups: engine controls vs classical controls
+  document.querySelectorAll('.engine-only').forEach((el) => { el.hidden = classical; });
+  document.getElementById('m1-controls').hidden = id !== 'M1';
+  document.getElementById('m2-controls').hidden = id !== 'M2';
+
+  // toggle center panels + the two-column classical layout
+  appShell.classList.toggle('mode-classical', classical);
+  levelsPanel.hidden = classical;
+  moduleActions.hidden = classical;
+  m1Panel.hidden = id !== 'M1';
+  m2Panel.hidden = id !== 'M2';
+
+  // stop the inactive classical view; show/refresh the active one
+  if (id === 'M1') { ensureMathieuView().show(); } else if (mathieuView) mathieuView.hide();
+  if (id === 'M2') { ensureChainView().show(); } else if (chainView) chainView.hide();
 });
 
 // -- playback --
@@ -292,6 +349,10 @@ window.addEventListener('resize', resizeLevels);
 // Animation loop
 // =============================================================================
 function frame() {
+  // Classical modules (M1/M2) drive their own self-contained canvas views; the
+  // density-matrix engine is idle and its panels are hidden.
+  if (state.classical) { requestAnimationFrame(frame); return; }
+
   // Chunked excitation scan takes precedence (M3).
   if (state.scanQueue) {
     const q = state.scanQueue;

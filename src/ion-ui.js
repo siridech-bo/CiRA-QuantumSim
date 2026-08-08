@@ -11,8 +11,20 @@
 import { IonSystem } from './ion.js';
 import { Spectrum } from './spectrum.js';
 
-// ---- module metadata (M3, M5 now; room for M1/M2/M4/M6/M7/M8) --------------
+// ---- module metadata (M1/M2 classical + M3/M5 engine; room for M4/M6/M7/M8) -
 export const MODULES = {
+  M1: {
+    name: 'Paul trap (Mathieu)',
+    classical: true,
+    desc: 'Why is there a harmonic oscillator at all? RF confinement obeys the Mathieu equation <code>ü + [a − 2q·cos(2τ)]u = 0</code>. Stability comes from the <b>monodromy (Floquet) matrix</b>: stable ⟺ <code>|Tr M| &lt; 2</code>. The a=0 boundary <code>q* ≈ 0.908</code> is <b>derived by bisection</b>, not hard-coded.',
+    breakIt: 'Break it: push <code>q</code> past <code>q* ≈ 0.908</code> — the trajectory diverges and the ion is lost.',
+  },
+  M2: {
+    name: 'Coulomb normal modes',
+    classical: true,
+    desc: 'N ions in a 1D harmonic well + Coulomb repulsion. Equilibrium by <b>Newton iteration</b>; modes from <b>eigendecomposing James\'s Hessian</b>. The COM mode is <code>ω_z</code> for any N; the two-ion stretch is <code>√3·ω_z</code>. Sets up which mode a two-qubit gate (M7) uses as its bus.',
+    breakIt: 'Break it: raise <code>N</code> until the linear chain would zigzag (transverse mode goes soft).',
+  },
   M3: {
     name: 'Sideband spectroscopy',
     desc: 'Drag the δ line and watch which arrow family ignites: <code>carrier δ=0</code>, <code>RSB δ=−ω_z</code>, <code>BSB δ=+ω_z</code>. Scan δ to build the excitation spectrum — carrier plus both resolved sidebands.',

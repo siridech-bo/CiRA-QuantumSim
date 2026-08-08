@@ -47,8 +47,8 @@
         <div class="module-tabs" id="module-tabs">
           <button class="mod-btn primary" data-module="M3">M3</button>
           <button class="mod-btn" data-module="M5">M5</button>
-          <button class="mod-btn" disabled title="Phase 2">M1</button>
-          <button class="mod-btn" disabled title="Phase 2">M2</button>
+          <button class="mod-btn" data-module="M1">M1</button>
+          <button class="mod-btn" data-module="M2">M2</button>
           <button class="mod-btn" disabled title="Phase 2">M4</button>
           <button class="mod-btn" disabled title="Phase 2">M6</button>
           <button class="mod-btn" disabled title="Phase 3">M7</button>
@@ -58,7 +58,30 @@
         <div class="break-it" id="break-it"></div>
       </div>
 
-      <div class="side-group">
+      <!-- ===== M1 Paul-trap controls (classical; shown only for M1) ===== -->
+      <div class="side-group classical-only" id="m1-controls" hidden>
+        <div class="side-label">Mathieu parameters</div>
+        <label class="slider-row"><span>q (RF)</span>
+          <input id="m1-q" type="range" min="0" max="1.15" step="0.005" value="0.40" />
+          <span id="m1-q-val" class="val mono">0.40</span></label>
+        <label class="slider-row"><span>a (DC)</span>
+          <input id="m1-a" type="range" min="-0.3" max="0.3" step="0.005" value="0.00" />
+          <span id="m1-a-val" class="val mono">0.00</span></label>
+        <div class="module-desc" id="m1-status"></div>
+        <div class="break-it">Break it: push <code>q</code> past the derived <code>q* ≈ 0.908</code> boundary and the full-ODE trajectory diverges — the ion is no longer trapped.</div>
+      </div>
+
+      <!-- ===== M2 normal-mode controls (classical; shown only for M2) ===== -->
+      <div class="side-group classical-only" id="m2-controls" hidden>
+        <div class="side-label">Ion chain</div>
+        <label class="slider-row"><span>N ions</span>
+          <input id="m2-n" type="range" min="1" max="8" step="1" value="2" />
+          <span id="m2-n-val" class="val mono">2</span></label>
+        <div class="module-desc" id="m2-status"></div>
+        <div class="break-it">Break it: raise <code>N</code> — the equilibrium positions compress and the spectrum fills in. Below the annotated <code>ω_x/ω_z</code> ratio the chain buckles into a zigzag (transverse mode goes soft).</div>
+      </div>
+
+      <div class="side-group engine-only">
         <div class="side-label">Playback</div>
         <div class="btn-row">
           <button id="btn-play" class="primary">▶ Play</button>
@@ -69,7 +92,7 @@
           <span id="speed-val" class="val mono">1.0×</span></label>
       </div>
 
-      <div class="side-group">
+      <div class="side-group engine-only">
         <div class="side-label">Initial motional state</div>
         <select id="state-kind" class="side-select">
           <option value="g0">|g, 0⟩  (ground)</option>
@@ -90,7 +113,7 @@
         <div class="module-desc">coherent → sharp revivals; thermal → smeared collapse (same engine).</div>
       </div>
 
-      <div class="side-group">
+      <div class="side-group engine-only">
         <div class="side-label">Laser drive</div>
         <label class="slider-row"><span>δ / ω_z</span>
           <input id="delta" type="range" min="-1.6" max="1.6" step="0.02" value="-1" />
@@ -107,7 +130,7 @@
           </select></label>
       </div>
 
-      <div class="side-group">
+      <div class="side-group engine-only">
         <div class="side-label">Trap → η (computed)</div>
         <label class="slider-row"><span>λ (nm)</span>
           <select id="lambda" class="side-select" style="max-width:120px">
@@ -120,7 +143,7 @@
         <div class="module-desc" id="eta-readout"></div>
       </div>
 
-      <div class="side-group">
+      <div class="side-group engine-only">
         <div class="side-label">Dissipators <span class="tag">Lindblad</span></div>
         <label class="check"><input type="checkbox" id="chk-se" /> spontaneous emission Γ_eff</label>
         <label class="slider-row"><span>Γ_eff</span>
@@ -136,14 +159,14 @@
           <span id="gammaphi-val" class="val mono">0.05</span></label>
       </div>
 
-      <div class="side-group">
+      <div class="side-group engine-only">
         <div class="side-label">Truncation</div>
         <label class="slider-row"><span>N_FOCK</span>
           <input id="nfock" type="range" min="8" max="30" step="1" value="20" />
           <span id="nfock-val" class="val mono">20</span></label>
       </div>
 
-      <div class="side-group">
+      <div class="side-group engine-only">
         <div class="side-label">Diagram</div>
         <label class="slider-row"><span>motional zoom</span>
           <input id="zoom" type="range" min="1" max="4" step="0.1" value="1" />
@@ -183,6 +206,46 @@
         <span data-for="M5" style="display:none"><button id="btn-cool" class="primary">Start sideband cooling (RSB + SE)</button></span>
         <span data-for="M5" style="display:none" class="mono">raise the heating rate to stall it →</span>
       </div>
+
+      <!-- ===== M1 — Paul-trap Mathieu panel (classical) ===== -->
+      <section id="m1-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Paul trap — Mathieu a–q stability + micromotion</h2>
+          <span class="subtitle">stability from the monodromy (Floquet) matrix: stable ⟺ |Tr M| &lt; 2. q* derived by bisection.</span>
+        </div>
+        <div class="mode-body">
+          <div class="mode-cell">
+            <div class="mode-cap">a–q stability diagram (operating point ●)</div>
+            <canvas id="m1-stability" width="560" height="360"></canvas>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap">trajectory u(τ): secular + micromotion vs pseudopotential envelope</div>
+            <canvas id="m1-traj" width="560" height="200"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== M2 — Coulomb normal-modes panel (classical) ===== -->
+      <section id="m2-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Coulomb normal modes (James 1998)</h2>
+          <span class="subtitle">Newton equilibrium + Hessian eigendecomposition. COM = ω_z (any N); two-ion stretch = √3·ω_z.</span>
+        </div>
+        <div class="mode-body">
+          <div class="mode-cell">
+            <div class="mode-cap">equilibrium ion positions</div>
+            <canvas id="m2-positions" width="560" height="90"></canvas>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap">mode-frequency spectrum (click a bar to inspect its shape)</div>
+            <canvas id="m2-bars" width="560" height="200"></canvas>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap">eigenvector / mode shape (per-ion axial displacement)</div>
+            <canvas id="m2-shape" width="560" height="120"></canvas>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- ===== Right sidebar: readouts ===== -->

@@ -68,6 +68,24 @@
 .diagram-controls label { font-size: 11.5px; display: flex; align-items: center; gap: 5px; }
 .diagram-controls select, .diagram-controls input[type="range"] { max-width: 120px; }
 
+/* ===== M1 / M2 classical module panels (Phase 2a) ===== */
+.mode-panel {
+  flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  padding: 10px 16px 12px; overflow: auto;
+}
+.mode-panel .panel-head { flex-shrink: 0; }
+.mode-body { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.mode-cell { min-width: 0; }
+.mode-cap { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.mode-cell canvas {
+  width: 100%; height: auto; display: block;
+  background: var(--plot); border: 1px solid var(--border); border-radius: 8px;
+}
+/* classical modules use two columns (engine readouts hidden) */
+#app-shell.mode-classical { grid-template-columns: 286px minmax(0, 1fr); }
+#app-shell.mode-classical #sidebar-right { display: none; }
+.classical-only .break-it { color: #d08a4a; }
+
 .legend-row { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
 .legend-row .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 
