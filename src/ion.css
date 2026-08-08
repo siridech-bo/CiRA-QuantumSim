@@ -86,6 +86,23 @@
 #app-shell.mode-classical #sidebar-right { display: none; }
 .classical-only .break-it { color: #d08a4a; }
 
+/* ===== M6 — single-qubit-gate Bloch sphere panel (Phase 2b) ===== */
+#m6-panel { padding-bottom: 8px; }
+#m6-scene-wrap {
+  flex: 1 1 auto; min-height: 0; margin-top: 10px;
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  background: var(--plot);
+}
+#m6-scene { width: 100%; height: 100%; min-height: 360px; }
+#m6-scene canvas { display: block; }
+.m6-status {
+  flex-shrink: 0; margin-top: 8px; font-size: 12px; line-height: 1.5;
+  font-family: ui-monospace, Consolas, monospace; color: var(--text); min-height: 18px;
+}
+.m6-status .k { color: var(--muted); }
+.m6-status.hot { color: var(--ion-red); }
+#m6-acstark { margin-top: 8px; }
+
 .legend-row { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
 .legend-row .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 

@@ -12,7 +12,9 @@
   <script type="importmap">
   {
     "imports": {
-      "mathjs": "https://cdn.jsdelivr.net/npm/mathjs@12.4.3/+esm"
+      "mathjs": "https://cdn.jsdelivr.net/npm/mathjs@12.4.3/+esm",
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
     }
   }
   </script>
@@ -50,7 +52,7 @@
           <button class="mod-btn" data-module="M1">M1</button>
           <button class="mod-btn" data-module="M2">M2</button>
           <button class="mod-btn" disabled title="Phase 2">M4</button>
-          <button class="mod-btn" disabled title="Phase 2">M6</button>
+          <button class="mod-btn" data-module="M6">M6</button>
           <button class="mod-btn" disabled title="Phase 3">M7</button>
           <button class="mod-btn" disabled title="Phase 3">M8</button>
         </div>
@@ -81,6 +83,35 @@
         <div class="break-it">Break it: raise <code>N</code> — the equilibrium positions compress and the spectrum fills in. Below the annotated <code>ω_x/ω_z</code> ratio the chain buckles into a zigzag (transverse mode goes soft).</div>
       </div>
 
+      <!-- ===== M6 single-qubit-gate controls (engine; shown only for M6) ===== -->
+      <div class="side-group engine-only m6-only" id="m6-controls" hidden>
+        <div class="side-label">Carrier gates (δ=0 → Rx)</div>
+        <div class="btn-row">
+          <button id="m6-rx90" class="primary">Rx(π/2)</button>
+          <button id="m6-rx180" class="primary">Rx(π)</button>
+          <button id="m6-rx360">Rx(2π)</button>
+        </div>
+        <label class="slider-row"><span>θ / π</span>
+          <input id="m6-theta" type="range" min="0.1" max="2" step="0.05" value="1" />
+          <span id="m6-theta-val" class="val mono">1.00</span></label>
+        <button id="m6-apply" class="full">Apply Rx(θ·π)</button>
+        <div class="module-desc">The engine drives a real σx carrier pulse; no drive phase → no native Ry. Watch the arrow rotate about <b>x</b>.</div>
+
+        <div class="side-label" style="margin-top:12px">Pulse strength Ω / ω_z <span class="tag">break it</span></div>
+        <label class="slider-row"><span>Ω / ω_z</span>
+          <input id="m6-rabi" type="range" min="0.02" max="2" step="0.02" value="0.20" />
+          <span id="m6-rabi-val" class="val mono">0.20</span></label>
+        <div class="break-it">Ω≪ω_z ⇒ selective &amp; clean. Raise Ω toward/above ω_z=1 and re-fire a gate: the motion heats (n̄↑) and the fidelity drops.</div>
+
+        <div class="side-label" style="margin-top:12px">AC Stark (off-resonant)</div>
+        <label class="slider-row"><span>δ / ω_z</span>
+          <input id="m6-delta" type="range" min="0" max="0.8" step="0.02" value="0.30" />
+          <span id="m6-delta-val" class="val mono">0.30</span></label>
+        <button id="m6-precess" class="full">Precess about tilted axis</button>
+        <button id="m6-measure" class="full" style="margin-top:6px">Measure Ω_gen &amp; light shift</button>
+        <div class="thermo-readout" id="m6-acstark"></div>
+      </div>
+
       <div class="side-group engine-only">
         <div class="side-label">Playback</div>
         <div class="btn-row">
@@ -92,7 +123,7 @@
           <span id="speed-val" class="val mono">1.0×</span></label>
       </div>
 
-      <div class="side-group engine-only">
+      <div class="side-group engine-only m35-only">
         <div class="side-label">Initial motional state</div>
         <select id="state-kind" class="side-select">
           <option value="g0">|g, 0⟩  (ground)</option>
@@ -113,7 +144,7 @@
         <div class="module-desc">coherent → sharp revivals; thermal → smeared collapse (same engine).</div>
       </div>
 
-      <div class="side-group engine-only">
+      <div class="side-group engine-only m35-only">
         <div class="side-label">Laser drive</div>
         <label class="slider-row"><span>δ / ω_z</span>
           <input id="delta" type="range" min="-1.6" max="1.6" step="0.02" value="-1" />
@@ -166,7 +197,7 @@
           <span id="nfock-val" class="val mono">20</span></label>
       </div>
 
-      <div class="side-group engine-only">
+      <div class="side-group engine-only m35-only">
         <div class="side-label">Diagram</div>
         <label class="slider-row"><span>motional zoom</span>
           <input id="zoom" type="range" min="1" max="4" step="0.1" value="1" />
@@ -244,6 +275,18 @@
             <div class="mode-cap">eigenvector / mode shape (per-ion axial displacement)</div>
             <canvas id="m2-shape" width="560" height="120"></canvas>
           </div>
+        </div>
+      </section>
+
+      <!-- ===== M6 — single-qubit gates: internal-state Bloch sphere ===== -->
+      <section id="m6-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Single-qubit gates — internal-state Bloch sphere</h2>
+          <span class="subtitle">carrier (δ=0) pulse = real Rx(θ); off-resonant = AC-Stark tilt. Driven by the same Lindblad engine (Bloch vector = Tr(ρ σ_k) reduced over motion).</span>
+        </div>
+        <div id="m6-scene-wrap"><div id="m6-scene"></div></div>
+        <div class="m6-status" id="m6-status">
+          <span>Fire a carrier gate — the arrow rotates about <b>x</b>. n̄ stays ≈0 while Ω≪ω_z.</span>
         </div>
       </section>
     </main>

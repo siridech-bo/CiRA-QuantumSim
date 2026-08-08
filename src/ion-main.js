@@ -10,12 +10,16 @@ import { IonSystem } from './ion.js';
 import { LevelDiagram } from './ion-levels.js';
 import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum } from './ion-traces.js';
 import { DensityHeatmap } from './heatmap.js';
+import { BlochScene } from './scene.js';
 import { invalidatePlotColors } from './theme.js';
 import {
   MODULES, ModuleTabs, wireSlider, prepareState,
   excitationPoint, scanGrid, measureAsymmetry, measureFFT,
 } from './ion-ui.js';
 import { MathieuView, ChainView } from './ion-modes-ui.js';
+import {
+  carrierGateDuration, gateReport, measureGeneralizedRabi,
+} from './ion-gates.js';
 
 // ---- engine + parameters ----------------------------------------------------
 const params = {
@@ -24,6 +28,7 @@ const params = {
   gamma: 0.10, heating: 0.02, nBath: 1, gammaPhi: 0.05,
   seOn: false, bathOn: false, dephaseOn: false,
   prep: { kind: 'thermal', param: 2.0 },
+  m6: { rabi: 0.20, delta: 0.30, theta: 1.0 },   // M6: pulse Ω, AC-Stark δ, angle θ·π
 };
 let sys = buildEngine();
 
@@ -54,20 +59,23 @@ const truncEl = document.getElementById('trunc-warn');
 
 // ---- app state --------------------------------------------------------------
 const state = {
-  playing: false, speed: 1, classical: false,
+  playing: false, speed: 1, classical: false, module: 'M3',
   stepBudget: 6, dwell: 0.4, sampleAccum: 0,
   scanQueue: null,      // { grid, i, cfg, delta[], pe[] } while scanning δ
+  m6gate: null,         // { kind, tTotal, tElapsed, theta } while an M6 gate runs
 };
 let lastHeatMs = 0;
 const HEAT_HZ = 8;
 
 // ---- theme ------------------------------------------------------------------
+const SCENE_BG = { dark: 0x0d1117, light: 0xeef1f5 };
 const themeToggle = document.getElementById('theme-toggle');
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
   invalidatePlotColors();
   try { localStorage.setItem('ion-theme', theme); } catch (e) { /* ignore */ }
+  if (m6Scene) m6Scene.setBackground(SCENE_BG[theme]);
   refresh(true);
   // classical views cache no colors of their own — repaint the active one
   if (state.classical) {
@@ -185,32 +193,129 @@ function ensureChainView() {
   return chainView;
 }
 
+// ---- M6: internal-state Bloch sphere (reuse BlochScene, single qubit) --------
+let m6Scene = null;
+const M6_GATE_FRAMES = 90;   // frames to animate one gate/precession (smooth arrow sweep)
+function ensureM6Scene() {
+  if (m6Scene) return m6Scene;
+  m6Scene = new BlochScene(document.getElementById('m6-scene'), [{ symbol: 'ion', color: 0x4aa3ff }]);
+  m6Scene.setCoupling(false);                       // single sphere → no coupling lines
+  m6Scene.setBackground(SCENE_BG[document.documentElement.dataset.theme] || 0x0d1117);
+  return m6Scene;
+}
+
+// Reset the shared engine to the gate-ready state |g,0⟩ (south pole) at the M6 drive.
+function m6ResetEngine() {
+  state.m6gate = null;
+  sys.setDetuning(0); sys.setRabi(params.m6.rabi);
+  sys.reset();                                       // |g,0⟩
+  updateM6Sphere();
+}
+function updateM6Sphere() { if (m6Scene) m6Scene.update([sys.blochVector()]); }
+
+// Schedule a gate: an on-resonant Rx(θ) (delta=0) or an off-resonant precession
+// about the tilted axis (delta≠0). Always starts fresh from |g,0⟩ so n̄ and the
+// gate fidelity are measured from a known state.
+function m6StartGate(kind, thetaRad) {
+  if (state.classical || state.module !== 'M6') return;
+  const delta = kind === 'precess' ? params.m6.delta : 0;
+  sys.setDetuning(delta); sys.setRabi(params.m6.rabi);
+  sys.reset();                                       // |g,0⟩
+  // Rx(θ): rotation rate = carrier Rabi Ω_eff. Precession: rate = generalized Rabi.
+  let tTotal;
+  if (kind === 'precess') {
+    const genRabi = Math.sqrt(delta * delta + params.m6.rabi * params.m6.rabi);
+    tTotal = 2 * (2 * Math.PI) / genRabi;            // two full turns about the tilted axis
+  } else {
+    tTotal = carrierGateDuration(sys, thetaRad);
+  }
+  peTrace.clear(); fluorTrace.clear(); nbarTrace.clear();
+  state.m6gate = { kind, tTotal, tElapsed: 0, theta: thetaRad };
+  setM6Status(`<span class="k">firing</span> ${kind === 'precess' ? 'off-resonant precession (δ=' + params.m6.delta.toFixed(2) + ')' : 'Rx(' + (thetaRad / Math.PI).toFixed(2) + 'π)'} at Ω=${params.m6.rabi.toFixed(2)}…`);
+}
+
+// Advance the running M6 gate by one animation slice; finalize when complete.
+function m6StepGate() {
+  const g = state.m6gate;
+  if (!g) return;
+  const dt = g.tTotal / M6_GATE_FRAMES;
+  const remaining = g.tTotal - g.tElapsed;
+  const h = Math.min(dt, remaining);
+  if (h > 1e-12) { sys.step(h); g.tElapsed += h; sampleTraces(); }
+  updateM6Sphere();
+  peTrace.draw(); fluorTrace.draw(); nbarTrace.draw();
+  drawObservables(); drawTrunc();
+  const now = performance.now();
+  if (now - lastHeatMs > 1000 / HEAT_HZ) { heatmap.draw(nestedRhoAbs()); lastHeatMs = now; }
+  if (g.tElapsed >= g.tTotal - 1e-9) { m6FinalizeGate(); }
+}
+
+function m6FinalizeGate() {
+  const g = state.m6gate; state.m6gate = null;
+  const nbar = sys.nBar();
+  const hot = nbar > 1e-2;
+  if (g.kind === 'precess') {
+    setM6Status(
+      `<span class="k">precessed about tilted axis</span> — δ=${params.m6.delta.toFixed(2)}, Ω=${params.m6.rabi.toFixed(2)}, ` +
+      `Ω_gen=√(δ²+Ω²)=${Math.sqrt(params.m6.delta ** 2 + params.m6.rabi ** 2).toFixed(3)}. n̄=${nbar.toExponential(2)}`, hot);
+  } else {
+    const rep = gateReport(sys, g.theta);
+    setM6Status(
+      `<span class="k">Rx(${(g.theta / Math.PI).toFixed(2)}π) done</span> — fidelity F=<b>${rep.fidelity.toFixed(5)}</b>, ` +
+      `n̄=<b>${nbar.toExponential(2)}</b> (Δn̄ from 0), P_e=${rep.pExcited.toFixed(4)}` +
+      (hot ? ' &nbsp;⚠ Ω≳ω_z: motion heated, gate no longer selective' : ''), hot);
+  }
+}
+
+function setM6Status(html, hot = false) {
+  const el = document.getElementById('m6-status');
+  el.innerHTML = html;
+  el.classList.toggle('hot', hot);
+}
+
+const m6Panel = document.getElementById('m6-panel');
 const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const m = MODULES[id];
+  state.module = id;
   document.getElementById('module-desc').innerHTML = `<b>${m.name}</b> — ${m.desc}`;
   document.getElementById('break-it').innerHTML = m.breakIt;
   moduleActions.querySelectorAll('[data-for]').forEach((el) =>
     el.style.display = el.dataset.for === id ? '' : 'none');
 
   const classical = !!m.classical;
+  const isM6 = id === 'M6';
   state.classical = classical;
-  if (classical) { state.playing = false; playBtn.textContent = '▶ Play'; }
+  if (classical || isM6) { state.playing = false; playBtn.textContent = '▶ Play'; }
+  if (!isM6) state.m6gate = null;
 
-  // toggle side-groups: engine controls vs classical controls
+  // toggle side-groups: engine controls vs classical controls. M6 is engine-based
+  // but swaps the M3/M5 drive/state/diagram groups for its own gate controls.
   document.querySelectorAll('.engine-only').forEach((el) => { el.hidden = classical; });
+  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6; });
+  document.getElementById('m6-controls').hidden = classical || !isM6;
   document.getElementById('m1-controls').hidden = id !== 'M1';
   document.getElementById('m2-controls').hidden = id !== 'M2';
 
-  // toggle center panels + the two-column classical layout
+  // toggle center panels. M6 keeps the right sidebar (engine readouts) → NOT
+  // mode-classical, but shows the Bloch sphere instead of the level diagram.
   appShell.classList.toggle('mode-classical', classical);
-  levelsPanel.hidden = classical;
-  moduleActions.hidden = classical;
+  levelsPanel.hidden = classical || isM6;
+  moduleActions.hidden = classical || isM6;
   m1Panel.hidden = id !== 'M1';
   m2Panel.hidden = id !== 'M2';
+  m6Panel.hidden = !isM6;
 
   // stop the inactive classical view; show/refresh the active one
   if (id === 'M1') { ensureMathieuView().show(); } else if (mathieuView) mathieuView.hide();
   if (id === 'M2') { ensureChainView().show(); } else if (chainView) chainView.hide();
+
+  if (isM6) {
+    ensureM6Scene();
+    peTrace.clear(); fluorTrace.clear(); nbarTrace.clear();
+    m6ResetEngine();
+    setM6Status('<span class="k">ready</span> — fire a carrier gate; the arrow rotates about <b>x</b>. n̄ stays ≈0 while Ω≪ω_z.');
+    refresh(true);
+  }
 });
 
 // -- playback --
@@ -334,6 +439,33 @@ document.getElementById('btn-thermo').addEventListener('click', () => {
   }, 30);
 });
 
+// -- M6: single-qubit gates --
+wireSlider('m6-rabi', (v) => {
+  params.m6.rabi = v;
+  if (state.module === 'M6' && !state.m6gate) { sys.setRabi(v); }
+});
+wireSlider('m6-delta', (v) => { params.m6.delta = v; }, (v) => v.toFixed(2));
+wireSlider('m6-theta', (v) => { params.m6.theta = v; }, (v) => v.toFixed(2));
+document.getElementById('m6-rx90').addEventListener('click', () => m6StartGate('rx', Math.PI / 2));
+document.getElementById('m6-rx180').addEventListener('click', () => m6StartGate('rx', Math.PI));
+document.getElementById('m6-rx360').addEventListener('click', () => m6StartGate('rx', 2 * Math.PI));
+document.getElementById('m6-apply').addEventListener('click', () => m6StartGate('rx', params.m6.theta * Math.PI));
+document.getElementById('m6-precess').addEventListener('click', () => m6StartGate('precess', 0));
+document.getElementById('m6-measure').addEventListener('click', () => {
+  const el = document.getElementById('m6-acstark');
+  const d = params.m6.delta, O = params.m6.rabi;
+  if (d < 0.05) { el.innerHTML = '<span class="lbl">set δ &gt; 0 for an off-resonant AC-Stark measurement</span>'; return; }
+  el.innerHTML = '<span class="lbl">measuring in a clean two-level regime (ω_z pushed far away)…</span>';
+  setTimeout(() => {
+    const m = measureGeneralizedRabi(d, O, { omegaZ: 30, periods: 10 });
+    const genErr = Math.abs(m.measGen - m.formulaGen) / m.formulaGen * 100;
+    const lsErr = Math.abs(m.lightShiftMeas - m.lightShiftFormula) / Math.abs(m.lightShiftFormula) * 100;
+    el.innerHTML =
+      `<div><span class="lbl">Ω_gen (measured):</span> ${m.measGen.toFixed(4)} &nbsp; vs √(δ²+Ω²)=${m.formulaGen.toFixed(4)} (${genErr.toFixed(2)}%)</div>` +
+      `<div><span class="lbl">light shift ½(Ω_gen−|δ|):</span> ${m.lightShiftMeas.toExponential(3)} &nbsp; vs Ω²/4δ=${m.lightShiftFormula.toExponential(3)} (${lsErr.toFixed(1)}%)</div>`;
+  }, 30);
+});
+
 // =============================================================================
 // Canvas sizing for the crisp level diagram (fill its wrapper).
 // =============================================================================
@@ -352,6 +484,16 @@ function frame() {
   // Classical modules (M1/M2) drive their own self-contained canvas views; the
   // density-matrix engine is idle and its panels are hidden.
   if (state.classical) { requestAnimationFrame(frame); return; }
+
+  // M6 single-qubit gates: run a scheduled carrier pulse / precession, animating
+  // the internal-state Bloch sphere off the real reduced ρ. Sphere renders every
+  // frame so OrbitControls stay live even when idle.
+  if (state.module === 'M6') {
+    if (state.m6gate) m6StepGate();
+    if (m6Scene) m6Scene.render();
+    requestAnimationFrame(frame);
+    return;
+  }
 
   // Chunked excitation scan takes precedence (M3).
   if (state.scanQueue) {

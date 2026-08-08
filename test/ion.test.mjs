@@ -16,6 +16,9 @@ import assert from 'node:assert';
 import { create, all } from 'mathjs';
 import { IonSystem } from '../src/ion.js';
 import { Spectrum } from '../src/spectrum.js';   // Phase 1b: FFT thermometry (spec §3.3, assertion 10)
+import {                                          // Phase 2b: M6 single-qubit gates (spec §4 M6)
+  driveCarrierGate, gateReport, idealRxAmps, fidelityToPure, measureGeneralizedRabi,
+} from '../src/ion-gates.js';
 
 const math = create(all);
 let failures = 0, passes = 0;
@@ -449,6 +452,92 @@ function asymmetryNbar(nbarSet, { N = 18, eta = 0.3, Om = 0.03, tPulse = 25 } = 
   report('T14 RSB cooling floor < 0.01 (Γ/ω_z=0.1), ∝(Γ/ω_z)², heating lifts it', ok,
     `n̄_ss(0.1)=${floorA.toExponential(2)} (<0.01), n̄_ss(0.2)=${floorB.toExponential(2)}, ` +
     `ratio=${ratio.toFixed(2)} (∈[3,12]); heating: ${cold.toExponential(2)}→${hot.toExponential(2)}`);
+}
+
+// =============================================================================
+// M6 single-qubit gates (spec §4 M6). The carrier (δ=0) drive rotates the internal
+// qubit — a pulse of area Ω_eff·t is a Bloch rotation Rx(θ). All three claims are
+// EMERGENT from the same engine: the clean rotation, the AC-Stark tilt, and the
+// break-it loss of spectral selectivity when the pulse gets short (Ω ≳ ω_z). The
+// engine exposes only a real Ω (no drive phase), so the native gate is Rx / a
+// δ-tilted rotation — asserted as such, not a faked Ry.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Test M6a — Clean carrier rotation: a long (Ω≪ω_z) carrier π-pulse on |g,0⟩ →
+// |e,0⟩ with the MOTION UNCHANGED (Δn̄ < 1e-3) and high fidelity to the ideal σx
+// rotation; a carrier 2π returns to |g,0⟩. Selectivity here is that a spectrally
+// narrow pulse does not touch the ±ω_z sidebands.
+// -----------------------------------------------------------------------------
+{
+  const Om = 0.05;   // Ω ≪ ω_z = 1
+
+  const sPi = new IonSystem({ N_FOCK: 20, omegaZ: 1, delta: 0, rabi: Om, mode: 'exact' });
+  sPi.reset();                                   // |g,0⟩, n̄=0
+  driveCarrierGate(sPi, Math.PI, 600);
+  const piRep = gateReport(sPi, Math.PI);
+  const dNbarPi = piRep.nbar;                    // Δn̄ from 0
+  const piOk = piRep.fidelity > 0.99 && dNbarPi < 1e-3 && piRep.pExcited > 0.99;
+
+  const s2Pi = new IonSystem({ N_FOCK: 20, omegaZ: 1, delta: 0, rabi: Om, mode: 'exact' });
+  s2Pi.reset();
+  driveCarrierGate(s2Pi, 2 * Math.PI, 800);
+  const backFid = fidelityToPure(s2Pi, idealRxAmps(2 * Math.PI).cg, idealRxAmps(2 * Math.PI).ce);
+  const twoPiOk = backFid > 0.999 && s2Pi.pExcited() < 1e-3;
+
+  report('M6a clean carrier rotation: π→|e,0⟩ (Δn̄<1e-3, F>0.99), 2π→|g,0⟩', piOk && twoPiOk,
+    `π: F=${piRep.fidelity.toFixed(6)}, P_e=${piRep.pExcited.toFixed(6)}, Δn̄=${dNbarPi.toExponential(2)}; ` +
+    `2π: F(→g)=${backFid.toFixed(6)}, P_e=${s2Pi.pExcited().toExponential(2)}`);
+}
+
+// -----------------------------------------------------------------------------
+// Test M6b — AC Stark / light shift: an OFF-RESONANT carrier (finite δ, Rabi Ω)
+// rotates about a TILTED axis; the internal-state precession is the generalized
+// Rabi Ω_gen = √(δ²+Ω²), and the per-level light shift ½(Ω_gen−|δ|) ≈ Ω²/(4δ) in
+// the δ≫Ω regime. Measured in a clean two-level regime (ω_z pushed far away).
+// -----------------------------------------------------------------------------
+{
+  let ok = true, details = [];
+  for (const [d, O] of [[0.3, 0.05], [0.5, 0.1]]) {   // δ≫Ω and δ≪ω_z(=30)
+    const m = measureGeneralizedRabi(d, O, { omegaZ: 30, periods: 10 });
+    const genErr = Math.abs(m.measGen - m.formulaGen) / m.formulaGen;
+    const lsErr = Math.abs(m.lightShiftMeas - m.lightShiftFormula) / Math.abs(m.lightShiftFormula);
+    if (genErr > 0.02 || lsErr > 0.08) ok = false;
+    details.push(`δ=${d},Ω=${O}: Ω_gen=${m.measGen.toFixed(5)} vs √(δ²+Ω²)=${m.formulaGen.toFixed(5)} (${(genErr * 100).toFixed(2)}%), ` +
+      `LS=${m.lightShiftMeas.toExponential(2)} vs Ω²/4δ=${m.lightShiftFormula.toExponential(2)} (${(lsErr * 100).toFixed(1)}%)`);
+  }
+  report('M6b AC Stark: precession=√(δ²+Ω²) (<2%), light shift≈Ω²/4δ (<8%)', ok, details.join('; '));
+}
+
+// -----------------------------------------------------------------------------
+// Test M6c — Break it (EMERGENT spectral selectivity): a LONG carrier π-pulse
+// (Ω≪ω_z) leaves the motion cold and the gate clean; a SHORT/broadband π-pulse
+// (Ω≈ω_z, bandwidth ~Ω reaches the ±ω_z sidebands) EXCITES the motion (the
+// envelope of n̄ grows with Ω — there are coherent dips where residual sideband
+// displacement briefly refocuses, which a hard-wired branch would not produce)
+// and spin–motion entanglement drags the single-qubit fidelity down. BOTH halves
+// asserted — selective when Ω≪ω_z, NOT selective when Ω≳ω_z. Never hard-wired.
+// -----------------------------------------------------------------------------
+{
+  const runPi = (Om, N) => {
+    const s = new IonSystem({ N_FOCK: N, omegaZ: 1, delta: 0, rabi: Om, mode: 'exact' });
+    s.reset();
+    driveCarrierGate(s, Math.PI, Math.max(600, Math.ceil(Math.PI / carrierRabi0Local(s) * Om * 40)));
+    return gateReport(s, Math.PI);
+  };
+  function carrierRabi0Local(s) { return s.couplingMatrix()[0]; }
+
+  const longP = runPi(0.05, 20);   // Ω ≪ ω_z — spectrally selective
+  const shortP = runPi(1.0, 20);   // Ω ≈ ω_z — broadband, not selective
+
+  const infidLong = 1 - longP.fidelity, infidShort = 1 - shortP.fidelity;
+  const selectiveOk = longP.nbar < 1e-3 && longP.fidelity > 0.99;
+  const notSelectiveOk = shortP.nbar > 3e-3 && shortP.nbar > 50 * longP.nbar && infidShort > 20 * infidLong;
+
+  report('M6c break-it: Ω≪ω_z selective (cold, F>0.99); Ω≈ω_z heats motion + F drops', selectiveOk && notSelectiveOk,
+    `long Ω=0.05: n̄=${longP.nbar.toExponential(2)}, F=${longP.fidelity.toFixed(5)}; ` +
+    `short Ω=1.0: n̄=${shortP.nbar.toExponential(2)} (×${(shortP.nbar / longP.nbar).toFixed(0)}), ` +
+    `F=${shortP.fidelity.toFixed(5)} (infidelity ×${(infidShort / infidLong).toFixed(0)})`);
 }
 
 // =============================================================================

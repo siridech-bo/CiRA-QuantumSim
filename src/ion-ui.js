@@ -35,6 +35,11 @@ export const MODULES = {
     desc: 'Drive the red sideband (<code>δ=−ω_z</code>) with spontaneous emission on: the ladder depopulates downward and n̄ falls toward the floor. The RSB amplitude vanishes as n̄→0 because <code>|g,0⟩</code> is dark.',
     breakIt: 'Break it: raise the heating rate (motional bath) until cooling stalls at a higher floor.',
   },
+  M6: {
+    name: 'Single-qubit gates',
+    desc: 'A carrier (<code>δ=0</code>) pulse of area <code>Ω_eff·t</code> rotates the internal qubit — a real <b>Rx(θ)</b> on the Bloch sphere (the engine exposes only a real Ω → σx drive, no phase, so no native Ry). Off-resonant (<code>δ≠0</code>) tilts the axis: <b>AC Stark</b>, precession at the generalized Rabi <code>√(δ²+Ω²)</code>, light shift <code>≈Ω²/4δ</code>.',
+    breakIt: 'Break it: shorten the pulse (raise <code>Ω</code> toward/above <code>ω_z</code>) — the bandwidth ~Ω reaches the ±ω_z sidebands, the motion heats (n̄ grows) and spin–motion entanglement drops the gate fidelity. Selectivity is EMERGENT from Ω vs ω_z.',
+  },
 };
 
 // ---- generic slider wiring --------------------------------------------------
