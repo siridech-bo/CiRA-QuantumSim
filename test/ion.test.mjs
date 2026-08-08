@@ -15,6 +15,7 @@
 import assert from 'node:assert';
 import { create, all } from 'mathjs';
 import { IonSystem } from '../src/ion.js';
+import { Spectrum } from '../src/spectrum.js';   // Phase 1b: FFT thermometry (spec §3.3, assertion 10)
 
 const math = create(all);
 let failures = 0, passes = 0;
@@ -299,6 +300,155 @@ const ETA = new IonSystem({}).etaValue();     // ⁴⁰Ca⁺ 729 nm, 1 MHz
   report('T9 emergent sideband selectivity (P(e,0)≫P(e,2); destroyed at Ω>ω_z)', ok,
     `Ω≪ω_z: P(e,0)=${eLo[0].toFixed(4)}, P(e,2)=${eLo[2].toExponential(2)}; ` +
     `Ω>ω_z: max P(e,2)=${e2max.toFixed(4)} (>0.01)`);
+}
+
+// =============================================================================
+// Phase 1b thermometry + cooling assertions (spec §6.10, §6.11, §6.14). These
+// back the M3/M5 visual claims: the FFT-of-P_e phonon spectrum, the two
+// independent n̄ measurements agreeing, and the sideband-cooling floor.
+// =============================================================================
+
+// Blue-sideband flopping frequencies Ω_{n,n+1} = Ω·|D[n+1][n]| from the engine's
+// own coupling matrix (drives P_e(t) = Σ_n P(n) sin²(Ω_{n,n+1} t/2)).
+function blueFlopFreqs(sys) {
+  const N = sys.N_FOCK, cm = sys.couplingMatrix();
+  const out = [];
+  for (let n = 0; n + 1 < N; n++) out.push(cm[(n + 1) * N + n]);
+  return out;
+}
+
+// Sideband-asymmetry thermometer: weak short probe on red (δ=−ω_z) and blue
+// (δ=+ω_z); in the quadratic regime P_e,red/P_e,blue = n̄/(n̄+1) = r ⇒ n̄=r/(1−r).
+function asymmetryNbar(nbarSet, { N = 18, eta = 0.3, Om = 0.03, tPulse = 25 } = {}) {
+  const amp = (delta) => {
+    const s = ionWithEta(eta, N, 'exact');
+    s.setRabi(Om); s.setDetuning(delta); s.setThermal(nbarSet, 'g');
+    s.step(tPulse);
+    return s.pExcited();
+  };
+  const red = amp(-1), blue = amp(+1);
+  const r = red / blue;
+  return { r, nbar: r / (1 - r) };
+}
+
+// =============================================================================
+// Test 10 — FFT thermometry: drive the BLUE sideband on a thermal state, feed
+// P_e(t) into the EXISTING spectrum.js (spec §3.3 — no second FFT), and read the
+// phonon distribution off the peak heights. Peaks sit at Ω_{n,n+1}; their heights
+// ∝ P(n), so the ratio P(1)/P(0) = n̄/(1+n̄) recovers n̄ (Meekhof/NIST 1996). A
+// stub canvas lets spectrum.js run under node. Cross-checked against the sideband-
+// asymmetry thermometer at the SAME set n̄ — the two must agree (spec §3.4).
+// =============================================================================
+{
+  const nbarSet = 0.8, N = 12, eta = 0.3, Om = 0.3, fftSize = 1024, cycles = 30;
+  const s = ionWithEta(eta, N, 'exact');
+  s.setRabi(Om); s.setDetuning(+1); s.setThermal(nbarSet, 'g');
+  const Omega_n = blueFlopFreqs(s);
+
+  // Sample enough cycles of the slowest peak (Ω_0) that truncation sidelobes are
+  // small; stay below Nyquist for the fastest populated peak.
+  const T_target = cycles * (2 * Math.PI / Omega_n[0]);
+  let dwellSim = T_target / fftSize;
+  const nyq = 0.5 * Math.PI / Math.max(...Omega_n);
+  if (dwellSim > nyq) dwellSim = nyq;
+
+  // spectrum.js has a fixed 3 Hz apodization (tuned for ms NMR dwell); feed it a
+  // SCALED dwell D_SPEC so the two lowest peaks separate to ≫ that linewidth while
+  // the window still holds signal. Frequencies invert exactly: Ω = 2π·D_SPEC·f/dt.
+  let D_SPEC = (Omega_n[1] - Omega_n[0]) * dwellSim / (2 * Math.PI * 30);
+  const endDecay = Math.exp(-Math.PI * 3 * (fftSize - 1) * D_SPEC);
+  if (endDecay < 0.04) D_SPEC = -Math.log(0.04) / (Math.PI * 3 * (fftSize - 1));
+
+  const spec = new Spectrum({ getContext: () => ({}) }, { dwell: D_SPEC, fftSize });
+  const samples = [];
+  for (let k = 0; k < fftSize; k++) { samples.push(s.pExcited()); s.step(dwellSim); }
+  const mean = samples.reduce((a, b) => a + b, 0) / fftSize;
+  for (const v of samples) spec.push({ real: v - mean, imag: 0 });
+  const out = spec.compute();
+
+  const toOmega = (f) => 2 * Math.PI * D_SPEC * f / dwellSim;
+  const peakNear = (target, hw) => {
+    let best = 0;
+    for (let i = 0; i < out.freq.length; i++) {
+      const om = toOmega(out.freq[i]);
+      if (om > 0 && Math.abs(om - target) < hw) best = Math.max(best, out.mag[i]);
+    }
+    return best;
+  };
+  const hw = 0.5 * (Omega_n[1] - Omega_n[0]);
+  const p0 = peakNear(Omega_n[0], hw), p1 = peakNear(Omega_n[1], hw), p2 = peakNear(Omega_n[2], hw);
+  const q = p1 / p0;                       // P(1)/P(0) = n̄/(1+n̄)
+  const nFFT = q / (1 - q);
+
+  // Independent thermometer at the same set n̄.
+  const asym = asymmetryNbar(nbarSet);
+
+  const monotonic = p0 > p1 && p1 > p2;    // thermal geometric fall-off in the FFT
+  const fftOk = Math.abs(nFFT - nbarSet) / nbarSet < 0.30;
+  const agreeOk = Math.abs(nFFT - asym.nbar) < 0.35;
+  const ok = monotonic && fftOk && agreeOk;
+  report('T10 FFT of P_e(t) recovers P(n) → n̄ (spectrum.js, agrees w/ asymmetry)', ok,
+    `set n̄=${nbarSet}; FFT peaks p0>p1>p2=${p0.toFixed(1)}>${p1.toFixed(1)}>${p2.toFixed(1)}; ` +
+    `n̄(FFT)=${nFFT.toFixed(3)} (${(Math.abs(nFFT - nbarSet) / nbarSet * 100).toFixed(1)}%), ` +
+    `n̄(asym)=${asym.nbar.toFixed(3)}`);
+}
+
+// =============================================================================
+// Test 11 — Sideband asymmetry: r = A_red/A_blue from the excitation spectrum
+// gives n̄ = r/(1−r), recovering the set n̄ (the second, precise thermometer;
+// spec §3.4). Independent of the FFT — the two agreeing IS real thermometry.
+// =============================================================================
+{
+  let ok = true, details = [];
+  for (const nbarSet of [0.5, 1.0, 2.0]) {
+    const { r, nbar } = asymmetryNbar(nbarSet);
+    const err = Math.abs(nbar - nbarSet) / nbarSet;
+    if (err > 0.05) ok = false;
+    details.push(`n̄=${nbarSet}: r=${r.toFixed(3)}→${nbar.toFixed(3)} (${(err * 100).toFixed(1)}%)`);
+  }
+  report('T11 sideband asymmetry n̄=r/(1−r) recovers set n̄ (< 5%)', ok, details.join('; '));
+}
+
+// =============================================================================
+// Test 14 — Sideband-cooling floor: from a warm thermal state, red-sideband
+// (δ=−ω_z) drive + motion-preserving spontaneous emission cools n̄ to a steady
+// state that (a) stays below 0.01 for Γ_eff/ω_z=0.1 and (b) SCALES as (Γ_eff/ω_z)²
+// — asserted as super-linear scaling + the bound, NOT a precise prefactor (spec
+// §6.14: the O(1) coefficient is recoil/convention dependent and brittle). The
+// drive is scaled with Γ_eff (fixed ηΩ/Γ) so both the quantum-limit and drive
+// contributions to the floor scale as Γ². Also: raising the heating rate (the M5
+// motional bath "break-it" control) lifts the floor — a real effect.
+// =============================================================================
+{
+  // ηΩ = 0.5·Γ_eff (weak, resolved sideband), η=0.25, δ=−ω_z, cool a warm n̄=2.
+  const coolFloor = (GammaEff, T, heating = 0) => {
+    const eta = 0.25, Om = 0.5 * GammaEff / eta;
+    const s = ionWithEta(eta, 12, 'exact');
+    s.setRabi(Om); s.setDetuning(-1);
+    s.setSpontaneousEmission(true, GammaEff);
+    if (heating > 0) s.setMotionalBath(true, { heating, nBath: 1 });
+    s.setThermal(2.0, 'g');
+    const nStep = 24, dt = T / nStep;
+    for (let i = 0; i < nStep; i++) s.step(dt);
+    return s.nBar();
+  };
+
+  const floorA = coolFloor(0.1, 900);   // Γ_eff/ω_z = 0.1
+  const floorB = coolFloor(0.2, 600);   // Γ_eff/ω_z = 0.2
+  const ratio = floorB / floorA;
+
+  const boundOk = floorA < 0.01;                 // (b) bound
+  const scalingOk = ratio > 3 && ratio < 12;     // (a) super-linear ≈ quadratic, not the prefactor
+  const cooledOk = floorA < 2.0 && floorB < 2.0; // actually cooled below the warm start
+
+  const cold = coolFloor(0.15, 600, 0);
+  const hot  = coolFloor(0.15, 600, 0.05);       // motional-bath "break it"
+  const heatOk = hot > cold * 2;                 // heating clearly raises the floor
+
+  const ok = boundOk && scalingOk && cooledOk && heatOk;
+  report('T14 RSB cooling floor < 0.01 (Γ/ω_z=0.1), ∝(Γ/ω_z)², heating lifts it', ok,
+    `n̄_ss(0.1)=${floorA.toExponential(2)} (<0.01), n̄_ss(0.2)=${floorB.toExponential(2)}, ` +
+    `ratio=${ratio.toFixed(2)} (∈[3,12]); heating: ${cold.toExponential(2)}→${hot.toExponential(2)}`);
 }
 
 // =============================================================================

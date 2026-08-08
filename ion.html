@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Trapped Ion — CiRA QuantumSim</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="src/ion.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "mathjs": "https://cdn.jsdelivr.net/npm/mathjs@12.4.3/+esm"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app-shell">
+    <!-- ===== Top bar ===== -->
+    <header id="topbar">
+      <div class="brand">
+        <span class="logo">⚛</span>
+        <div class="brand-text">
+          <h1>Trapped-Ion Process Visualizer</h1>
+          <span class="subtitle">real single-ion Lindblad substrate — 2 internal levels ⊗ motional Fock space</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="substrate-nav">Substrate:
+          <a href="index.html">NMR</a> |
+          <a href="jc.html">Jaynes-Cummings</a> |
+          <span class="cur">Trapped Ion</span>
+        </span>
+        <button id="theme-toggle" class="icon-btn" title="Toggle light / dark">🌙</button>
+      </div>
+    </header>
+
+    <!-- ===== Left sidebar: controls ===== -->
+    <aside id="sidebar-left">
+      <h2 class="side-title">Controls</h2>
+
+      <div class="side-group">
+        <div class="side-label">Module</div>
+        <div class="module-tabs" id="module-tabs">
+          <button class="mod-btn primary" data-module="M3">M3</button>
+          <button class="mod-btn" data-module="M5">M5</button>
+          <button class="mod-btn" disabled title="Phase 2">M1</button>
+          <button class="mod-btn" disabled title="Phase 2">M2</button>
+          <button class="mod-btn" disabled title="Phase 2">M4</button>
+          <button class="mod-btn" disabled title="Phase 2">M6</button>
+          <button class="mod-btn" disabled title="Phase 3">M7</button>
+          <button class="mod-btn" disabled title="Phase 3">M8</button>
+        </div>
+        <div class="module-desc" id="module-desc"></div>
+        <div class="break-it" id="break-it"></div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Playback</div>
+        <div class="btn-row">
+          <button id="btn-play" class="primary">▶ Play</button>
+          <button id="btn-reset">↺ Reset</button>
+        </div>
+        <label class="slider-row"><span>Speed</span>
+          <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1" />
+          <span id="speed-val" class="val mono">1.0×</span></label>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Initial motional state</div>
+        <select id="state-kind" class="side-select">
+          <option value="g0">|g, 0⟩  (ground)</option>
+          <option value="fock">|g, n⟩  Fock</option>
+          <option value="thermal" selected>thermal  n̄</option>
+          <option value="coherent">coherent  |α⟩</option>
+        </select>
+        <label class="slider-row" id="row-fock"><span>n</span>
+          <input id="fock-n" type="range" min="0" max="10" step="1" value="1" />
+          <span id="fock-n-val" class="val mono">1</span></label>
+        <label class="slider-row" id="row-thermal"><span>n̄</span>
+          <input id="thermal-nbar" type="range" min="0" max="6" step="0.1" value="2" />
+          <span id="thermal-nbar-val" class="val mono">2.0</span></label>
+        <label class="slider-row" id="row-coherent"><span>α</span>
+          <input id="coherent-alpha" type="range" min="0" max="3" step="0.1" value="1.5" />
+          <span id="coherent-alpha-val" class="val mono">1.5</span></label>
+        <button id="btn-prepare" class="full">Prepare state</button>
+        <div class="module-desc">coherent → sharp revivals; thermal → smeared collapse (same engine).</div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Laser drive</div>
+        <label class="slider-row"><span>δ / ω_z</span>
+          <input id="delta" type="range" min="-1.6" max="1.6" step="0.02" value="-1" />
+          <span id="delta-val" class="val mono">−1.00</span></label>
+        <label class="slider-row"><span>Ω / ω_z</span>
+          <input id="rabi" type="range" min="0.01" max="2" step="0.01" value="0.30" />
+          <span id="rabi-val" class="val mono">0.30</span></label>
+        <label class="slider-row"><span>coupling</span>
+          <select id="coupling-mode" class="side-select" style="max-width:150px">
+            <option value="exact" selected>exact D(iη)</option>
+            <option value="ld">Lamb–Dicke</option>
+            <option value="jc">JC (red only)</option>
+            <option value="ajc">anti-JC (blue)</option>
+          </select></label>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Trap → η (computed)</div>
+        <label class="slider-row"><span>λ (nm)</span>
+          <select id="lambda" class="side-select" style="max-width:120px">
+            <option value="729" selected>729 (qubit)</option>
+            <option value="397">397 (cooling)</option>
+          </select></label>
+        <label class="slider-row"><span>ν_z (MHz)</span>
+          <input id="nutrap" type="range" min="0.3" max="5" step="0.1" value="1.0" />
+          <span id="nutrap-val" class="val mono">1.0</span></label>
+        <div class="module-desc" id="eta-readout"></div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Dissipators <span class="tag">Lindblad</span></div>
+        <label class="check"><input type="checkbox" id="chk-se" /> spontaneous emission Γ_eff</label>
+        <label class="slider-row"><span>Γ_eff</span>
+          <input id="gamma" type="range" min="0.02" max="1" step="0.01" value="0.10" />
+          <span id="gamma-val" class="val mono">0.10</span></label>
+        <label class="check"><input type="checkbox" id="chk-bath" /> motional bath (heating)</label>
+        <label class="slider-row"><span>ṅ̄ (q/s)</span>
+          <input id="heating" type="range" min="0" max="0.2" step="0.005" value="0.02" />
+          <span id="heating-val" class="val mono">0.020</span></label>
+        <label class="check"><input type="checkbox" id="chk-dephase" /> pure dephasing γ_φ</label>
+        <label class="slider-row"><span>γ_φ</span>
+          <input id="gammaphi" type="range" min="0" max="0.5" step="0.01" value="0.05" />
+          <span id="gammaphi-val" class="val mono">0.05</span></label>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Truncation</div>
+        <label class="slider-row"><span>N_FOCK</span>
+          <input id="nfock" type="range" min="8" max="30" step="1" value="20" />
+          <span id="nfock-val" class="val mono">20</span></label>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">Diagram</div>
+        <label class="slider-row"><span>motional zoom</span>
+          <input id="zoom" type="range" min="1" max="4" step="0.1" value="1" />
+          <span id="zoom-val" class="val mono">1.0×</span></label>
+        <label class="slider-row"><span>rung length</span>
+          <select id="lenmap" class="side-select" style="max-width:120px">
+            <option value="sqrt" selected>sqrt</option>
+            <option value="log">soft-log</option>
+            <option value="linear">linear</option>
+          </select></label>
+        <label class="check"><input type="checkbox" id="chk-ghost" checked /> ghost trail (~30 frames)</label>
+      </div>
+    </aside>
+
+    <!-- ===== Center: level diagram ===== -->
+    <main id="center">
+      <section id="levels-panel">
+        <div class="panel-head">
+          <h2>Double-ladder level diagram</h2>
+          <span class="subtitle">drag the δ line ⇄ to ignite carrier / red / blue families</span>
+        </div>
+        <div id="levels-wrap"><canvas id="levels-canvas" width="720" height="560"></canvas></div>
+        <div class="trunc-warn" id="trunc-warn"></div>
+        <div class="legend-row">
+          <span><span class="sw" style="background:var(--ion-carrier)"></span>carrier δ=0</span>
+          <span><span class="sw" style="background:var(--ion-red)"></span>RSB δ=−ω_z</span>
+          <span><span class="sw" style="background:var(--ion-blue)"></span>BSB δ=+ω_z</span>
+          <span><span class="sw" style="background:var(--ion-rung-g)"></span>|g,n⟩</span>
+          <span><span class="sw" style="background:var(--ion-rung-e)"></span>|e,n⟩</span>
+        </div>
+      </section>
+      <div class="diagram-controls" id="module-actions">
+        <!-- M3 -->
+        <span data-for="M3"><button id="btn-scan" class="primary">Scan δ → excitation spectrum</button></span>
+        <span data-for="M3" id="scan-status" class="mono"></span>
+        <!-- M5 -->
+        <span data-for="M5" style="display:none"><button id="btn-cool" class="primary">Start sideband cooling (RSB + SE)</button></span>
+        <span data-for="M5" style="display:none" class="mono">raise the heating rate to stall it →</span>
+      </div>
+    </main>
+
+    <!-- ===== Right sidebar: readouts ===== -->
+    <aside id="sidebar-right">
+      <h2 class="side-title">Readouts</h2>
+
+      <div class="result-block">
+        <h3>Live observables</h3>
+        <div id="obs-readout" class="obs-grid"></div>
+      </div>
+
+      <div class="result-block">
+        <h3>P_e(t) — Rabi flopping <span class="muted-tag">collapses with T₂ off</span></h3>
+        <canvas id="pe-canvas" width="440" height="120"></canvas>
+      </div>
+
+      <div class="result-block">
+        <h3>Fluorescence R=Γρ_ee <span class="muted-tag">Poisson shot noise</span></h3>
+        <canvas id="fluor-canvas" width="440" height="110"></canvas>
+      </div>
+
+      <div class="result-block">
+        <h3>n̄(t) — cooling curve</h3>
+        <canvas id="nbar-canvas" width="440" height="110"></canvas>
+      </div>
+
+      <div class="result-block">
+        <h3>Excitation spectrum (M3)</h3>
+        <canvas id="spectrum-canvas" width="440" height="130"></canvas>
+      </div>
+
+      <div class="result-block">
+        <h3>Thermometry — two independent n̄</h3>
+        <button id="btn-thermo" class="full" style="margin-top:0">Measure n̄ (sideband asymmetry + FFT)</button>
+        <div class="thermo-readout" id="thermo-readout"></div>
+      </div>
+
+      <div class="result-block center">
+        <h3>|ρ| density matrix</h3>
+        <canvas id="heatmap-canvas" width="200" height="200"></canvas>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="src/ion-main.js"></script>
+</body>
+</html>
