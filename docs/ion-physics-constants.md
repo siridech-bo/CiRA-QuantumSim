@@ -110,11 +110,14 @@ d = (e² / (2πε₀ m ω_z²))^(1/3)
 6. Debye–Waller `e^(−η²/2)`: inside the Laguerre element OR a separate carrier factor, not both.
 
 ## ⚠ OPEN / not pinned by this research pass — source before unit-testing
-- **Recoil-kernel spontaneous emission** (spec §2.5, the ξ≈2/5 factor and `e^(±ik·x̂)` collapse
-  operators): a candidate claim was **refuted** (W(z)=3(1−z²)/4 detail unverified); the 2/5 only
-  survives indirectly via the (1+4α) cooling form. **Recommendation: Phase 1 uses the simple
-  motion-preserving `√Γ|g⟩⟨e|⊗I` spontaneous emission; defer the recoil kernel to Phase 2** with
-  a dedicated primary derivation (RMP §III or a cooling-theory reference) before it is unit-tested.
+- **Recoil-kernel spontaneous emission** (spec §2.5): ✅ **NOW RESOLVED** — see
+  [`docs/ion-recoil-kernel-physics.md`](ion-recoil-kernel-physics.md). A dedicated research pass
+  pinned it: exact dissipator RMP Eq. 87–88 with dipole pattern Y(z)=3(1+z²)/4, three-operator
+  O(η̃²) form `c₀=√(Γ(1−2ξη̃²))σ⁻, c±=√(Γξη̃²)σ⁻a^(†)`, and the disputed **ξ is
+  orientation-dependent: (2−cos²θₐ)/5 = 1/5 (π ∥ z), 2/5 (σ ⊥ z, default), 1/3 (iso)** — the
+  earlier "refutation" had computed the parallel case. η̃ (emitted 397 nm photon) is kept
+  separate from the drive η. Phase 1 still ships the motion-preserving form; the kernel is added
+  in Phase 2c behind a `recoil:'kernel'` toggle, as a prerequisite for M4 (Doppler).
 - **Paul-trap Mathieu** (spec M1): `q ≈ 0.908` (β=1 boundary, a=0) and
   `ω_sec ≈ (ω_RF/2)√(a + q²/2)` were not covered by a surviving claim — standard textbook, but
   source from Ghosh *Ion Traps* or RMP §II before asserting.
