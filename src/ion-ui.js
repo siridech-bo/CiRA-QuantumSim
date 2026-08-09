@@ -40,6 +40,12 @@ export const MODULES = {
     desc: 'A carrier (<code>δ=0</code>) pulse of area <code>Ω_eff·t</code> rotates the internal qubit — a real <b>Rx(θ)</b> on the Bloch sphere (the engine exposes only a real Ω → σx drive, no phase, so no native Ry). Off-resonant (<code>δ≠0</code>) tilts the axis: <b>AC Stark</b>, precession at the generalized Rabi <code>√(δ²+Ω²)</code>, light shift <code>≈Ω²/4δ</code>.',
     breakIt: 'Break it: shorten the pulse (raise <code>Ω</code> toward/above <code>ω_z</code>) — the bandwidth ~Ω reaches the ±ω_z sidebands, the motion heats (n̄ grows) and spin–motion entanglement drops the gate fidelity. Selectivity is EMERGENT from Ω vs ω_z.',
   },
+  M4: {
+    name: 'Doppler cooling',
+    desc: 'The OPPOSITE regime to sideband cooling: <b>broad linewidth</b> <code>Γ ≳ ω_z</code> (sidebands unresolved), <b>red-detuned</b> drive <code>δ&lt;0</code> + spontaneous emission with the <b>recoil kernel</b>. Velocity-dependent scattering (friction) balances recoil heating → a steady state. The friction is strongest at <b>δ = −Γ/2</b> (the scan minimum), where the textbook Doppler limit is <code>k_BT_D=ħΓ/2 ⇒ n̄≈Γ/2ω_z</code>.',
+    breakIt: 'Break it: detune <b>blue</b> (<code>δ&gt;0</code>) — friction reverses into anti-friction and the motion <b>heats</b> (n̄ runs away up) instead of cooling.',
+    note: 'LD-valid regime: this O(η̃²) recoil kernel is honest only for <code>η̃²(2n̄+1)≪1</code>, so we run at moderate <code>Γ/ω_z</code> (≈3–6) where the floor is a few quanta. There the engine gives <code>n̄_ss = c·Γ/2ω_z</code> with <code>c≈0.5–0.65</code> (partially-resolved sidebands over-cool below the asymptote). The canonical <code>n̄=Γ/2ω_z</code> is the <code>Γ≫ω_z</code> asymptote (⁴⁰Ca⁺: n̄≈10.8) — exactly where the LD kernel breaks down. That break-down IS the lesson.',
+  },
 };
 
 // ---- generic slider wiring --------------------------------------------------
@@ -158,4 +164,54 @@ export function measureFFT(nbarSet, { N = 12, eta = 0.3, Om = 0.3, fftSize = 102
   const hw = 0.5 * (Omega_n[1] - Omega_n[0]);
   const q = peak(Omega_n[1], hw) / peak(Omega_n[0], hw);
   return q / (1 - q);
+}
+
+// =============================================================================
+// M4 — Doppler cooling (spec §4 M4, §6 assertion 13; docs/ion-recoil-kernel-physics.md §5).
+// Broad-linewidth (Γ ≳ ω_z) red-detuned drive + spontaneous emission WITH the recoil
+// kernel. These build their OWN short-lived engines (same discipline as excitationPoint
+// / measureAsymmetry) so a scan is a clean experiment independent of the live engine.
+// Uses the ⁴⁰Ca⁺ 397 nm cooling geometry: drive η and emitted-photon η̃ both ≈0.178, σ.
+// Mirrors test/ion.test.mjs (M4). See MODULES.M4.note on the LD-validity boundary.
+// =============================================================================
+
+// A fresh Doppler engine: η(drive)=η̃(recoil)=0.178 (397 nm), recoil='kernel' σ, broad Γ.
+function dopplerEngine({ N = 12, Gamma, delta, Om, eta = 0.178 }) {
+  const s = new IonSystem({ N_FOCK: N, omegaZ: 1, delta, rabi: Om, mode: 'exact', lambdaNm: 397 });
+  const e0 = s.etaValue();                                   // η(397 nm,1 MHz) ≈ 0.178
+  s.setTrap({ nuTrapHz: 1e6 * (e0 / eta) * (e0 / eta) });    // pin η (moves η̃ with it)
+  s.setRecoil('kernel', { geometry: 'sigma', etaTilde: eta });
+  s.setSpontaneousEmission(true, Gamma);
+  return s;
+}
+
+// One n̄-vs-δ scan point: cool from a warm thermal state for a fixed time, return the
+// (near-)steady n̄. Fast + crude by design (the scan only needs the SHAPE / the minimum
+// near −Γ/2); the accurate floor readout uses dopplerFloorExtrap below.
+export function dopplerScanPoint({ N = 10, Gamma, Om, nInit, T = 260 }, delta) {
+  const s = dopplerEngine({ N, Gamma, delta, Om });
+  s.setThermal(nInit, 'g');
+  const nStep = 10, dt = T / nStep;
+  for (let i = 0; i < nStep; i++) s.step(dt);
+  return s.nBar();
+}
+
+// Accurate steady-state floor via 3-point single-exponential extrapolation (same as the
+// test): n(t)≈n_ss+B e^{−Wt} ⇒ n_ss = n₄+(n₄−n₃)·r/(1−r), r=(n₄−n₃)/(n₃−n₂).
+export function dopplerFloorExtrap({ N = 12, Gamma, Om, nInit, tSample = 220 }, delta) {
+  const s = dopplerEngine({ N, Gamma, delta, Om });
+  s.setThermal(nInit, 'g');
+  const p = [];
+  for (let k = 0; k < 4; k++) { s.step(tSample); p.push(s.nBar()); }
+  const r = (p[3] - p[2]) / (p[2] - p[1]);
+  let nSS = p[3];
+  if (r > 0 && r < 0.999) nSS = p[3] + (p[3] - p[2]) * r / (1 - r);
+  return { nSS, last: p[3] };
+}
+
+// δ grid for the scan: carrier-side → past −Γ (so the minimum near −Γ/2 is bracketed).
+export function dopplerScanGrid(Gamma, steps = 13) {
+  const dMin = -1.5 * Gamma, dMax = 0.5 * Gamma, g = [];
+  for (let i = 0; i < steps; i++) g.push(dMin + (dMax - dMin) * i / (steps - 1));
+  return g;
 }

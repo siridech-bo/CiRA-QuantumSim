@@ -103,6 +103,19 @@
 .m6-status.hot { color: var(--ion-red); }
 #m6-acstark { margin-top: 8px; }
 
+/* ===== M4 — Doppler-cooling floor readout (Phase 2, last module) ===== */
+.m4-readout {
+  font-size: 12px; line-height: 1.65; font-family: ui-monospace, Consolas, monospace;
+  color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 11px; background: var(--plot);
+}
+.m4-readout .lbl { color: var(--muted); }
+.m4-readout .big { font-size: 15px; font-weight: 700; }
+.m4-readout.hot { border-color: var(--ion-red); }
+.m4-readout .ld { color: var(--muted); font-size: 11px; margin-top: 6px; display: block; }
+#m4-opt { color: var(--muted); }
+#m4-note { margin-top: 8px; }
+
 .legend-row { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
 .legend-row .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 

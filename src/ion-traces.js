@@ -233,3 +233,73 @@ export class ExcitationSpectrum {
     ctx.textAlign = 'right'; ctx.fillText('δ / ω_z', w - 4, 12); ctx.textAlign = 'left';
   }
 }
+
+// ---------------------------------------------------------------------------
+// 5. DopplerScan (M4) — steady-state n̄ vs swept detuning δ. Consumes { delta[],
+// nbar[], Gamma }. Marks the optimum δ=−Γ/2 (dashed) and highlights the scan
+// minimum. The minimum sitting at −Γ/2, and n̄ rising toward the carrier (δ→0)
+// and running away on the blue side, is the whole M4 story in one plot.
+// ---------------------------------------------------------------------------
+export class DopplerScan {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.data = null;
+  }
+  set(data) { this.data = data; }
+  clear() { this.data = null; }
+  draw() {
+    const { ctx, canvas } = this;
+    const w = canvas.width, h = canvas.height;
+    const col = plotColors();
+    ctx.clearRect(0, 0, w, h);
+    const padL = 30, padR = 8, padB = 18, padT = 8;
+    if (!this.data || this.data.delta.length < 2) {
+      ctx.fillStyle = col.text; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('scan δ to map the Doppler floor n̄(δ)…', 8, h / 2); return;
+    }
+    const { delta, nbar, Gamma } = this.data;
+    const dMin = delta[0], dMax = delta[delta.length - 1];
+    const nMax = Math.max(1e-6, ...nbar) * 1.1;
+    const xOf = (d) => padL + ((d - dMin) / (dMax - dMin)) * (w - padL - padR);
+    const yOf = (n) => padT + (1 - n / nMax) * (h - padT - padB);
+
+    // y grid + axis
+    ctx.strokeStyle = col.line; ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // guides: carrier δ=0 and the Doppler optimum δ=−Γ/2
+    const half = -Gamma / 2;
+    const guides = [[0, col.ionCarrier, 'δ=0'], [half, col.ionRed, '−Γ/2']];
+    ctx.font = '9px system-ui, sans-serif'; ctx.textAlign = 'center';
+    for (const [d, cc, lbl] of guides) {
+      if (d < dMin || d > dMax) continue;
+      const x = xOf(d);
+      ctx.strokeStyle = cc; ctx.globalAlpha = 0.5; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, h - padB); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.fillStyle = cc;
+      ctx.fillText(lbl, x, h - 5);
+    }
+    ctx.textAlign = 'left';
+
+    // n̄(δ) curve
+    ctx.strokeStyle = col.accent; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i < delta.length; i++) {
+      const x = xOf(delta[i]), y = yOf(nbar[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // highlight the minimum
+    let mi = 0; for (let i = 1; i < nbar.length; i++) if (nbar[i] < nbar[mi]) mi = i;
+    ctx.fillStyle = col.ionRungG;
+    ctx.beginPath(); ctx.arc(xOf(delta[mi]), yOf(nbar[mi]), 4, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = col.text; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.fillStyle = col.text; ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText(`n̄_ss vs δ  (min at δ≈${delta[mi].toFixed(2)})`, 6, 12);
+    ctx.textAlign = 'right'; ctx.fillText('δ / ω_z', w - 4, 12); ctx.textAlign = 'left';
+  }
+}

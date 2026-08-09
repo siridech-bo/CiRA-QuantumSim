@@ -51,7 +51,7 @@
           <button class="mod-btn" data-module="M5">M5</button>
           <button class="mod-btn" data-module="M1">M1</button>
           <button class="mod-btn" data-module="M2">M2</button>
-          <button class="mod-btn" disabled title="Phase 2">M4</button>
+          <button class="mod-btn" data-module="M4">M4</button>
           <button class="mod-btn" data-module="M6">M6</button>
           <button class="mod-btn" disabled title="Phase 3">M7</button>
           <button class="mod-btn" disabled title="Phase 3">M8</button>
@@ -112,6 +112,29 @@
         <div class="thermo-readout" id="m6-acstark"></div>
       </div>
 
+      <!-- ===== M4 Doppler-cooling controls (engine; shown only for M4) ===== -->
+      <div class="side-group engine-only m4-only" id="m4-controls" hidden>
+        <div class="side-label">Doppler drive (broad Γ, red δ)</div>
+        <label class="slider-row"><span>Γ / ω_z</span>
+          <input id="m4-gamma" type="range" min="2" max="8" step="0.25" value="4" />
+          <span id="m4-gamma-val" class="val mono">4.0</span></label>
+        <label class="slider-row"><span>δ / ω_z</span>
+          <input id="m4-delta" type="range" min="-6" max="3" step="0.1" value="-2" />
+          <span id="m4-delta-val" class="val mono">−2.0</span></label>
+        <div class="module-desc" id="m4-opt">optimum δ = −Γ/2 = <b>−2.0</b></div>
+        <label class="slider-row"><span>Ω / ω_z</span>
+          <input id="m4-rabi" type="range" min="0.4" max="3" step="0.1" value="1.2" />
+          <span id="m4-rabi-val" class="val mono">1.2</span></label>
+        <label class="slider-row"><span>initial n̄</span>
+          <input id="m4-nbar0" type="range" min="0" max="8" step="0.5" value="4" />
+          <span id="m4-nbar0-val" class="val mono">4.0</span></label>
+        <div class="btn-row">
+          <button id="m4-cool" class="primary full">Start Doppler cooling</button>
+        </div>
+        <button id="m4-scan" class="full" style="margin-top:6px">Scan δ → n̄ floor map</button>
+        <div class="break-it">Break it: drag <code>δ</code> positive (blue) — friction reverses and the motion <b>heats</b> (watch n̄(t) climb).</div>
+      </div>
+
       <div class="side-group engine-only">
         <div class="side-label">Playback</div>
         <div class="btn-row">
@@ -161,7 +184,7 @@
           </select></label>
       </div>
 
-      <div class="side-group engine-only">
+      <div class="side-group engine-only hide-m4">
         <div class="side-label">Trap → η (computed)</div>
         <label class="slider-row"><span>λ (nm)</span>
           <select id="lambda" class="side-select" style="max-width:120px">
@@ -174,7 +197,7 @@
         <div class="module-desc" id="eta-readout"></div>
       </div>
 
-      <div class="side-group engine-only">
+      <div class="side-group engine-only hide-m4">
         <div class="side-label">Dissipators <span class="tag">Lindblad</span></div>
         <label class="check"><input type="checkbox" id="chk-se" /> spontaneous emission Γ_eff</label>
         <label class="slider-row"><span>Γ_eff</span>
@@ -197,7 +220,7 @@
           </select></label>
       </div>
 
-      <div class="side-group engine-only">
+      <div class="side-group engine-only hide-m4">
         <div class="side-label">Truncation</div>
         <label class="slider-row"><span>N_FOCK</span>
           <input id="nfock" type="range" min="8" max="30" step="1" value="20" />
@@ -295,6 +318,27 @@
         <div class="m6-status" id="m6-status">
           <span>Fire a carrier gate — the arrow rotates about <b>x</b>. n̄ stays ≈0 while Ω≪ω_z.</span>
         </div>
+      </section>
+
+      <!-- ===== M4 — Doppler cooling: n̄-vs-δ floor map + readout ===== -->
+      <section id="m4-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Doppler cooling — friction vs recoil heating</h2>
+          <span class="subtitle">broad Γ ≳ ω_z (sidebands unresolved), red-detuned δ&lt;0 + spontaneous emission with the recoil kernel. Watch n̄(t) on the right cool to the floor; scan δ to see the minimum at −Γ/2.</span>
+        </div>
+        <div class="mode-body">
+          <div class="mode-cell">
+            <div class="mode-cap">steady-state n̄ vs detuning δ (minimum at δ=−Γ/2; blue side heats)</div>
+            <canvas id="m4-scan-canvas" width="620" height="300"></canvas>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap">measured floor vs the canonical Doppler limit</div>
+            <div class="m4-readout" id="m4-readout">
+              <span class="lbl">Press <b>Scan δ → n̄ floor map</b> to measure the Doppler floor and compare it to the textbook <code>Γ/2ω_z</code>.</span>
+            </div>
+          </div>
+        </div>
+        <div class="break-it" id="m4-note"></div>
       </section>
     </main>
 

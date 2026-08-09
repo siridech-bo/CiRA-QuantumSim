@@ -8,13 +8,14 @@
 // =============================================================================
 import { IonSystem } from './ion.js';
 import { LevelDiagram } from './ion-levels.js';
-import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum } from './ion-traces.js';
+import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum, DopplerScan } from './ion-traces.js';
 import { DensityHeatmap } from './heatmap.js';
 import { BlochScene } from './scene.js';
 import { invalidatePlotColors } from './theme.js';
 import {
   MODULES, ModuleTabs, wireSlider, prepareState,
   excitationPoint, scanGrid, measureAsymmetry, measureFFT,
+  dopplerScanPoint, dopplerFloorExtrap, dopplerScanGrid,
 } from './ion-ui.js';
 import { MathieuView, ChainView } from './ion-modes-ui.js';
 import {
@@ -30,6 +31,7 @@ const params = {
   recoil: 'none', recoilGeom: 'sigma',
   prep: { kind: 'thermal', param: 2.0 },
   m6: { rabi: 0.20, delta: 0.30, theta: 1.0 },   // M6: pulse Ω, AC-Stark δ, angle θ·π
+  m4: { Gamma: 4, delta: -2, rabi: 1.2, nbar0: 4 },  // M4 Doppler: broad Γ, red δ, Ω, initial n̄
 };
 let sys = buildEngine();
 
@@ -55,6 +57,7 @@ const peTrace = new PeTrace(document.getElementById('pe-canvas'));
 const fluorTrace = new FluorescenceTrace(document.getElementById('fluor-canvas'), { binTime: 1.5 });
 const nbarTrace = new NbarTrace(document.getElementById('nbar-canvas'));
 const excSpectrum = new ExcitationSpectrum(document.getElementById('spectrum-canvas'));
+const m4Scan = new DopplerScan(document.getElementById('m4-scan-canvas'));
 const heatmap = new DensityHeatmap(document.getElementById('heatmap-canvas'));
 const obsEl = document.getElementById('obs-readout');
 const truncEl = document.getElementById('trunc-warn');
@@ -63,7 +66,9 @@ const truncEl = document.getElementById('trunc-warn');
 const state = {
   playing: false, speed: 1, classical: false, module: 'M3',
   stepBudget: 6, dwell: 0.4, sampleAccum: 0,
-  scanQueue: null,      // { grid, i, cfg, delta[], pe[] } while scanning δ
+  scanQueue: null,      // { grid, i, cfg, delta[], pe[] } while scanning δ (M3)
+  m4scan: null,         // { grid, i, cfg, delta[], nbar[] } while scanning the Doppler floor (M4)
+  m4prevSys: null,      // stashed pre-M4 engine (M4 swaps in its own dedicated engine)
   m6gate: null,         // { kind, tTotal, tElapsed, theta } while an M6 gate runs
 };
 let lastHeatMs = 0;
@@ -129,6 +134,7 @@ function drawDiagram() {
 function refresh(full = false) {
   drawDiagram();
   peTrace.draw(); fluorTrace.draw(); nbarTrace.draw(); excSpectrum.draw();
+  if (state.module === 'M4') m4Scan.draw();   // recolors the floor map on theme toggle
   drawObservables(); drawTrunc();
   const now = performance.now();
   if (full || now - lastHeatMs > 1000 / HEAT_HZ) { heatmap.draw(nestedRhoAbs()); lastHeatMs = now; }
@@ -275,10 +281,87 @@ function setM6Status(html, hot = false) {
   el.classList.toggle('hot', hot);
 }
 
+// ---- M4: Doppler cooling ----------------------------------------------------
+// M4 runs on its OWN engine instance (swapped into `sys` while the tab is active,
+// restored on leave) so it never contaminates the M3/M5 drive/dissipator params —
+// its broad Γ would otherwise break M5's resolved-sideband cooling. Config = the
+// ⁴⁰Ca⁺ 397 nm cooling geometry (drive η = emitted-photon η̃ ≈ 0.178 at λ=397 nm,
+// ν_z=1 MHz, σ), broad linewidth Γ ≳ ω_z, spontaneous emission WITH the recoil
+// kernel, and a warm thermal seed. Same physics the M4 test + scan helper use.
+function buildDopplerEngine() {
+  const s = new IonSystem({
+    N_FOCK: params.N, omegaZ: 1, delta: params.m4.delta, rabi: params.m4.rabi,
+    mode: 'exact', lambdaNm: 397,                 // η = η̃ ≈ 0.178 at ν_z = 1 MHz
+  });
+  s.setRecoil('kernel', { geometry: 'sigma' });
+  s.setSpontaneousEmission(true, params.m4.Gamma);  // broad Γ (independent of the 0–1 slider)
+  s.setThermal(params.m4.nbar0, 'g');               // warm start
+  return s;
+}
+
+// Update the "optimum δ = −Γ/2" marker + warn when the user has detuned blue.
+function updateM4Opt() {
+  const opt = -params.m4.Gamma / 2;
+  const el = document.getElementById('m4-opt');
+  if (params.m4.delta > 0) {
+    el.innerHTML = `⚠ blue detuning (δ=+${params.m4.delta.toFixed(1)}) — friction reversed, motion <b>heats</b>`;
+    el.classList.add('hot');
+  } else {
+    el.innerHTML = `optimum δ = −Γ/2 = <b>${opt.toFixed(1)}</b>`;
+    el.classList.remove('hot');
+  }
+}
+
+function setM4Readout(html, hot = false) {
+  const el = document.getElementById('m4-readout');
+  el.innerHTML = html;
+  el.classList.toggle('hot', hot);
+}
+
+// Kick off the live cooling run (or the blue-detuned heating "break it"): rebuild
+// the M4 engine so the curve starts from a fresh warm state, then play.
+function m4StartCooling() {
+  sys = buildDopplerEngine();
+  calibrateStepBudget();
+  peTrace.clear(); fluorTrace.clear(); nbarTrace.clear();
+  state.playing = true; playBtn.textContent = '⏸ Pause';
+  const heating = params.m4.delta > 0;
+  document.getElementById('m4-note').innerHTML = heating
+    ? '⚠ δ>0 (blue): the motion is HEATING — n̄(t) climbs. Drag δ back to −Γ/2 to cool.'
+    : `cooling: red-detuned δ=${params.m4.delta.toFixed(1)}, broad Γ=${params.m4.Gamma.toFixed(1)}. Watch n̄(t) fall to the floor (right).`;
+  refresh(true);
+}
+
+// Finish the δ-scan: render the n̄(δ) map, then measure an ACCURATE floor at −Γ/2
+// (single-exponential extrapolation, same as the test) and report it against the
+// canonical Doppler limit Γ/2ω_z with the honest coefficient c and the LD caveat.
+function m4FinishScan(q) {
+  m4Scan.set({ delta: q.delta, nbar: q.nbar, Gamma: q.cfg.Gamma });
+  m4Scan.draw();
+  const G = q.cfg.Gamma, half = -G / 2, canonical = G / 2;
+  const { nSS } = dopplerFloorExtrap({ N: 12, Gamma: G, Om: q.cfg.Om, nInit: Math.max(1.5, G / 3), tSample: 220 }, half);
+  const c = nSS / canonical;
+  const ld = 0.178 * 0.178 * (2 * nSS + 1);
+  setM4Readout(
+    `<div><span class="lbl">measured floor at δ=−Γ/2:</span> <span class="big">n̄_ss ≈ ${nSS.toFixed(2)}</span></div>` +
+    `<div><span class="lbl">canonical Doppler limit Γ/2ω_z:</span> ${canonical.toFixed(2)}</div>` +
+    `<div><span class="lbl">honest coefficient c = n̄_ss/(Γ/2ω_z):</span> <b>${c.toFixed(2)}</b></div>` +
+    `<span class="ld">LD-valid: η̃²(2n̄+1)=${ld.toFixed(2)} ≲ 0.2 ✓. The partially-resolved sideband over-cools below the ` +
+    `asymptote, so c&lt;1; c→1 only as Γ/ω_z→large (⁴⁰Ca⁺ n̄≈10.8), exactly where this O(η̃²) kernel breaks down.</span>`);
+  document.getElementById('m4-note').innerHTML =
+    `floor mapped: minimum near δ=−Γ/2=${half.toFixed(1)}, rising toward the carrier and running away on the blue side.`;
+}
+
+const m4Panel = document.getElementById('m4-panel');
 const m6Panel = document.getElementById('m6-panel');
 const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const m = MODULES[id];
+  const prev = state.module;
   state.module = id;
+
+  // Leaving M4: restore the pre-M4 engine so M3/M5/M6 are untouched by the swap.
+  if (prev === 'M4' && id !== 'M4' && state.m4prevSys) { sys = state.m4prevSys; state.m4prevSys = null; }
+
   document.getElementById('module-desc').innerHTML = `<b>${m.name}</b> — ${m.desc}`;
   document.getElementById('break-it').innerHTML = m.breakIt;
   moduleActions.querySelectorAll('[data-for]').forEach((el) =>
@@ -286,26 +369,33 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
 
   const classical = !!m.classical;
   const isM6 = id === 'M6';
+  const isM4 = id === 'M4';
   state.classical = classical;
-  if (classical || isM6) { state.playing = false; playBtn.textContent = '▶ Play'; }
+  if (classical || isM6 || isM4) { state.playing = false; playBtn.textContent = '▶ Play'; }
   if (!isM6) state.m6gate = null;
+  if (!isM4) state.m4scan = null;
 
-  // toggle side-groups: engine controls vs classical controls. M6 is engine-based
-  // but swaps the M3/M5 drive/state/diagram groups for its own gate controls.
+  // toggle side-groups: engine controls vs classical controls. M4 and M6 are
+  // engine-based but swap the M3/M5 drive/state/diagram groups for their own controls.
   document.querySelectorAll('.engine-only').forEach((el) => { el.hidden = classical; });
-  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6; });
+  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6 || isM4; });
   document.getElementById('m6-controls').hidden = classical || !isM6;
+  document.getElementById('m4-controls').hidden = classical || !isM4;
+  // M4 runs its own dedicated engine → hide the shared trap/dissipator/truncation
+  // controls (they target the M3/M5 engine) to avoid desyncing the swapped engine.
+  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4; });
   document.getElementById('m1-controls').hidden = id !== 'M1';
   document.getElementById('m2-controls').hidden = id !== 'M2';
 
-  // toggle center panels. M6 keeps the right sidebar (engine readouts) → NOT
-  // mode-classical, but shows the Bloch sphere instead of the level diagram.
+  // toggle center panels. M4/M6 keep the right sidebar (engine readouts) → NOT
+  // mode-classical, but show their own panel instead of the level diagram.
   appShell.classList.toggle('mode-classical', classical);
-  levelsPanel.hidden = classical || isM6;
-  moduleActions.hidden = classical || isM6;
+  levelsPanel.hidden = classical || isM6 || isM4;
+  moduleActions.hidden = classical || isM6 || isM4;
   m1Panel.hidden = id !== 'M1';
   m2Panel.hidden = id !== 'M2';
   m6Panel.hidden = !isM6;
+  m4Panel.hidden = !isM4;
 
   // stop the inactive classical view; show/refresh the active one
   if (id === 'M1') { ensureMathieuView().show(); } else if (mathieuView) mathieuView.hide();
@@ -316,6 +406,24 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
     peTrace.clear(); fluorTrace.clear(); nbarTrace.clear();
     m6ResetEngine();
     setM6Status('<span class="k">ready</span> — fire a carrier gate; the arrow rotates about <b>x</b>. n̄ stays ≈0 while Ω≪ω_z.');
+    refresh(true);
+  }
+
+  if (isM4) {
+    if (!state.m4prevSys) state.m4prevSys = sys;    // stash the M3/M5/M6 engine
+    sys = buildDopplerEngine();                     // dedicated Doppler engine (broad Γ, red δ, recoil)
+    calibrateStepBudget();
+    peTrace.clear(); fluorTrace.clear(); nbarTrace.clear();
+    m4Scan.clear();
+    updateM4Opt();
+    updateEta();
+    document.getElementById('m4-note').innerHTML =
+      'Press <b>Start Doppler cooling</b> to cool the warm ion to the floor, or <b>Scan δ</b> to map n̄(δ).';
+    setM4Readout('<span class="lbl">Press <b>Scan δ → n̄ floor map</b> to measure the Doppler floor and compare it to the textbook <code>Γ/2ω_z</code>.</span>');
+    refresh(true);
+    m4Scan.draw();
+  } else if (!classical && !isM6) {
+    // Entering M3/M5 (incl. from M4): redraw the level diagram with the live engine.
     refresh(true);
   }
 });
@@ -374,7 +482,11 @@ document.getElementById('coupling-mode').addEventListener('change', (e) => {
 // -- trap → η --
 function updateEta() {
   const el = document.getElementById('eta-readout');
-  el.innerHTML = `η = <b>${sys.etaValue().toFixed(4)}</b> &nbsp; (λ=${params.lambdaNm} nm, ν_z=${(params.nuTrapHz / 1e6).toFixed(1)} MHz, ${params.massU} u). Stiffer trap ⇒ smaller η.`;
+  // η is read from the LIVE engine (truthful even while M4 runs on its 397 nm engine).
+  const inM4 = state.module === 'M4';
+  const lam = inM4 ? 397 : params.lambdaNm, nu = inM4 ? 1.0 : params.nuTrapHz / 1e6;
+  el.innerHTML = `η = <b>${sys.etaValue().toFixed(4)}</b> &nbsp; (λ=${lam} nm, ν_z=${nu.toFixed(1)} MHz, ${params.massU} u).` +
+    (inM4 ? ' <span class="muted-tag">M4: 397 nm cooling, η=η̃</span>' : ' Stiffer trap ⇒ smaller η.');
 }
 document.getElementById('lambda').addEventListener('change', (e) => {
   params.lambdaNm = parseFloat(e.target.value); sys.setTrap({ lambdaNm: params.lambdaNm }); updateEta(); refresh();
@@ -470,6 +582,40 @@ document.getElementById('m6-measure').addEventListener('click', () => {
   }, 30);
 });
 
+// -- M4: Doppler cooling --
+// M4 drives its OWN swapped Doppler engine (sys.* while active) and stores its
+// broad values in params.m4.* only. It must NOT write the shared
+// params.gamma/delta/rabi — those belong to the M3/M5 engine and are not
+// restored on M4 leave, so leaking M4's broad Γ/δ/Ω into them re-contaminates
+// M5's resolved-sideband cooling on a later SE-toggle or N_FOCK rebuild.
+wireSlider('m4-gamma', (v) => {
+  params.m4.Gamma = v;
+  if (state.module === 'M4') sys.setSpontaneousEmission(true, v);
+  updateM4Opt();
+}, (v) => v.toFixed(1));
+wireSlider('m4-delta', (v) => {
+  params.m4.delta = v;
+  if (state.module === 'M4') sys.setDetuning(v);
+  updateM4Opt();
+}, (v) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(1));
+wireSlider('m4-rabi', (v) => {
+  params.m4.rabi = v;
+  if (state.module === 'M4' && !state.m4scan) sys.setRabi(v);
+}, (v) => v.toFixed(1));
+wireSlider('m4-nbar0', (v) => { params.m4.nbar0 = v; }, (v) => v.toFixed(1));
+document.getElementById('m4-cool').addEventListener('click', m4StartCooling);
+
+// Chunked Doppler-floor δ-scan (stays responsive), then an accurate extrapolated
+// floor at −Γ/2 for the readout vs the canonical Γ/2ω_z.
+document.getElementById('m4-scan').addEventListener('click', () => {
+  state.playing = false; playBtn.textContent = '▶ Play';
+  const G = params.m4.Gamma;
+  const grid = dopplerScanGrid(G, 13);
+  const cfg = { N: 10, Gamma: G, Om: params.m4.rabi, nInit: Math.max(2, G / 2), T: 260 };
+  state.m4scan = { grid, i: 0, cfg, delta: [], nbar: [] };
+  setM4Readout('<span class="lbl">scanning δ to map n̄(δ)… (~15 s, the tab pauses briefly)</span>');
+});
+
 // =============================================================================
 // Canvas sizing for the crisp level diagram (fill its wrapper).
 // =============================================================================
@@ -495,6 +641,21 @@ function frame() {
   if (state.module === 'M6') {
     if (state.m6gate) m6StepGate();
     if (m6Scene) m6Scene.render();
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  // Chunked Doppler-floor δ-scan (M4): a couple of cooling runs per frame → n̄(δ) map.
+  if (state.m4scan) {
+    const q = state.m4scan;
+    const perFrame = 2;
+    for (let k = 0; k < perFrame && q.i < q.grid.length; k++, q.i++) {
+      const d = q.grid[q.i];
+      q.delta.push(d); q.nbar.push(dopplerScanPoint(q.cfg, d));
+    }
+    m4Scan.set({ delta: q.delta, nbar: q.nbar, Gamma: q.cfg.Gamma });
+    m4Scan.draw();
+    if (q.i >= q.grid.length) { const done = q; state.m4scan = null; m4FinishScan(done); }
     requestAnimationFrame(frame);
     return;
   }
