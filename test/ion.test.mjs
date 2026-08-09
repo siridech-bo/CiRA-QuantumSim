@@ -541,5 +541,152 @@ function asymmetryNbar(nbarSet, { N = 18, eta = 0.3, Om = 0.03, tPulse = 25 } = 
 }
 
 // =============================================================================
+// Phase 2c — Spontaneous-emission RECOIL KERNEL (docs/ion-recoil-kernel-physics.md).
+// Adds the recoil-resolved dissipator: recoil='none' = motion-preserving √Γ σ⁻⊗I
+// (Phase-1 default); recoil='kernel' = the three-operator Lamb–Dicke O(η̃²) form
+//   c₀=√(Γ(1−2ξη̃²))σ⁻⊗I,  c₋=√(Γξη̃²)σ⁻⊗a,  c₊=√(Γξη̃²)σ⁻⊗a† .
+// ξ = dipole projection: σ=2/5 (default), π=1/5, iso=1/3. η̃ = emitted-photon LD
+// parameter (397 nm ⇒ ≈0.178), SEPARATE from the drive η. Recoil heats the motion —
+// it lifts the cooling floor (the reason the exact T14 prefactor is not asserted).
+// =============================================================================
+
+// Fully decay |e,n⟩ under spontaneous emission ONLY (no drive) and return the final
+// motional readout. With the qubit ending in |g⟩ (dark), all population is stationary.
+function decayFromE(n, { recoil = 'none', geometry = 'sigma', Gamma = 0.4, N = 8, T = 120 } = {}) {
+  const s = new IonSystem({ N_FOCK: N, rabi: 0, delta: 0, mode: 'exact' });
+  s.setRecoil(recoil, { geometry });
+  s.setSpontaneousEmission(true, Gamma);
+  s.setFock(n, 'e');
+  s.step(T);
+  return { nbar: s.nBar(), pg: s.populations().g, pe: s.pExcited(), sys: s };
+}
+
+// -----------------------------------------------------------------------------
+// R1 — CPTP / invariants with the kernel ACTIVE (SE recoil='kernel' + bath + dephasing).
+// -----------------------------------------------------------------------------
+{
+  const sys = new IonSystem({ N_FOCK: 8, omegaZ: 1, delta: -1, rabi: 0.3, mode: 'exact' });
+  sys.setRecoil('kernel', { geometry: 'sigma' });
+  sys.setSpontaneousEmission(true, 0.08);
+  sys.setMotionalBath(true, { heating: 0.02, nBath: 0.5 });
+  sys.setDephasing(true, 0.03);
+  sys.setFock(2, 'e');
+
+  const checkpoints = [['init', rhoMathMatrix(sys)]];
+  sys.step(3);  checkpoints.push(['driven t=3', rhoMathMatrix(sys)]);
+  sys.step(5);  checkpoints.push(['driven t=8', rhoMathMatrix(sys)]);
+  sys.setRabi(0); sys.step(15); checkpoints.push(['decay t=23', rhoMathMatrix(sys)]);
+
+  let allOk = true, worstTr = 0, worstHerm = 0, worstNeg = 0;
+  for (const [label, M] of checkpoints) {
+    const tr = traceReal(M), herm = maxHermitianDeviation(M), minEig = minEigenvalue(M);
+    worstTr = Math.max(worstTr, Math.abs(tr - 1));
+    worstHerm = Math.max(worstHerm, herm);
+    worstNeg = Math.min(worstNeg, minEig);
+    const ok = Math.abs(tr - 1) < 1e-6 && herm < 1e-9 && minEig > -1e-8;
+    if (!ok) { allOk = false; console.log(`      [${label}] tr=${tr}, herm=${herm}, minEig=${minEig}`); }
+  }
+  report('R1 kernel CPTP invariants (Tr=1, Hermitian, PSD) w/ SE+bath+dephasing', allOk,
+    `max|Tr−1|=${worstTr.toExponential(2)}, maxHermDev=${worstHerm.toExponential(2)}, minEig=${worstNeg.toExponential(2)}`);
+}
+
+// -----------------------------------------------------------------------------
+// R2 — Recoil heats the motion. From |e,0⟩, SE only. 'none' ⇒ |g,0⟩ (n̄≈0). 'kernel'
+// (σ, η̃≈0.178) ⇒ the c₊ recoil deposits one phonon on decay ⇒ n̄ = ξη̃²/(1−ξη̃²) > 0.
+// -----------------------------------------------------------------------------
+{
+  const none = decayFromE(0, { recoil: 'none' });
+  const kern = decayFromE(0, { recoil: 'kernel', geometry: 'sigma' });
+  const etaT = kern.sys.etaTildeValue(), xi = kern.sys.geometryFactor();
+  const s = xi * etaT * etaT;
+  const nExpect = s / (1 - s);                       // branching to |g,1⟩ on decay
+  const relErr = Math.abs(kern.nbar - nExpect) / nExpect;
+  const ok = none.nbar < 1e-9 && none.pe < 1e-6 && kern.pe < 1e-6 &&
+             kern.nbar > 1e-3 && kern.nbar > 1e4 * (none.nbar + 1e-30) && relErr < 0.05;
+  report('R2 recoil heats motion: |e,0⟩→ none n̄≈0, kernel n̄=ξη̃²/(1−ξη̃²)>0', ok,
+    `none n̄=${none.nbar.toExponential(2)}; kernel(σ) n̄=${kern.nbar.toExponential(4)} ` +
+    `vs ξη̃²/(1−ξη̃²)=${nExpect.toExponential(4)} (${(relErr * 100).toFixed(2)}%); ξ=${xi.toFixed(3)}, η̃=${etaT.toFixed(4)}`);
+}
+
+// -----------------------------------------------------------------------------
+// R3 — Up/down asymmetry + (2n+1) scaling. From |e,n⟩ the phonon-changing branching
+// P(Δn≠0)=1−P_g(n) = ξη̃²(2n+1)/(1+ξη̃²(2n−1)) ≈ ξη̃²(2n+1) grows ∝(2n+1); and the ADD
+// channel c₊∝(n+1) beats the REMOVE channel c₋∝n ⇒ P_g(n+1) > P_g(n−1).
+// -----------------------------------------------------------------------------
+{
+  let ok = true, details = [];
+  const fracs = {};
+  let asymOk = true;
+  for (const n of [1, 2, 3]) {
+    const r = decayFromE(n, { recoil: 'kernel', geometry: 'sigma', N: 10 });
+    const changed = 1 - r.pg[n];                     // left the initial n
+    fracs[n] = changed;
+    if (!(r.pg[n + 1] > r.pg[n - 1])) asymOk = false; // add > remove
+    details.push(`n=${n}: P(Δn≠0)=${changed.toExponential(3)}, P_g(${n + 1})=${r.pg[n + 1].toExponential(2)}>P_g(${n - 1})=${r.pg[n - 1].toExponential(2)}`);
+  }
+  // (2n+1) scaling: frac(n)/frac(1) ≈ (2n+1)/3.
+  const r2 = fracs[2] / fracs[1], r3 = fracs[3] / fracs[1];
+  const scale2Ok = Math.abs(r2 - 5 / 3) / (5 / 3) < 0.08;
+  const scale3Ok = Math.abs(r3 - 7 / 3) / (7 / 3) < 0.08;
+  const growsOk = fracs[3] > fracs[2] && fracs[2] > fracs[1];
+  ok = asymOk && scale2Ok && scale3Ok && growsOk;
+  report('R3 up/down asymmetry: c₊∝(n+1)>c₋∝n, P(Δn≠0)∝(2n+1)', ok,
+    `${details.join('; ')}; frac ratios n2/n1=${r2.toFixed(3)}(~5/3), n3/n1=${r3.toFixed(3)}(~7/3)`);
+}
+
+// -----------------------------------------------------------------------------
+// R4 — Geometry ratio: recoil heating with σ (ξ=2/5) ≈ 2× that with π (ξ=1/5).
+// -----------------------------------------------------------------------------
+{
+  const sig = decayFromE(0, { recoil: 'kernel', geometry: 'sigma' });
+  const pi  = decayFromE(0, { recoil: 'kernel', geometry: 'pi' });
+  const ratio = sig.nbar / pi.nbar;
+  const ok = Math.abs(ratio - 2) < 0.1;
+  report('R4 geometry: σ(ξ=2/5) recoil heating ≈ 2× π(ξ=1/5)', ok,
+    `n̄(σ)=${sig.nbar.toExponential(4)}, n̄(π)=${pi.nbar.toExponential(4)}, ratio=${ratio.toFixed(4)} (≈2)`);
+}
+
+// -----------------------------------------------------------------------------
+// R5 — Default unchanged: recoil defaults to 'none'; |e,0⟩→|g,0⟩ leaves n̄≈0.
+// -----------------------------------------------------------------------------
+{
+  const s = new IonSystem({});
+  const defOk = s.recoilMode() === 'none';
+  const dec = decayFromE(0, { recoil: 'none' });
+  const ok = defOk && dec.nbar < 1e-9;
+  report('R5 default recoil=none; |e,0⟩→|g,0⟩ (n̄≈0) backward-compat', ok,
+    `default recoil='${s.recoilMode()}'; decay n̄=${dec.nbar.toExponential(2)}`);
+}
+
+// -----------------------------------------------------------------------------
+// R6 — Cooling floor: RSB sideband cooling with recoil='kernel' reaches a HIGHER
+// floor than recoil='none' (recoil heating), still ∝(Γ_eff/ω_z)² scaling. We assert
+// kernel > none and both cooled — NOT the O(1) prefactor (recoil doc §4).
+// -----------------------------------------------------------------------------
+{
+  const coolFloor = (recoil, GammaEff = 0.15, T = 900) => {
+    const eta = 0.25, Om = 0.5 * GammaEff / eta;
+    const s = ionWithEta(eta, 12, 'exact');
+    s.setRabi(Om); s.setDetuning(-1);
+    s.setRecoil(recoil, { geometry: 'sigma' });
+    s.setSpontaneousEmission(true, GammaEff);
+    s.setThermal(2.0, 'g');
+    const nStep = 24, dt = T / nStep;
+    for (let i = 0; i < nStep; i++) s.step(dt);
+    return s.nBar();
+  };
+  const floorNone = coolFloor('none');
+  const floorKern = coolFloor('kernel');
+  // scaling check for the kernel: floor(0.2)/floor(0.1) super-linear (≈ quadratic).
+  const kA = coolFloor('kernel', 0.1, 900), kB = coolFloor('kernel', 0.2, 600);
+  const scaleRatio = kB / kA;
+  const ok = floorKern > floorNone && floorNone < 2.0 && floorKern < 2.0 &&
+             scaleRatio > 3 && scaleRatio < 14;
+  report('R6 cooling floor: kernel lifts floor above none, still ∝(Γ/ω_z)²', ok,
+    `n̄_ss none=${floorNone.toExponential(3)}, kernel=${floorKern.toExponential(3)} (kernel>none); ` +
+    `kernel scaling floor(0.2)/floor(0.1)=${scaleRatio.toFixed(2)} (∈[3,14])`);
+}
+
+// =============================================================================
 console.log(`\n${passes} passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);

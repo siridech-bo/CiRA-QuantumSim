@@ -27,6 +27,7 @@ const params = {
   delta: -1, rabi: 0.30, mode: 'exact',
   gamma: 0.10, heating: 0.02, nBath: 1, gammaPhi: 0.05,
   seOn: false, bathOn: false, dephaseOn: false,
+  recoil: 'none', recoilGeom: 'sigma',
   prep: { kind: 'thermal', param: 2.0 },
   m6: { rabi: 0.20, delta: 0.30, theta: 1.0 },   // M6: pulse Ω, AC-Stark δ, angle θ·π
 };
@@ -38,6 +39,7 @@ function buildEngine() {
     omegaZ: 1, delta: params.delta, rabi: params.rabi, mode: params.mode,
     Gamma: params.gamma, heating: params.heating, nBath: params.nBath, gammaPhi: params.gammaPhi,
   });
+  s.setRecoil(params.recoil, { geometry: params.recoilGeom });
   s.setSpontaneousEmission(params.seOn, params.gamma);
   s.setMotionalBath(params.bathOn, { heating: params.heating, nBath: params.nBath });
   s.setDephasing(params.dephaseOn, params.gammaPhi);
@@ -386,6 +388,8 @@ document.getElementById('chk-bath').addEventListener('change', (e) => { params.b
 wireSlider('heating', (v) => { params.heating = v; sys.setMotionalBath(params.bathOn, { heating: params.heating, nBath: params.nBath }); refresh(); }, (v) => v.toFixed(3));
 document.getElementById('chk-dephase').addEventListener('change', (e) => { params.dephaseOn = e.target.checked; sys.setDephasing(params.dephaseOn, params.gammaPhi); calibrateStepBudget(); refresh(); });
 wireSlider('gammaphi', (v) => { params.gammaPhi = v; sys.setDephasing(params.dephaseOn, params.gammaPhi); refresh(); });
+document.getElementById('chk-recoil').addEventListener('change', (e) => { params.recoil = e.target.checked ? 'kernel' : 'none'; sys.setRecoil(params.recoil, { geometry: params.recoilGeom }); calibrateStepBudget(); refresh(); });
+document.getElementById('recoil-geom').addEventListener('change', (e) => { params.recoilGeom = e.target.value; sys.setRecoil(params.recoil, { geometry: params.recoilGeom }); refresh(); });
 
 // -- N_FOCK (structural rebuild) --
 wireSlider('nfock', (v) => {

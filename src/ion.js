@@ -163,20 +163,52 @@ export class IonSystem {
     this.bathOn   = !!opts.bathOn;     // motional bath (heating)
     this.dephaseOn= !!opts.dephaseOn;  // pure dephasing
 
+    // ---- Spontaneous-emission RECOIL mode (Phase 2c; docs/ion-recoil-kernel-physics.md) --
+    //   'none'   = the Phase-1 motion-preserving operator √Γ σ⁻⊗I (DEFAULT, unchanged).
+    //   'kernel' = three-operator Lamb–Dicke O(η̃²) recoil kernel (RMP Eqs.87–88; Phatak 8–9).
+    // geometry sets the dipole projection ξ (recoil doc §crux): σ=2/5, π=1/5, iso=1/3.
+    // η̃ = EMITTED-photon Lamb–Dicke parameter (recoil doc §2), SEPARATE from the drive η —
+    // computed from the emission wavelength (⁴⁰Ca⁺ 397 nm ⇒ η̃≈0.178) via the same
+    // k·√(ħ/2mω_z) formula, or overridden directly with opts.etaTilde.
+    this.recoil      = opts.recoil      || 'none';
+    this.geometry    = opts.geometry    || 'sigma';
+    this.emitLambdaNm= opts.emitLambdaNm!== undefined ? opts.emitLambdaNm : 397;
+    this._etaTildeOverride = opts.etaTilde;   // undefined ⇒ compute from emitLambdaNm
+
     // η computed from real SI quantities (spec §2.8).
     this.eta = this._computeEta();
+    this._refreshEtaTilde();
 
     this._build();
     this.reset();
   }
 
   // ---- Lamb–Dicke parameter from real quantities: η = k·√(ħ/2mω_z) ----------
-  _computeEta() {
-    const k = 2 * Math.PI / (this.lambdaNm * 1e-9);   // wavevector (1/m)
+  _computeEtaFor(lambdaNm) {
+    const k = 2 * Math.PI / (lambdaNm * 1e-9);         // wavevector (1/m)
     const m = this.massU * U;                          // mass (kg)
     const omega = 2 * Math.PI * this.nuTrapHz;         // trap ang. freq (rad/s)
     const x0 = Math.sqrt(HBAR / (2 * m * omega));      // ground-state extent (m)
     return k * x0;
+  }
+  _computeEta() { return this._computeEtaFor(this.lambdaNm); }
+
+  // Emitted-photon Lamb–Dicke parameter η̃ (recoil doc §2): same formula, emission
+  // wavelength. Overridable via opts.etaTilde; else tracks emitLambdaNm + trap.
+  _refreshEtaTilde() {
+    this.etaTilde = this._etaTildeOverride !== undefined
+      ? this._etaTildeOverride
+      : this._computeEtaFor(this.emitLambdaNm);
+  }
+
+  // Dipole angular-projection factor ξ = ⟨(n̂·ẑ)²⟩ (recoil doc §crux, orientation-dependent).
+  _xiFactor() {
+    switch (this.geometry) {
+      case 'pi':  return 1 / 5;   // dipole ∥ z (Δm=0)
+      case 'iso': return 1 / 3;   // orientation-averaged
+      case 'sigma':               // dipole ⊥ z (Δm=±1) — RMP default
+      default:    return 2 / 5;
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -342,14 +374,35 @@ export class IonSystem {
   //   motional bath: L₋=√(κ(n̄+1)) a, L₊=√(κ n̄) a†,  κ = (dn̄/dt)/n̄_bath
   //   pure dephasing: L_φ = √(γ_φ/2) σz ⊗ I
   // Precompute the collapse operators + halfA = ½ Σ_c L_c†L_c.
-  // (The recoil-kernel spontaneous emission is DEFERRED to Phase 2 per the
-  //  locked decisions — a candidate claim was refuted in the research pass.)
+  //
+  // Spontaneous-emission recoil (Phase 2c, docs/ion-recoil-kernel-physics.md §3):
+  //   recoil='none'   → the single motion-preserving √Γ σ⁻⊗I (DEFAULT, Phase 1).
+  //   recoil='kernel' → REPLACE it with the three-operator Lamb–Dicke O(η̃²) form
+  //     c₀ = √(Γ(1−2ξη̃²)) σ⁻⊗I   (motion-preserving decay, Debye–Waller counter-term)
+  //     c₋ = √(Γ ξ η̃²)     σ⁻⊗a    (recoil removes one phonon; rate ∝ n)
+  //     c₊ = √(Γ ξ η̃²)     σ⁻⊗a†   (recoil adds one phonon;   rate ∝ n+1)
+  //   σ⁻⊗a = sm·a and σ⁻⊗a† = sm·a† (sm acts on the qubit, a on motion — they commute),
+  //   so in idx=s·N+n these lower e→g while a shifts n∓1. The (1−2ξη̃²) in c₀ is the
+  //   trace-preserving counter-term to c±; DO NOT also reduce the carrier separately.
+  //   Valid in the Lamb–Dicke regime η̃²(2n+1)≪1 (this is an O(η̃²) expansion).
   // -------------------------------------------------------------------------
   _buildDissipators() {
     const F = this._F;
     const ops = [];
     if (this.seOn && this.Gamma > 0) {
-      ops.push(F.scaleF(this.sm, Math.sqrt(this.Gamma)));   // √Γ σ⁻
+      if (this.recoil === 'kernel') {
+        const xi = this._xiFactor(), et2 = this.etaTilde * this.etaTilde;
+        const s = xi * et2;                                    // ξ η̃²
+        const c0 = Math.sqrt(this.Gamma * Math.max(0, 1 - 2 * s));
+        const cpm = Math.sqrt(this.Gamma * s);
+        ops.push(F.scaleF(this.sm, c0));                       // c₀ = √(Γ(1−2ξη̃²)) σ⁻⊗I
+        const smA    = F.mmul(this.sm, this.a);                // σ⁻⊗a
+        const smAdag = F.mmul(this.sm, this.adag);             // σ⁻⊗a†
+        ops.push(F.scaleF(smA,    cpm));                       // c₋ = √(Γξη̃²) σ⁻⊗a
+        ops.push(F.scaleF(smAdag, cpm));                       // c₊ = √(Γξη̃²) σ⁻⊗a†
+      } else {
+        ops.push(F.scaleF(this.sm, Math.sqrt(this.Gamma)));   // √Γ σ⁻  (recoil='none')
+      }
     }
     if (this.bathOn) {
       const kappa = this.nBath > 0 ? this.heating / this.nBath : 0;   // dn̄/dt = κ n̄
@@ -416,9 +469,11 @@ export class IonSystem {
     if (lambdaNm !== undefined) this.lambdaNm = lambdaNm;
     if (nuTrapHz !== undefined) this.nuTrapHz = nuTrapHz;
     this.eta = this._computeEta();
+    this._refreshEtaTilde();          // η̃ shares the trap (mass, ω_z), so it moves too
     this._buildDisplacement();
     this._buildCoupling();
     this._assembleH();
+    this._buildDissipators();         // kernel coefficients depend on η̃
     this._setSubStep();
   }
   setEtaParams(p) { return this.setTrap(p); }   // alias
@@ -436,6 +491,23 @@ export class IonSystem {
   setDephasing(on, gammaPhi)        { this.dephaseOn = !!on; if (gammaPhi !== undefined) this.gammaPhi = gammaPhi; this._buildDissipators(); this._setSubStep(); }
   setHeatingRate(rate)              { this.heating = rate; this._buildDissipators(); this._setSubStep(); }
   setAllDissipators(on)             { this.seOn = this.bathOn = this.dephaseOn = !!on; this._buildDissipators(); this._setSubStep(); }
+
+  // Spontaneous-emission recoil mode (Phase 2c). mode: 'none'|'kernel'.
+  //   opts.geometry: 'sigma'(2/5, default) | 'pi'(1/5) | 'iso'(1/3)
+  //   opts.emitLambdaNm: emitted-photon wavelength (nm) → recomputes η̃
+  //   opts.etaTilde: override η̃ directly (bypasses emitLambdaNm)
+  setRecoil(mode, opts = {}) {
+    if (mode !== undefined) {
+      if (mode !== 'none' && mode !== 'kernel') throw new Error(`IonSystem: unknown recoil mode '${mode}'`);
+      this.recoil = mode;
+    }
+    if (opts.geometry     !== undefined) this.geometry     = opts.geometry;
+    if (opts.emitLambdaNm !== undefined) this.emitLambdaNm = opts.emitLambdaNm;
+    if (opts.etaTilde     !== undefined) this._etaTildeOverride = opts.etaTilde;
+    this._refreshEtaTilde();
+    this._buildDissipators();
+    this._setSubStep();
+  }
 
   Ncutoff() { return this.N_FOCK; }
   dimension() { return this.dim; }
@@ -629,7 +701,10 @@ export class IonSystem {
 
   detuning() { return this.delta; }   // current δ
   rabi()     { return this.Omega; }    // current Ω (carrier Rabi frequency)
-  etaValue() { return this.eta; }      // computed Lamb–Dicke parameter η
+  etaValue() { return this.eta; }      // computed Lamb–Dicke parameter η (drive)
+  etaTildeValue() { return this.etaTilde; }   // emitted-photon LD parameter η̃ (recoil)
+  recoilMode() { return this.recoil; }        // 'none' | 'kernel'
+  geometryFactor() { return this._xiFactor(); }   // ξ for the current geometry
 
   // Population in the top 3 Fock states (both internal blocks).
   truncationOccupancy() {
