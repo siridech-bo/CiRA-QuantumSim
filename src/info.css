@@ -1,0 +1,112 @@
+/* ==========================================================================
+   info.css — the reusable "ⓘ info button + modal dialog" educational overlay.
+   Theme-aware (reuses the shared day/night tokens from style.css), self-contained,
+   no external deps. Shared across substrates (Trapped Ion first, then NMR + JC).
+   ========================================================================== */
+
+/* ---- the "info" trigger injected next to a label / heading --------------- */
+.info-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 6px; padding: 1px 7px;
+  border: 1px solid var(--accent); border-radius: 9px;
+  background: transparent; color: var(--accent);
+  font-size: 9.5px; font-weight: 700; line-height: 1.4; letter-spacing: .03em;
+  text-transform: lowercase;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer; vertical-align: middle; flex: 0 0 auto; white-space: nowrap;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.info-btn::before { content: "\2139"; margin-right: 3px; font-size: 10px; }  /* ℹ glyph */
+.info-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.info-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* headings hold a slightly larger pill on the baseline of larger text */
+h2 .info-btn, h3 .info-btn { font-size: 10px; padding: 1px 8px; }
+
+/* ---- modal backdrop + dialog -------------------------------------------- */
+.info-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; opacity: 0; pointer-events: none;
+  transition: opacity .15s ease;
+}
+.info-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.info-dialog {
+  width: min(680px, 100%); max-height: min(84vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--panel, var(--elev)); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  transform: translateY(8px) scale(0.98); transition: transform .15s ease;
+}
+.info-backdrop.open .info-dialog { transform: translateY(0) scale(1); }
+
+.info-head {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 20px 12px; border-bottom: 1px solid var(--border);
+}
+.info-head .info-titles { flex: 1 1 auto; min-width: 0; }
+.info-head .info-kicker {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 3px;
+}
+.info-head h3.info-title {
+  margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--text);
+}
+.info-head .info-symbol {
+  margin-top: 4px; font-size: 13px; color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+}
+.info-close {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--btn); color: var(--text);
+  font-size: 17px; line-height: 1; cursor: pointer;
+}
+.info-close:hover { background: var(--btn-hover); }
+
+.info-body {
+  padding: 16px 20px; overflow-y: auto; font-size: 13.5px; line-height: 1.68;
+  color: var(--text);
+}
+.info-body p { margin: 0 0 11px; }
+.info-body p:last-child { margin-bottom: 0; }
+.info-body h4 {
+  margin: 16px 0 6px; font-size: 12.5px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+}
+.info-body ul { margin: 0 0 11px; padding-left: 20px; }
+.info-body li { margin: 0 0 5px; }
+.info-body b, .info-body strong { color: var(--text); font-weight: 700; }
+.info-body code {
+  font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  background: var(--plot, rgba(127,127,127,.12)); color: var(--code-text, var(--text));
+  padding: 1px 5px; border-radius: 4px;
+}
+/* a display formula block */
+.info-body .eq {
+  display: block; margin: 10px 0; padding: 9px 12px;
+  background: var(--plot, rgba(127,127,127,.1)); border: 1px solid var(--border);
+  border-radius: 8px; font-family: ui-monospace, Consolas, monospace;
+  font-size: 12.5px; overflow-x: auto; white-space: pre; line-height: 1.5;
+}
+.info-body .lead { color: var(--muted); }
+.info-body .warn { color: #d08a4a; }
+
+/* ---- references footer --------------------------------------------------- */
+.info-refs {
+  padding: 12px 20px 18px; border-top: 1px solid var(--border);
+  font-size: 12px; line-height: 1.55;
+}
+.info-refs h4 {
+  margin: 0 0 7px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+}
+.info-refs ol { margin: 0; padding-left: 18px; color: var(--muted); }
+.info-refs li { margin: 0 0 5px; }
+.info-refs a { color: var(--accent); text-decoration: none; }
+.info-refs a:hover { text-decoration: underline; }
+.info-refs .tag {
+  display: inline-block; font-family: ui-monospace, monospace; font-weight: 700;
+  color: var(--text); margin-right: 4px;
+}

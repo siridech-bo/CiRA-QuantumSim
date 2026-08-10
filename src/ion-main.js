@@ -25,6 +25,12 @@ import { MathieuView, ChainView } from './ion-modes-ui.js';
 import {
   carrierGateDuration, gateReport, measureGeneralizedRabi,
 } from './ion-gates.js';
+import { initInfo } from './info.js';
+import { ION_INFO } from './ion-info.js';
+
+// Educational ⓘ info buttons: inject one next to every [data-info] label / graph
+// heading and open a sourced popup on click (src/info.js + src/ion-info.js).
+initInfo(ION_INFO);
 
 // ---- engine + parameters ----------------------------------------------------
 const params = {
@@ -714,6 +720,10 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const prev = state.module;
   state.module = id;
 
+  // Keep the center tab bar in sync with the selected module.
+  document.querySelectorAll('#center-tabs .ctab').forEach((b) =>
+    b.classList.toggle('active', b.dataset.module === id));
+
   // Leaving M4: restore the pre-M4 engine so M3/M5/M6 are untouched by the swap.
   if (prev === 'M4' && id !== 'M4' && state.m4prevSys) { sys = state.m4prevSys; state.m4prevSys = null; }
 
@@ -802,6 +812,10 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
     refresh(true);
   }
 });
+
+// Route the center tab bar through the same selector as the sidebar module tabs.
+document.querySelectorAll('#center-tabs .ctab').forEach((b) =>
+  b.addEventListener('click', () => tabs.select(b.dataset.module)));
 
 // -- playback --
 const playBtn = document.getElementById('btn-play');
