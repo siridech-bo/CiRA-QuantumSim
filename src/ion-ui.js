@@ -40,6 +40,11 @@ export const MODULES = {
     desc: 'A carrier (<code>δ=0</code>) pulse of area <code>Ω_eff·t</code> rotates the internal qubit — a real <b>Rx(θ)</b> on the Bloch sphere (the engine exposes only a real Ω → σx drive, no phase, so no native Ry). Off-resonant (<code>δ≠0</code>) tilts the axis: <b>AC Stark</b>, precession at the generalized Rabi <code>√(δ²+Ω²)</code>, light shift <code>≈Ω²/4δ</code>.',
     breakIt: 'Break it: shorten the pulse (raise <code>Ω</code> toward/above <code>ω_z</code>) — the bandwidth ~Ω reaches the ±ω_z sidebands, the motion heats (n̄ grows) and spin–motion entanglement drops the gate fidelity. Selectivity is EMERGENT from Ω vs ω_z.',
   },
+  M7: {
+    name: 'Mølmer–Sørensen gate',
+    desc: 'Two qubits ⊗ one shared motional mode (dim 4·N_FOCK). A bichromatic spin-dependent force <code>H=(ηΩ/2)S_x(a e^{−iδt}+a† e^{+iδt})</code> drives a phase-space <b>displacement loop</b> that closes at <code>τ_g=2πK/δ</code>. With <code>ηΩ=δ/(2√K)</code> the enclosed geometric phase entangles the qubits: <code>|gg⟩→(|gg⟩+i|ee⟩)/√2</code> (Bell), and the motion returns to vacuum (spin–motion disentangled).',
+    breakIt: 'Break it: mis-set <code>δ</code> off loop closure — the loop no longer closes at τ_g, residual spin–motion entanglement stays, and the Bell fidelity drops.',
+  },
   M4: {
     name: 'Doppler cooling',
     desc: 'The OPPOSITE regime to sideband cooling: <b>broad linewidth</b> <code>Γ ≳ ω_z</code> (sidebands unresolved), <b>red-detuned</b> drive <code>δ&lt;0</code> + spontaneous emission with the <b>recoil kernel</b>. Velocity-dependent scattering (friction) balances recoil heating → a steady state. The friction is strongest at <b>δ = −Γ/2</b> (the scan minimum), where the textbook Doppler limit is <code>k_BT_D=ħΓ/2 ⇒ n̄≈Γ/2ω_z</code>.',

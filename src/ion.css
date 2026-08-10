@@ -116,6 +116,33 @@
 #m4-opt { color: var(--muted); }
 #m4-note { margin-top: 8px; }
 
+/* ===== M7 — Mølmer–Sørensen gate panel (Phase 3) ===== */
+/* M7 carries all its own readouts in the center panel → hide the right sidebar
+   (its observables assume the IonSystem API; the MS engine has a different one). */
+#app-shell.mode-ms { grid-template-columns: 286px minmax(0, 1fr); }
+#app-shell.mode-ms #sidebar-right { display: none; }
+.m7-body { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.m7-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.m7-row .mode-cell { flex: 1 1 300px; min-width: 260px; }
+#m7-loop, #m7-wigner {
+  width: 100%; height: auto; max-width: 380px; display: block;
+  background: var(--plot); border: 1px solid var(--border); border-radius: 8px;
+}
+#m7-pops {
+  width: 100%; height: auto; display: block;
+  background: var(--plot); border: 1px solid var(--border); border-radius: 8px;
+}
+.m7-readout {
+  margin-top: 8px; font-size: 12px; line-height: 1.65;
+  font-family: ui-monospace, Consolas, monospace; color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; background: var(--plot);
+}
+.m7-readout .lbl { color: var(--muted); }
+.m7-readout .big { font-size: 15px; font-weight: 700; }
+.m7-readout.hot { border-color: var(--ion-red); }
+#m7-drive { color: var(--muted); }
+#m7-note { margin-top: 8px; }
+
 .legend-row { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
 .legend-row .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 

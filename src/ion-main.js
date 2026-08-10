@@ -7,11 +7,14 @@
 // in slow motion rather than freezing). Substrates 1 & 2 are untouched.
 // =============================================================================
 import { IonSystem } from './ion.js';
+import { MSGate } from './ion-ms.js';
 import { LevelDiagram } from './ion-levels.js';
 import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum, DopplerScan } from './ion-traces.js';
 import { DensityHeatmap } from './heatmap.js';
 import { BlochScene } from './scene.js';
-import { invalidatePlotColors } from './theme.js';
+import { WignerPlot } from './jc-ui.js';
+import { wignerGrid } from './wigner.js';
+import { invalidatePlotColors, plotColors } from './theme.js';
 import {
   MODULES, ModuleTabs, wireSlider, prepareState,
   excitationPoint, scanGrid, measureAsymmetry, measureFFT,
@@ -32,6 +35,11 @@ const params = {
   prep: { kind: 'thermal', param: 2.0 },
   m6: { rabi: 0.20, delta: 0.30, theta: 1.0 },   // M6: pulse Ω, AC-Stark δ, angle θ·π
   m4: { Gamma: 4, delta: -2, rabi: 1.2, nbar0: 4 },  // M4 Doppler: broad Γ, red δ, Ω, initial n̄
+  // M7 Mølmer–Sørensen: nominal detuning δ, loop count K, break-it δ-mismatch %, and
+  // η (only the product ηΩ enters; Ω auto-set to δ/(2√K)). Kept ENTIRELY in its own
+  // namespace — M7 runs a dedicated MSGate (state.m7.engine) and never writes the
+  // shared params.gamma/delta/rabi (that was the M4 leak bug — not repeated here).
+  m7: { N: 20, delta: 1.0, K: 1, deltaErrPct: 0, eta: 0.1 },
 };
 let sys = buildEngine();
 
@@ -70,6 +78,7 @@ const state = {
   m4scan: null,         // { grid, i, cfg, delta[], nbar[] } while scanning the Doppler floor (M4)
   m4prevSys: null,      // stashed pre-M4 engine (M4 swaps in its own dedicated engine)
   m6gate: null,         // { kind, tTotal, tElapsed, theta } while an M6 gate runs
+  m7: null,             // { engine (MSGate), running, tElapsed, tTotal, traj, ... } — M7's own namespace
 };
 let lastHeatMs = 0;
 const HEAT_HZ = 8;
@@ -352,8 +361,176 @@ function m4FinishScan(q) {
     `floor mapped: minimum near δ=−Γ/2=${half.toFixed(1)}, rising toward the carrier and running away on the blue side.`;
 }
 
+// ---- M7: Mølmer–Sørensen gate ----------------------------------------------
+// M7 runs its OWN dedicated MSGate engine (2 qubits ⊗ 1 mode, dim 4·N_FOCK) held
+// in state.m7.engine — the shared `sys` (M3/M5 IonSystem) is left UNTOUCHED, so
+// there is no engine swap and no way for MS state to leak into the M1–M6 params.
+// All MS knobs live in params.m7.*. The phase-space loop and break-it are read
+// straight off the engine: conditionalXP() gives the |++⟩ ⟨X⟩,⟨P⟩ loop coordinate,
+// reducedMode() feeds wigner.js, bellFidelity()/residualEntanglement() the readout.
+let m7Wigner = null;
+function ensureM7Wigner() {
+  if (!m7Wigner) m7Wigner = new WignerPlot(document.getElementById('m7-wigner'));
+  return m7Wigner;
+}
+
+// Build a fresh MSGate from the current M7 controls. Break-it: keep the drive (ηΩ)
+// and gate time τ_g from the NOMINAL δ, but run at δ = δ₀·(1+Δδ%). At 0% this is
+// exact loop closure; off 0% the loop no longer closes at τ_g.
+function m7BuildEngine() {
+  const p = params.m7;
+  const ref = new MSGate({ N_FOCK: p.N, delta: p.delta, K: p.K, eta: p.eta });  // matchClosure
+  const gOmega = ref.etaOmega();          // ηΩ = δ₀/(2√K)
+  const tauG = ref.gateTime();            // τ_g = 2πK/δ₀
+  const actualDelta = p.delta * (1 + p.deltaErrPct / 100);
+  const engine = new MSGate({
+    N_FOCK: p.N, delta: actualDelta, K: p.K, eta: p.eta,
+    Omega: gOmega / p.eta, matchClosure: false,
+  });
+  return { engine, tauG, gOmega, actualDelta };
+}
+
+function m7UpdateDrive() {
+  const p = params.m7;
+  const ref = new MSGate({ N_FOCK: 4, delta: p.delta, K: p.K, eta: p.eta });
+  document.getElementById('m7-drive').innerHTML =
+    `τ_g = 2πK/δ = <b>${ref.gateTime().toFixed(3)}</b>, ηΩ = δ/(2√K) = <b>${ref.closureCoupling().toFixed(4)}</b> ` +
+    `(Ω=${(ref.closureCoupling() / p.eta).toFixed(3)}, η=${p.eta})`;
+}
+
+// Reset the M7 engine to |gg,0⟩ and clear the accumulated loop trajectory.
+function m7Reset() {
+  const built = m7BuildEngine();
+  state.m7 = { engine: built.engine, running: false, tElapsed: 0, tTotal: built.tauG,
+               traj: [{ x: 0, p: 0 }], actualDelta: built.actualDelta };
+  m7UpdateDrive();
+  m7Render();
+  setM7Readout('<span class="lbl">ready — press <b>Run MS gate</b> to fire from |gg,0⟩.</span>');
+  document.getElementById('m7-note').innerHTML =
+    'The |++⟩ component traces a phase-space loop; at loop closure it returns to the origin and the qubits are left in a Bell state.';
+}
+
+function m7StartGate() {
+  const built = m7BuildEngine();
+  state.m7 = { engine: built.engine, running: true, tElapsed: 0, tTotal: built.tauG,
+               traj: [{ x: 0, p: 0 }], actualDelta: built.actualDelta };
+  setM7Readout('<span class="lbl">running the gate…</span>');
+}
+
+// Advance the running gate one animation slice, sampling the loop coordinate.
+const M7_FRAMES = 150;   // base animation slices per loop (×K)
+function m7StepGate() {
+  const m = state.m7; if (!m || !m.running) return;
+  const eng = m.engine;
+  const frames = M7_FRAMES * params.m7.K;
+  const dt = m.tTotal / frames;
+  const h = Math.min(dt, m.tTotal - m.tElapsed);
+  if (h > 1e-12) {
+    eng.step(h); m.tElapsed += h;
+    const xp = eng.conditionalXP();
+    m.traj.push({ x: xp.x, p: xp.p });
+  }
+  m7Render();
+  if (m.tElapsed >= m.tTotal - 1e-9) { m.running = false; m7Finalize(); }
+}
+
+function m7Finalize() {
+  const eng = state.m7.engine;
+  const F = eng.bellFidelity();
+  const resid = eng.residualEntanglement();
+  const modePur = eng.modePurity();
+  const [pgg, pge, peg, pee] = eng.qubitPopulations();
+  const err = params.m7.deltaErrPct;
+  const good = F > 0.99 && resid < 5e-3;
+  setM7Readout(
+    `<div><span class="lbl">Bell fidelity ⟨Φ⁺|ρ|Φ⁺⟩, Φ⁺=(|gg⟩+i|ee⟩)/√2:</span> <span class="big">F = ${F.toFixed(4)}</span></div>` +
+    `<div><span class="lbl">residual spin–motion entanglement 1−Tr(ρ²_2q):</span> <b>${resid.toExponential(2)}</b> ` +
+    `(mode purity ${modePur.toFixed(3)})</div>` +
+    `<div><span class="lbl">populations:</span> gg=${pgg.toFixed(3)} ge=${pge.toFixed(3)} eg=${peg.toFixed(3)} ee=${pee.toFixed(3)}</div>`,
+    !good);
+  document.getElementById('m7-note').innerHTML = good
+    ? `loop CLOSED (Δδ=${err}%): the motion returned to vacuum and the qubits are maximally entangled — a Bell state.`
+    : `loop OPEN (Δδ=${err}%): at τ_g the displacement did NOT return to the origin, so the spins stay entangled with the motion and F drops. Set Δδ→0% to close it.`;
+}
+
+function setM7Readout(html, hot = false) {
+  const el = document.getElementById('m7-readout');
+  el.innerHTML = html;
+  el.classList.toggle('hot', hot);
+}
+
+// -- render: phase-space loop + reduced-mode Wigner + population bars --
+function m7Render() {
+  const m = state.m7; if (!m) return;
+  drawM7Loop(m.traj, !m.running);
+  try {
+    const grid = wignerGrid(m.engine.reducedMode(), { xmax: 3.5, n: 44 });
+    ensureM7Wigner().draw(grid);
+  } catch (e) { /* ignore transient */ }
+  drawM7Pops(m.engine.qubitPopulations());
+}
+
+function drawM7Loop(traj, done) {
+  const cv = document.getElementById('m7-loop'); if (!cv) return;
+  const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, c = plotColors();
+  ctx.clearRect(0, 0, w, h);
+  const R = 2.2, cx = w / 2, cy = h / 2, sc = (Math.min(w, h) / 2 - 18) / R;
+  const px = (v) => cx + v * sc, py = (v) => cy - v * sc;
+  // axes
+  ctx.strokeStyle = c.line; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(px(-R), cy); ctx.lineTo(px(R), cy);
+  ctx.moveTo(cx, py(-R)); ctx.lineTo(cx, py(R)); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = c.text; ctx.font = '11px system-ui, sans-serif';
+  ctx.textAlign = 'right'; ctx.fillText('X', px(R) - 4, cy - 5);
+  ctx.textAlign = 'left'; ctx.fillText('P', cx + 5, py(R) + 11);
+  // trajectory
+  if (traj.length > 1) {
+    ctx.strokeStyle = c.accent; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i < traj.length; i++) {
+      const X = px(traj[i].x), Y = py(traj[i].p);
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+  }
+  // origin marker + current point
+  ctx.fillStyle = c.text; ctx.beginPath(); ctx.arc(px(0), py(0), 3, 0, 2 * Math.PI); ctx.fill();
+  const last = traj[traj.length - 1];
+  const endR = Math.hypot(last.x, last.p);
+  ctx.fillStyle = (done && endR < 0.05) ? '#50C878' : c.accent2;
+  ctx.beginPath(); ctx.arc(px(last.x), py(last.p), 5, 0, 2 * Math.PI); ctx.fill();
+  if (done) {
+    ctx.fillStyle = endR < 0.05 ? '#50C878' : '#d08a4a';
+    ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(endR < 0.05 ? 'loop CLOSED (r→0)' : `loop OPEN (r=${endR.toFixed(2)})`, cx, h - 6);
+  }
+}
+
+function drawM7Pops(pops) {
+  const cv = document.getElementById('m7-pops'); if (!cv) return;
+  const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, c = plotColors();
+  ctx.clearRect(0, 0, w, h);
+  const labels = ['|gg⟩', '|ge⟩', '|eg⟩', '|ee⟩'];
+  const pad = 26, base = h - 20, plotW = w - pad - 8, plotH = base - 10;
+  const bw = plotW / 4;
+  ctx.strokeStyle = c.line; ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.moveTo(pad, base); ctx.lineTo(w - 8, base); ctx.stroke();
+  ctx.globalAlpha = 1;
+  for (let i = 0; i < 4; i++) {
+    const bh = Math.max(0, pops[i]) * plotH;   // populations already in [0,1]
+    ctx.fillStyle = (i === 0 || i === 3) ? c.accent : c.accent2;
+    ctx.fillRect(pad + i * bw + bw * 0.2, base - bh, bw * 0.6, bh);
+    ctx.fillStyle = c.text; ctx.font = '11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(labels[i], pad + i * bw + bw / 2, h - 5);
+    ctx.fillText(pops[i].toFixed(3), pad + i * bw + bw / 2, base - bh - 5);
+  }
+  ctx.fillStyle = c.text; ctx.textAlign = 'left'; ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('1.0', 4, base - plotH + 4); ctx.fillText('0', 12, base);
+}
+
 const m4Panel = document.getElementById('m4-panel');
 const m6Panel = document.getElementById('m6-panel');
+const m7Panel = document.getElementById('m7-panel');
 const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const m = MODULES[id];
   const prev = state.module;
@@ -370,32 +547,39 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const classical = !!m.classical;
   const isM6 = id === 'M6';
   const isM4 = id === 'M4';
+  const isM7 = id === 'M7';
   state.classical = classical;
-  if (classical || isM6 || isM4) { state.playing = false; playBtn.textContent = '▶ Play'; }
+  if (classical || isM6 || isM4 || isM7) { state.playing = false; playBtn.textContent = '▶ Play'; }
   if (!isM6) state.m6gate = null;
   if (!isM4) state.m4scan = null;
+  if (!isM7) state.m7 = null;
 
-  // toggle side-groups: engine controls vs classical controls. M4 and M6 are
+  // toggle side-groups: engine controls vs classical controls. M4/M6/M7 are
   // engine-based but swap the M3/M5 drive/state/diagram groups for their own controls.
   document.querySelectorAll('.engine-only').forEach((el) => { el.hidden = classical; });
-  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6 || isM4; });
+  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6 || isM4 || isM7; });
   document.getElementById('m6-controls').hidden = classical || !isM6;
   document.getElementById('m4-controls').hidden = classical || !isM4;
-  // M4 runs its own dedicated engine → hide the shared trap/dissipator/truncation
-  // controls (they target the M3/M5 engine) to avoid desyncing the swapped engine.
-  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4; });
+  document.getElementById('m7-controls').hidden = classical || !isM7;
+  // M4/M7 run their own dedicated engine → hide the shared trap/dissipator/truncation
+  // controls (they target the M3/M5 engine) to avoid desyncing. M7 also hides the
+  // global Playback group (it has its own Run button; the shared frame loop is idle).
+  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4 || isM7; });
+  document.getElementById('playback-group').hidden = classical || isM7;
   document.getElementById('m1-controls').hidden = id !== 'M1';
   document.getElementById('m2-controls').hidden = id !== 'M2';
 
-  // toggle center panels. M4/M6 keep the right sidebar (engine readouts) → NOT
-  // mode-classical, but show their own panel instead of the level diagram.
+  // toggle center panels. M4/M6 keep the right sidebar (engine readouts); M7 hides it
+  // (its readouts live in its own center panel + its engine has a different API).
   appShell.classList.toggle('mode-classical', classical);
-  levelsPanel.hidden = classical || isM6 || isM4;
-  moduleActions.hidden = classical || isM6 || isM4;
+  appShell.classList.toggle('mode-ms', isM7);
+  levelsPanel.hidden = classical || isM6 || isM4 || isM7;
+  moduleActions.hidden = classical || isM6 || isM4 || isM7;
   m1Panel.hidden = id !== 'M1';
   m2Panel.hidden = id !== 'M2';
   m6Panel.hidden = !isM6;
   m4Panel.hidden = !isM4;
+  m7Panel.hidden = !isM7;
 
   // stop the inactive classical view; show/refresh the active one
   if (id === 'M1') { ensureMathieuView().show(); } else if (mathieuView) mathieuView.hide();
@@ -422,8 +606,12 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
     setM4Readout('<span class="lbl">Press <b>Scan δ → n̄ floor map</b> to measure the Doppler floor and compare it to the textbook <code>Γ/2ω_z</code>.</span>');
     refresh(true);
     m4Scan.draw();
+  } else if (isM7) {
+    // Entering M7: build the dedicated MSGate (own namespace), reset to |gg,0⟩ and
+    // render the (empty) loop. `sys` is left untouched — no swap, no leak.
+    m7Reset();
   } else if (!classical && !isM6) {
-    // Entering M3/M5 (incl. from M4): redraw the level diagram with the live engine.
+    // Entering M3/M5 (incl. from M4/M7): redraw the level diagram with the live engine.
     refresh(true);
   }
 });
@@ -605,6 +793,24 @@ wireSlider('m4-rabi', (v) => {
 wireSlider('m4-nbar0', (v) => { params.m4.nbar0 = v; }, (v) => v.toFixed(1));
 document.getElementById('m4-cool').addEventListener('click', m4StartCooling);
 
+// -- M7: Mølmer–Sørensen gate --
+// All M7 sliders write ONLY params.m7.* (never the shared params.gamma/delta/rabi)
+// and rebuild the dedicated MSGate; the M3/M5 `sys` is never touched.
+wireSlider('m7-delta', (v) => {
+  params.m7.delta = v;
+  if (state.module === 'M7') { m7UpdateDrive(); if (state.m7 && !state.m7.running) m7Reset(); }
+}, (v) => v.toFixed(2));
+wireSlider('m7-k', (v) => {
+  params.m7.K = Math.round(v);
+  if (state.module === 'M7') { m7UpdateDrive(); if (state.m7 && !state.m7.running) m7Reset(); }
+}, (v) => String(Math.round(v)));
+wireSlider('m7-derr', (v) => {
+  params.m7.deltaErrPct = v;
+  if (state.module === 'M7' && state.m7 && !state.m7.running) m7Reset();
+}, (v) => (v > 0 ? '+' : '') + v.toFixed(0) + '%');
+document.getElementById('m7-run').addEventListener('click', () => { if (state.module === 'M7') m7StartGate(); });
+document.getElementById('m7-reset').addEventListener('click', () => { if (state.module === 'M7') m7Reset(); });
+
 // Chunked Doppler-floor δ-scan (stays responsive), then an accurate extrapolated
 // floor at −Γ/2 for the readout vs the canonical Γ/2ω_z.
 document.getElementById('m4-scan').addEventListener('click', () => {
@@ -641,6 +847,14 @@ function frame() {
   if (state.module === 'M6') {
     if (state.m6gate) m6StepGate();
     if (m6Scene) m6Scene.render();
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  // M7 Mølmer–Sørensen gate: advance the dedicated MSGate while a gate is running,
+  // animating the phase-space loop / Wigner / populations off the real ρ.
+  if (state.module === 'M7') {
+    if (state.m7 && state.m7.running) m7StepGate();
     requestAnimationFrame(frame);
     return;
   }

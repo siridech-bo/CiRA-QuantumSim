@@ -53,7 +53,7 @@
           <button class="mod-btn" data-module="M2">M2</button>
           <button class="mod-btn" data-module="M4">M4</button>
           <button class="mod-btn" data-module="M6">M6</button>
-          <button class="mod-btn" disabled title="Phase 3">M7</button>
+          <button class="mod-btn" data-module="M7">M7</button>
           <button class="mod-btn" disabled title="Phase 3">M8</button>
         </div>
         <div class="module-desc" id="module-desc"></div>
@@ -135,7 +135,28 @@
         <div class="break-it">Break it: drag <code>δ</code> positive (blue) — friction reverses and the motion <b>heats</b> (watch n̄(t) climb).</div>
       </div>
 
-      <div class="side-group engine-only">
+      <!-- ===== M7 Mølmer–Sørensen controls (engine; shown only for M7) ===== -->
+      <div class="side-group engine-only m7-only" id="m7-controls" hidden>
+        <div class="side-label">MS gate (loop closure ηΩ=δ/2√K)</div>
+        <label class="slider-row"><span>δ / unit</span>
+          <input id="m7-delta" type="range" min="0.4" max="2" step="0.05" value="1" />
+          <span id="m7-delta-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span>K loops</span>
+          <input id="m7-k" type="range" min="1" max="3" step="1" value="1" />
+          <span id="m7-k-val" class="val mono">1</span></label>
+        <div class="module-desc" id="m7-drive">τ_g = 2πK/δ, Ω auto-set so ηΩ = δ/(2√K)</div>
+        <div class="side-label" style="margin-top:12px">δ mismatch <span class="tag">break it</span></div>
+        <label class="slider-row"><span>Δδ (%)</span>
+          <input id="m7-derr" type="range" min="-20" max="20" step="1" value="0" />
+          <span id="m7-derr-val" class="val mono">0%</span></label>
+        <div class="break-it">At 0% the loop closes at τ_g → Bell F≈1. Off 0%, the loop stays open, spin–motion entanglement lingers and F drops.</div>
+        <div class="btn-row" style="margin-top:10px">
+          <button id="m7-run" class="primary full">Run MS gate</button>
+        </div>
+        <button id="m7-reset" class="full" style="margin-top:6px">Reset to |gg,0⟩</button>
+      </div>
+
+      <div class="side-group engine-only" id="playback-group">
         <div class="side-label">Playback</div>
         <div class="btn-row">
           <button id="btn-play" class="primary">▶ Play</button>
@@ -339,6 +360,34 @@
           </div>
         </div>
         <div class="break-it" id="m4-note"></div>
+      </section>
+
+      <!-- ===== M7 — Mølmer–Sørensen gate: phase-space loop + Bell state ===== -->
+      <section id="m7-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Mølmer–Sørensen gate — phase-space loop &amp; Bell state</h2>
+          <span class="subtitle">2 qubits ⊗ 1 mode, real Lindblad RK4 (dim 4·N_FOCK). The spin-dependent force traces a displacement loop that CLOSES at τ_g and entangles the qubits; mis-set δ and it fails to close.</span>
+        </div>
+        <div class="mode-body m7-body">
+          <div class="m7-row">
+            <div class="mode-cell">
+              <div class="mode-cap">phase-space loop ⟨X⟩–⟨P⟩ (|++⟩ component) — returns to origin at τ_g</div>
+              <canvas id="m7-loop" width="360" height="360"></canvas>
+            </div>
+            <div class="mode-cell">
+              <div class="mode-cap">reduced-mode Wigner W(x,p) — vacuum blob at closure, cat during the loop</div>
+              <canvas id="m7-wigner" width="360" height="360"></canvas>
+            </div>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap">two-qubit populations |gg⟩ |ge⟩ |eg⟩ |ee⟩</div>
+            <canvas id="m7-pops" width="620" height="140"></canvas>
+            <div class="m7-readout" id="m7-readout">
+              <span class="lbl">Press <b>Run MS gate</b> to fire the gate from |gg,0⟩ and read the Bell fidelity.</span>
+            </div>
+          </div>
+        </div>
+        <div class="break-it" id="m7-note"></div>
       </section>
     </main>
 
