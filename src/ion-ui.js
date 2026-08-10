@@ -51,6 +51,11 @@ export const MODULES = {
     breakIt: 'Break it: detune <b>blue</b> (<code>δ&gt;0</code>) — friction reverses into anti-friction and the motion <b>heats</b> (n̄ runs away up) instead of cooling.',
     note: 'LD-valid regime: this O(η̃²) recoil kernel is honest only for <code>η̃²(2n̄+1)≪1</code>, so we run at moderate <code>Γ/ω_z</code> (≈3–6) where the floor is a few quanta. There the engine gives <code>n̄_ss = c·Γ/2ω_z</code> with <code>c≈0.5–0.65</code> (partially-resolved sidebands over-cool below the asymptote). The canonical <code>n̄=Γ/2ω_z</code> is the <code>Γ≫ω_z</code> asymptote (⁴⁰Ca⁺: n̄≈10.8) — exactly where the LD kernel breaks down. That break-down IS the lesson.',
   },
+  M8: {
+    name: 'State readout',
+    desc: 'State-selective fluorescence detection: <b>bright</b> <code>|g⟩</code> (S₁/₂) scatters the 397 nm probe, <b>dark</b>/shelved <code>|e⟩</code> (D₅/₂) does not. Over a window <code>t_d</code> the PMT collects a Poisson photon count — mean <code>n̄_bright=R·t_d</code> vs <code>n̄_dark=R_bg·t_d≈0</code>. A <b>threshold</b> discriminates the two; readout fidelity <code>F=1−½[P(&lt;thr|bright)+P(≥thr|dark)]</code> at the <b>optimal threshold</b> (minimizing the Poisson overlap).',
+    breakIt: 'Break it: shorten <code>t_d</code> — <code>n̄_bright</code> shrinks below the Poisson width <code>√n̄</code>, the bright &amp; dark histograms overlap and <code>F</code> drops. Longer <code>t_d</code> (or higher <code>R</code>) → clean separation → <code>F→1</code>. Emergent from <code>t_d·R</code> vs <code>√n̄</code>, never hard-wired.',
+  },
 };
 
 // ---- generic slider wiring --------------------------------------------------

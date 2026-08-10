@@ -9,7 +9,8 @@
 import { IonSystem } from './ion.js';
 import { MSGate } from './ion-ms.js';
 import { LevelDiagram } from './ion-levels.js';
-import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum, DopplerScan } from './ion-traces.js';
+import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum, DopplerScan, poissonSample } from './ion-traces.js';
+import { optimalThreshold, poissonPMFArray } from './ion-readout.js';
 import { DensityHeatmap } from './heatmap.js';
 import { BlochScene } from './scene.js';
 import { WignerPlot } from './jc-ui.js';
@@ -40,6 +41,11 @@ const params = {
   // namespace — M7 runs a dedicated MSGate (state.m7.engine) and never writes the
   // shared params.gamma/delta/rabi (that was the M4 leak bug — not repeated here).
   m7: { N: 20, delta: 1.0, K: 1, deltaErrPct: 0, eta: 0.1 },
+  // M8 state readout: detection window t_d, bright scatter rate R, background R_bg.
+  // Pure Poisson photon-count model (n̄_bright=R·t_d, n̄_dark=R_bg·t_d). Kept ENTIRELY
+  // in its own namespace — M8 touches no engine and never writes the shared
+  // params.gamma/delta/rabi (no M4-style leak).
+  m8: { td: 1.0, R: 20, Rbg: 0.5 },
 };
 let sys = buildEngine();
 
@@ -79,6 +85,7 @@ const state = {
   m4prevSys: null,      // stashed pre-M4 engine (M4 swaps in its own dedicated engine)
   m6gate: null,         // { kind, tTotal, tElapsed, theta } while an M6 gate runs
   m7: null,             // { engine (MSGate), running, tElapsed, tTotal, traj, ... } — M7's own namespace
+  m8: null,             // { kMax, bright[], dark[], shots, lamB, lamD, opt } — M8's Poisson readout (no engine)
 };
 let lastHeatMs = 0;
 const HEAT_HZ = 8;
@@ -528,9 +535,180 @@ function drawM7Pops(pops) {
   ctx.fillText('1.0', 4, base - plotH + 4); ctx.fillText('0', 12, base);
 }
 
+// ---- M8: state readout (Poisson photon-count discrimination) ----------------
+// M8 is a PURE Poisson readout model — it touches NO engine (the shared `sys` is
+// left alone) and lives entirely in params.m8.* / state.m8, so nothing can leak
+// into the M1–M7 params. Two histograms (bright |g⟩ ~ Poisson(R·t_d) vs dark |e⟩ ~
+// Poisson(R_bg·t_d)) accumulate sampled shots via the SAME poissonSample generator
+// the fluorescence trace uses (spec §3.2 — written once). The optimal threshold +
+// readout fidelity come from the analytic Poisson overlap (ion-readout.js). Shorten
+// t_d → n̄_bright shrinks below the Poisson width √n̄ → histograms overlap → F drops.
+function m8Means() {
+  const p = params.m8;
+  return { lamB: p.R * p.td, lamD: p.Rbg * p.td };
+}
+
+// (Re)initialize the accumulation buffers for the current means; clears shots.
+function m8ResetHistograms() {
+  const { lamB, lamD } = m8Means();
+  const kMax = Math.max(8, Math.ceil(lamB + 6 * Math.sqrt(lamB + 1) + 6));
+  state.m8 = {
+    kMax, lamB, lamD, opt: optimalThreshold(lamB, lamD),
+    bright: new Float64Array(kMax + 1),
+    dark: new Float64Array(kMax + 1),
+    shots: 0,
+  };
+}
+
+// Sample a batch of shots from each Poisson distribution into the histograms.
+function m8SampleBatch(n = 300) {
+  const m = state.m8; if (!m) return;
+  for (let i = 0; i < n; i++) {
+    m.bright[Math.min(m.kMax, poissonSample(m.lamB))] += 1;
+    m.dark[Math.min(m.kMax, poissonSample(m.lamD))] += 1;
+  }
+  m.shots += n;
+}
+
+function setM8Readout(html, hot = false) {
+  const el = document.getElementById('m8-readout');
+  el.innerHTML = html; el.classList.toggle('hot', hot);
+}
+
+// Rebuild the buffers for the current means, seed them, and redraw everything.
+function m8Recompute() {
+  m8ResetHistograms();
+  m8SampleBatch(1500);          // seed so the histograms aren't empty on a slider change
+  m8Refresh();
+}
+
+function m8Refresh() {
+  const m = state.m8; if (!m) return;
+  drawM8Hist(); drawM8Sweep();
+  const opt = m.opt, overlap = opt.fidelity < 0.99;
+  setM8Readout(
+    `<div><span class="lbl">n̄_bright = R·t_d =</span> <b>${m.lamB.toFixed(2)}</b> &nbsp; ` +
+    `<span class="lbl">n̄_dark = R_bg·t_d =</span> <b>${m.lamD.toFixed(2)}</b></div>` +
+    `<div><span class="lbl">optimal threshold:</span> <b>${opt.threshold}</b> (n̄_dark &lt; thr &lt; n̄_bright)</div>` +
+    `<div><span class="lbl">readout fidelity F:</span> <span class="big">${opt.fidelity.toFixed(5)}</span></div>` +
+    `<div><span class="lbl">err bright→dark:</span> ${opt.errBright.toExponential(2)} &nbsp; ` +
+    `<span class="lbl">err dark→bright:</span> ${opt.errDark.toExponential(2)} &nbsp; ` +
+    `<span class="lbl">shots:</span> ${m.shots}</div>`,
+    overlap);
+  document.getElementById('m8-note').innerHTML = opt.fidelity > 0.99
+    ? `clean separation: n̄_bright=${m.lamB.toFixed(1)} ≫ Poisson width √n̄=${Math.sqrt(m.lamB).toFixed(1)} — the histograms barely overlap and F→1.`
+    : `⚠ overlap: n̄_bright=${m.lamB.toFixed(2)} is not ≫ the Poisson width √n̄=${Math.sqrt(Math.max(m.lamB, 1e-9)).toFixed(2)}, so the bright &amp; dark histograms overlap and F=${opt.fidelity.toFixed(3)} drops. Lengthen t_d (or raise R) to recover F→1.`;
+}
+
+// Histogram: bright (green) + dark (red) — sampled bars (normalized to probability)
+// with the analytic Poisson PMF overlaid, decision shading, and the threshold marker.
+function drawM8Hist() {
+  const cv = document.getElementById('m8-hist'); if (!cv) return;
+  const m = state.m8; if (!m) return;
+  const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, c = plotColors();
+  ctx.clearRect(0, 0, w, h);
+  const padL = 34, padR = 10, padT = 12, padB = 26, kMax = m.kMax;
+  const plotW = w - padL - padR, plotH = h - padT - padB, bw = plotW / (kMax + 1);
+  const xOf = (k) => padL + k * bw;                    // left edge of bin k
+  const base = padT + plotH;
+  const pB = poissonPMFArray(m.lamB, kMax), pD = poissonPMFArray(m.lamD, kMax);
+  const totB = m.shots || 1, totD = m.shots || 1;
+  let ymax = 1e-6;
+  for (let k = 0; k <= kMax; k++) ymax = Math.max(ymax, pB[k], pD[k], m.bright[k] / totB, m.dark[k] / totD);
+  ymax *= 1.15;
+  const yOf = (p) => padT + (1 - p / ymax) * plotH;
+
+  // decision shading: count ≥ thr → bright (right), < thr → dark (left)
+  const thr = m.opt.threshold, xThr = xOf(thr);
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = c.ionRungG; ctx.fillRect(xThr, padT, (w - padR) - xThr, plotH);
+  ctx.fillStyle = c.ionRed;   ctx.fillRect(padL, padT, xThr - padL, plotH);
+  ctx.globalAlpha = 1;
+
+  // axes
+  ctx.strokeStyle = c.line; ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.moveTo(padL, base); ctx.lineTo(w - padR, base);
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, base); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // empirical bars: bright + dark, side by side within each integer bin
+  for (let k = 0; k <= kMax; k++) {
+    const x = xOf(k);
+    const hb = (m.bright[k] / totB) / ymax * plotH, hd = (m.dark[k] / totD) / ymax * plotH;
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = c.ionRungG; ctx.fillRect(x + bw * 0.08, base - hb, bw * 0.4, hb);
+    ctx.fillStyle = c.ionRed;   ctx.fillRect(x + bw * 0.52, base - hd, bw * 0.4, hd);
+  }
+  ctx.globalAlpha = 1;
+
+  // analytic PMF overlay (stepped through bin centers)
+  const pmfLine = (arr, col) => {
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let k = 0; k <= kMax; k++) {
+      const x = xOf(k) + bw / 2, y = yOf(arr[k]);
+      k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  };
+  pmfLine(pB, c.ionRungG); pmfLine(pD, c.ionRed);
+
+  // threshold marker
+  ctx.strokeStyle = c.text; ctx.lineWidth = 1.4; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(xThr, padT); ctx.lineTo(xThr, base); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // labels
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.fillStyle = c.ionRungG; ctx.textAlign = 'left'; ctx.fillText('bright |g⟩', padL + 4, padT + 9);
+  ctx.fillStyle = c.ionRed; ctx.fillText('dark |e⟩', padL + 62, padT + 9);
+  ctx.fillStyle = c.text; ctx.textAlign = 'center'; ctx.fillText(`thr=${thr}`, xThr, padT + 9);
+  const tickStep = Math.max(1, Math.round(kMax / 8));
+  for (let k = 0; k <= kMax; k += tickStep) ctx.fillText(String(k), xOf(k) + bw / 2, base + 12);
+  ctx.textAlign = 'right'; ctx.fillText('photon count →', w - padR, h - 4); ctx.textAlign = 'left';
+}
+
+// F-vs-t_d sweep: the emergent break-it curve, with the current t_d marked.
+function drawM8Sweep() {
+  const cv = document.getElementById('m8-sweep'); if (!cv) return;
+  const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, c = plotColors();
+  ctx.clearRect(0, 0, w, h);
+  const padL = 26, padR = 8, padT = 10, padB = 18, p = params.m8;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const tdMin = 0.02, tdMax = 2.0, steps = 60;
+  const xOf = (td) => padL + (td - tdMin) / (tdMax - tdMin) * plotW;
+  const yOf = (F) => padT + (1 - F) * plotH;           // F ∈ [0,1]
+
+  ctx.strokeStyle = c.line; ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.moveTo(padL, yOf(0)); ctx.lineTo(w - padR, yOf(0));
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, yOf(0)); ctx.stroke();
+  ctx.globalAlpha = 0.3; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(padL, yOf(1)); ctx.lineTo(w - padR, yOf(1)); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = c.accent; ctx.lineWidth = 1.8; ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const td = tdMin + (tdMax - tdMin) * i / steps;
+    const F = optimalThreshold(p.R * td, p.Rbg * td).fidelity;
+    const x = xOf(td), y = yOf(F);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  const Fnow = optimalThreshold(p.R * p.td, p.Rbg * p.td).fidelity;
+  ctx.fillStyle = c.accent2;
+  ctx.beginPath(); ctx.arc(xOf(p.td), yOf(Fnow), 4, 0, 2 * Math.PI); ctx.fill();
+
+  ctx.fillStyle = c.text; ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('F=1', padL + 2, yOf(1) + 10); ctx.fillText('0', padL - 12, yOf(0) + 3);
+  ctx.textAlign = 'right'; ctx.fillText('t_d →', w - padR, h - 4); ctx.textAlign = 'left';
+}
+
+function m8Enter() { m8Recompute(); }
+
 const m4Panel = document.getElementById('m4-panel');
 const m6Panel = document.getElementById('m6-panel');
 const m7Panel = document.getElementById('m7-panel');
+const m8Panel = document.getElementById('m8-panel');
 const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const m = MODULES[id];
   const prev = state.module;
@@ -548,24 +726,28 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const isM6 = id === 'M6';
   const isM4 = id === 'M4';
   const isM7 = id === 'M7';
+  const isM8 = id === 'M8';
   state.classical = classical;
-  if (classical || isM6 || isM4 || isM7) { state.playing = false; playBtn.textContent = '▶ Play'; }
+  if (classical || isM6 || isM4 || isM7 || isM8) { state.playing = false; playBtn.textContent = '▶ Play'; }
   if (!isM6) state.m6gate = null;
   if (!isM4) state.m4scan = null;
   if (!isM7) state.m7 = null;
+  if (!isM8) state.m8 = null;
 
   // toggle side-groups: engine controls vs classical controls. M4/M6/M7 are
   // engine-based but swap the M3/M5 drive/state/diagram groups for their own controls.
   document.querySelectorAll('.engine-only').forEach((el) => { el.hidden = classical; });
-  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6 || isM4 || isM7; });
+  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6 || isM4 || isM7 || isM8; });
   document.getElementById('m6-controls').hidden = classical || !isM6;
   document.getElementById('m4-controls').hidden = classical || !isM4;
   document.getElementById('m7-controls').hidden = classical || !isM7;
-  // M4/M7 run their own dedicated engine → hide the shared trap/dissipator/truncation
-  // controls (they target the M3/M5 engine) to avoid desyncing. M7 also hides the
-  // global Playback group (it has its own Run button; the shared frame loop is idle).
-  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4 || isM7; });
-  document.getElementById('playback-group').hidden = classical || isM7;
+  document.getElementById('m8-controls').hidden = classical || !isM8;
+  // M4/M7 run their own dedicated engine, M8 runs a pure Poisson model → hide the
+  // shared trap/dissipator/truncation controls (they target the M3/M5 engine) to
+  // avoid desyncing. M7/M8 also hide the global Playback group (they have their own
+  // buttons / loop; the shared frame loop is idle).
+  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4 || isM7 || isM8; });
+  document.getElementById('playback-group').hidden = classical || isM7 || isM8;
   document.getElementById('m1-controls').hidden = id !== 'M1';
   document.getElementById('m2-controls').hidden = id !== 'M2';
 
@@ -573,13 +755,15 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   // (its readouts live in its own center panel + its engine has a different API).
   appShell.classList.toggle('mode-classical', classical);
   appShell.classList.toggle('mode-ms', isM7);
-  levelsPanel.hidden = classical || isM6 || isM4 || isM7;
-  moduleActions.hidden = classical || isM6 || isM4 || isM7;
+  appShell.classList.toggle('mode-readout', isM8);
+  levelsPanel.hidden = classical || isM6 || isM4 || isM7 || isM8;
+  moduleActions.hidden = classical || isM6 || isM4 || isM7 || isM8;
   m1Panel.hidden = id !== 'M1';
   m2Panel.hidden = id !== 'M2';
   m6Panel.hidden = !isM6;
   m4Panel.hidden = !isM4;
   m7Panel.hidden = !isM7;
+  m8Panel.hidden = !isM8;
 
   // stop the inactive classical view; show/refresh the active one
   if (id === 'M1') { ensureMathieuView().show(); } else if (mathieuView) mathieuView.hide();
@@ -610,6 +794,9 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
     // Entering M7: build the dedicated MSGate (own namespace), reset to |gg,0⟩ and
     // render the (empty) loop. `sys` is left untouched — no swap, no leak.
     m7Reset();
+  } else if (isM8) {
+    // Entering M8: build the Poisson readout histograms + fidelity. No engine touched.
+    m8Enter();
   } else if (!classical && !isM6) {
     // Entering M3/M5 (incl. from M4/M7): redraw the level diagram with the live engine.
     refresh(true);
@@ -811,6 +998,14 @@ wireSlider('m7-derr', (v) => {
 document.getElementById('m7-run').addEventListener('click', () => { if (state.module === 'M7') m7StartGate(); });
 document.getElementById('m7-reset').addEventListener('click', () => { if (state.module === 'M7') m7Reset(); });
 
+// -- M8: state readout --
+// All M8 sliders write ONLY params.m8.* (never the shared params.gamma/delta/rabi)
+// and rebuild the Poisson histograms; no engine is touched.
+wireSlider('m8-td', (v) => { params.m8.td = v; if (state.module === 'M8') m8Recompute(); }, (v) => v.toFixed(2));
+wireSlider('m8-r', (v) => { params.m8.R = v; if (state.module === 'M8') m8Recompute(); }, (v) => String(Math.round(v)));
+wireSlider('m8-rbg', (v) => { params.m8.Rbg = v; if (state.module === 'M8') m8Recompute(); }, (v) => v.toFixed(1));
+document.getElementById('m8-resample').addEventListener('click', () => { if (state.module === 'M8') m8Recompute(); });
+
 // Chunked Doppler-floor δ-scan (stays responsive), then an accurate extrapolated
 // floor at −Γ/2 for the readout vs the canonical Γ/2ω_z.
 document.getElementById('m4-scan').addEventListener('click', () => {
@@ -855,6 +1050,16 @@ function frame() {
   // animating the phase-space loop / Wigner / populations off the real ρ.
   if (state.module === 'M7') {
     if (state.m7 && state.m7.running) m7StepGate();
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  // M8 state readout: live-accumulate Poisson photon-count shots into the bright/dark
+  // histograms (up to a cap, then idle) so the student watches the distributions build
+  // and overlap. Pure Poisson model — no engine step.
+  if (state.module === 'M8') {
+    const m = state.m8;
+    if (m && m.shots < 20000) { m8SampleBatch(250); m8Refresh(); }
     requestAnimationFrame(frame);
     return;
   }

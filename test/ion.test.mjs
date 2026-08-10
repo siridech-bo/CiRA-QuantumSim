@@ -837,5 +837,96 @@ let floorG3 = null, floorG6 = null;
 }
 
 // =============================================================================
+// M8 — STATE READOUT (fluorescence detection + photon histograms; spec §4 M8, §6).
+//
+// State-selective detection: bright |g⟩ scatters the 397 nm probe (mean count
+// n̄_bright = R·t_d), dark/shelved |e⟩ does not (n̄_dark = R_bg·t_d ≈ 0). Photon
+// counts are Poisson; a threshold discriminates bright/dark; readout fidelity
+// F = 1 − ½[P(count<thr|bright) + P(count≥thr|dark)] at the optimal threshold.
+// The photon SAMPLER is the existing ion-traces poissonSample (reused, not
+// re-written); F/threshold come from the analytic Poisson PMF (ion-readout.js).
+// Break-it: shorten t_d → n̄_bright shrinks → histograms overlap → F drops. This
+// is EMERGENT from t_d·R vs the Poisson width √n̄, never hard-wired.
+// =============================================================================
+import { poissonSample } from '../src/ion-traces.js';
+import {
+  optimalThreshold, readoutFidelityAt, empiricalError, poissonPMFArray,
+} from '../src/ion-readout.js';
+
+// -----------------------------------------------------------------------------
+// M8a — Means: bright mean count = R·t_d (sampled), dark ≈ 0 (R_bg=0). Confirms the
+// sampler reused from ion-traces reproduces the Poisson mean of the detection model.
+// -----------------------------------------------------------------------------
+{
+  const R = 20, td = 1.0, NS = 40000;
+  let sB = 0, sD = 0;
+  for (let i = 0; i < NS; i++) { sB += poissonSample(R * td); sD += poissonSample(0 * td); }
+  const meanB = sB / NS, meanD = sD / NS;
+  const brightOk = Math.abs(meanB - R * td) / (R * td) < 0.02;   // 3σ ≈ 0.3% at NS=40k
+  const darkOk = meanD < 1e-9;                                    // R_bg=0 ⇒ all zeros
+  report('M8a bright mean count = R·t_d (sampled), dark ≈ 0', brightOk && darkOk,
+    `n̄_bright sampled ${meanB.toFixed(3)} vs R·t_d=${(R * td).toFixed(1)}; n̄_dark=${meanD.toExponential(2)} (R_bg=0)`);
+}
+
+// -----------------------------------------------------------------------------
+// M8b — Fidelity rises with the detection window: a LONG window (n̄_bright≫1, R·t_d=20)
+// gives F>0.99; a SHORT window (n̄_bright≲1, R·t_d=1) gives F clearly lower because the
+// bright and dark Poisson histograms overlap. Both halves asserted — the readout
+// working AND failing.
+// -----------------------------------------------------------------------------
+{
+  const R = 20, Rbg = 0.5;
+  const longW = optimalThreshold(R * 1.0, Rbg * 1.0);    // n̄_bright = 20
+  const shortW = optimalThreshold(R * 0.05, Rbg * 0.05); // n̄_bright = 1
+  const longOk = longW.fidelity > 0.99;
+  const shortOk = shortW.fidelity < 0.9 && shortW.fidelity < longW.fidelity - 0.1;
+  report('M8b readout fidelity: long window (n̄=20) F>0.99, short window (n̄≲1) drops', longOk && shortOk,
+    `F(t_d=1.0, n̄=20)=${longW.fidelity.toFixed(5)} (>0.99); F(t_d=0.05, n̄=1)=${shortW.fidelity.toFixed(4)} (clearly lower)`);
+}
+
+// -----------------------------------------------------------------------------
+// M8c — F is from Poisson statistics (not hard-wired): (i) sampled shots' empirical
+// classification error at the optimal threshold matches the analytic Poisson overlap;
+// (ii) the analytic F equals 1 − ½[overlap] recomputed at that threshold; (iii) the
+// optimal threshold sits strictly between n̄_dark and n̄_bright.
+// -----------------------------------------------------------------------------
+{
+  const R = 20, Rbg = 0.5, td = 0.2, NS = 40000;      // n̄_bright=4, n̄_dark=0.1 (measurable overlap)
+  const lamB = R * td, lamD = Rbg * td;
+  const opt = optimalThreshold(lamB, lamD);
+  // (ii) internal consistency: recomputed fidelity at the same threshold agrees.
+  const at = readoutFidelityAt(opt.threshold, lamB, lamD);
+  const consistentOk = Math.abs(at.fidelity - opt.fidelity) < 1e-12;
+  // (iii) threshold between the two means.
+  const betweenOk = opt.threshold > lamD && opt.threshold < lamB;
+  // (i) empirical vs analytic error from sampled shots.
+  const B = [], D = [];
+  for (let i = 0; i < NS; i++) { B.push(poissonSample(lamB)); D.push(poissonSample(lamD)); }
+  const emp = empiricalError(B, D, opt.threshold);
+  const matchOk = Math.abs(emp.error - opt.error) < 0.01;
+  report('M8c F from Poisson overlap: empirical=analytic, thr between means', consistentOk && betweenOk && matchOk,
+    `n̄_dark=${lamD} < thr=${opt.threshold} < n̄_bright=${lamB}; analytic err=${opt.error.toExponential(3)} ` +
+    `(F=${opt.fidelity.toFixed(4)}), empirical err=${emp.error.toExponential(3)}`);
+}
+
+// -----------------------------------------------------------------------------
+// M8d — Emergent break-it: sweeping t_d, F rises MONOTONICALLY toward 1 (n̄_bright=R·t_d
+// grows past the Poisson width √n̄, separating the histograms). Not a hard-coded branch —
+// the whole curve is non-decreasing and climbs from an overlapping floor to F→1.
+// -----------------------------------------------------------------------------
+{
+  const R = 20, Rbg = 0.5;
+  const tds = [0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0];
+  const Fs = tds.map((td) => optimalThreshold(R * td, Rbg * td).fidelity);
+  let mono = true;
+  for (let i = 1; i < Fs.length; i++) if (Fs[i] < Fs[i - 1] - 1e-9) mono = false;
+  const rises = Fs[Fs.length - 1] - Fs[0] > 0.15;   // climbs substantially overall
+  const towardOne = Fs[Fs.length - 1] > 0.99;       // F → 1 at a long window
+  const ok = mono && rises && towardOne;
+  report('M8d emergent: sweep t_d → F rises monotonically toward 1 (histograms separate)', ok,
+    `F(t_d): ${tds.map((td, i) => td.toFixed(2) + ':' + Fs[i].toFixed(4)).join(' ')}; monotonic=${mono}`);
+}
+
+// =============================================================================
 console.log(`\n${passes} passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);

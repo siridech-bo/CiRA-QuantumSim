@@ -45,8 +45,8 @@ the verified `docs/ion-physics-constants.md` and `docs/ion-recoil-kernel-physics
 | M4 | Doppler cooling | `ion.js` | ✅ | detune blue → heating |
 | M5 | Sideband cooling ★ | `ion.js` | ✅ | raise heating → cooling stalls |
 | M6 | Single-qubit gates (Bloch, AC Stark) | `ion.js` | ✅ | shorten pulse → not selective |
-| M7 | Mølmer-Sørensen gate (phase-space loop, Bell) | `ion-ms.js` | ⬜ Phase 3 | mis-set δ → loop won't close |
-| M8 | Readout (shelving, photon histograms) | `ion.js` | ⬜ Phase 3 | short window → histograms overlap |
+| M7 | Mølmer-Sørensen gate (phase-space loop, Bell) | `ion-ms.js` | ✅ | mis-set δ → loop won't close |
+| M8 | Readout (shelving, photon histograms) | `ion-readout.js` | ✅ | short window → histograms overlap |
 
 ### Engine physics (verified, `ion.js`)
 Full displacement operator `D(iη)=exp[iη(a+a†)]` as the DEFAULT coupling (exact Laguerre matrix
@@ -68,20 +68,20 @@ n̄ measured two independent ways (sideband asymmetry + Rabi-flop FFT) that agre
 `ion-gates.js` (M6 driver), `ion-modes-ui.js` (M1/M2 views), `ion-ui.js`, `ion-main.js`,
 `ion.css`, `ion.html`. Suites: ion (16), ion-modes (11).
 
-### Status: Phase 2 COMPLETE ✅
-All six context modules (M1–M6) + the recoil kernel are shipped and verified. Ion suite 27
-assertions; **152 total across 7 suites**. The recoil kernel is the sourced three-operator
-O(η̃²) form (ξ=2/5 σ-default); M4 Doppler is honest LD-regime (asserts the real coefficient
-c≈0.5–0.65 rising toward 1, documenting where the canonical Γ/2ω_z breaks down).
+### Status: SUBSTRATE COMPLETE ✅ (all 8 modules, Phases 1–3)
+All eight modules (M1–M8) + the recoil kernel are shipped and verified. Ion suite 31 assertions;
+**161 total across 8 suites**. Highlights: recoil kernel = sourced three-operator O(η̃²) form
+(ξ=2/5 σ-default); M4 Doppler honest LD-regime (real coefficient c≈0.5–0.65 rising, documents
+where canonical Γ/2ω_z breaks); M7 Mølmer-Sørensen Bell F=1.000000 at loop closure (independently
+re-derived by tracing out the motion); M8 readout fidelity from genuine Poisson overlap.
 
-### Remaining work — Phase 3 (the payoff)
-- **M7 — Mølmer-Sørensen gate** (`ion-ms.js`, 2 qubits ⊗ 1 mode, dim ~80): bichromatic drive,
-  phase-space displacement loop rendered via `wigner.js`, Bell fidelity; break-it: mis-set δ so
-  the loop won't close. Verified physics in `docs/ion-physics-constants.md` §8.
-- **M8 — Readout** (shelving, photon histograms, discrimination fidelity), reusing the Phase-1b
-  Poisson shot-noise generator; break-it: shorten the detection window → histograms overlap.
-- **Optional (Phase 2d)** — exact non-LD angle-integrated recoil dissipator (`recoil:'full'`) to
-  validate the literal canonical Doppler T_D=ħΓ/2k_B at the ⁴⁰Ca⁺ n̄≈10 regime.
+### Optional future work (not required)
+- **Phase 2d** — exact non-LD angle-integrated recoil dissipator (`recoil:'full'`, Gauss–Legendre
+  over the dipole pattern + D(iη̃)) to validate the literal canonical Doppler T_D=ħΓ/2k_B at the
+  ⁴⁰Ca⁺ n̄≈10 regime.
+- The deferred **JC QRC memory benchmark** (Substrate 2) as a Python/QuTiP script.
+- Full adversarial-QA-agent pass on `ion-ms.js` (M7 got thorough orchestrator verification but the
+  QA agent dispatches died on transient network).
 
 ## Process (every phase)
 Coder → **independent adversarial QA** (re-derives physics from scratch, hunts faked/rigged

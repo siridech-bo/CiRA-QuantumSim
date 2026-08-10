@@ -54,7 +54,7 @@
           <button class="mod-btn" data-module="M4">M4</button>
           <button class="mod-btn" data-module="M6">M6</button>
           <button class="mod-btn" data-module="M7">M7</button>
-          <button class="mod-btn" disabled title="Phase 3">M8</button>
+          <button class="mod-btn" data-module="M8">M8</button>
         </div>
         <div class="module-desc" id="module-desc"></div>
         <div class="break-it" id="break-it"></div>
@@ -154,6 +154,27 @@
           <button id="m7-run" class="primary full">Run MS gate</button>
         </div>
         <button id="m7-reset" class="full" style="margin-top:6px">Reset to |gg,0⟩</button>
+      </div>
+
+      <!-- ===== M8 readout controls (Poisson photon-count model; shown only for M8) ===== -->
+      <div class="side-group engine-only m8-only" id="m8-controls" hidden>
+        <div class="side-label">Detection window <span class="tag">break it</span></div>
+        <label class="slider-row"><span>t_d</span>
+          <input id="m8-td" type="range" min="0.02" max="2" step="0.02" value="1" />
+          <span id="m8-td-val" class="val mono">1.00</span></label>
+        <div class="break-it">Break it: shorten <code>t_d</code> — n̄_bright=R·t_d shrinks below the Poisson width √n̄, the bright &amp; dark histograms <b>overlap</b>, and the readout fidelity <b>drops</b>. Selectivity is emergent from t_d·R vs √n̄, not hard-wired.</div>
+        <div class="side-label" style="margin-top:12px">Rates (counts / unit time)</div>
+        <label class="slider-row"><span>R scatter</span>
+          <input id="m8-r" type="range" min="4" max="50" step="1" value="20" />
+          <span id="m8-r-val" class="val mono">20</span></label>
+        <div class="module-desc">R = on-resonance 397 nm scatter rate × collection efficiency (the bright <code>|g⟩</code> fluorescence R=Γ·ρ_ee).</div>
+        <label class="slider-row"><span>R_bg</span>
+          <input id="m8-rbg" type="range" min="0" max="5" step="0.1" value="0.5" />
+          <span id="m8-rbg-val" class="val mono">0.5</span></label>
+        <div class="module-desc">R_bg = dark <code>|e⟩</code> background / off-resonant rate (≈0).</div>
+        <div class="btn-row" style="margin-top:10px">
+          <button id="m8-resample" class="primary full">Resample shots</button>
+        </div>
       </div>
 
       <div class="side-group engine-only" id="playback-group">
@@ -388,6 +409,33 @@
           </div>
         </div>
         <div class="break-it" id="m7-note"></div>
+      </section>
+
+      <!-- ===== M8 — state readout: photon-count histograms + discrimination ===== -->
+      <section id="m8-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>State readout — fluorescence detection &amp; photon histograms</h2>
+          <span class="subtitle">bright |g⟩ scatters the 397 nm probe (n̄=R·t_d), dark/shelved |e⟩ does not (n̄=R_bg·t_d). Poisson photon counts; a threshold discriminates bright/dark. Shorten t_d and watch the histograms overlap.</span>
+        </div>
+        <div class="mode-body">
+          <div class="mode-cell">
+            <div class="mode-cap">photon-count histograms — bright vs dark Poisson, with the discrimination threshold (sampled bars + analytic PMF)</div>
+            <canvas id="m8-hist" width="620" height="300"></canvas>
+          </div>
+          <div class="m8-row">
+            <div class="mode-cell">
+              <div class="mode-cap">readout fidelity at the optimal threshold</div>
+              <div class="m8-readout" id="m8-readout">
+                <span class="lbl">adjust <b>t_d</b> / <b>R</b> / <b>R_bg</b> — the histograms and fidelity update live.</span>
+              </div>
+            </div>
+            <div class="mode-cell">
+              <div class="mode-cap">readout fidelity F vs detection window t_d (● = current)</div>
+              <canvas id="m8-sweep" width="300" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="break-it" id="m8-note"></div>
       </section>
     </main>
 
