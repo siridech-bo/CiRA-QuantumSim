@@ -11,6 +11,12 @@ import { compileCircuit, HOMO_TWO_QUBIT_ENABLED } from './gates.js';
 import { CircuitRunner } from './runner.js';
 import { CircuitUI, Histogram } from './circuit-ui.js';
 import { invalidatePlotColors } from './theme.js';
+import { initInfo } from './info.js';
+import { NMR_INFO } from './nmr-info.js';
+
+// Educational ⓘ info buttons: inject one next to every [data-info] label / graph
+// heading and open a sourced popup on click (src/info.js + src/nmr-info.js).
+initInfo(NMR_INFO);
 
 // Active molecule + engine (both reassigned by loadMolecule()).
 let molecule = defaultMolecule();

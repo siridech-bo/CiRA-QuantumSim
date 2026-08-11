@@ -9,6 +9,7 @@
   <title>Jaynes-Cummings Reservoir — CiRA QuantumSim</title>
   <link rel="stylesheet" href="src/style.css" />
   <link rel="stylesheet" href="src/jc.css" />
+  <link rel="stylesheet" href="src/info.css" />
   <script type="importmap">
   {
     "imports": {
@@ -26,7 +27,7 @@
         <span class="logo">⚛</span>
         <div class="brand-text">
           <h1>Jaynes-Cummings Qubit-Boson Reservoir</h1>
-          <span class="subtitle" id="app-subtitle">real cavity-QED Lindblad substrate — Fock mode ⊗ qubit</span>
+          <span class="subtitle" id="app-subtitle" data-info="engine-overview">real cavity-QED Lindblad substrate — Fock mode ⊗ qubit</span>
         </div>
       </div>
       <div class="topbar-actions">
@@ -44,7 +45,7 @@
       <h2 class="side-title">Controls</h2>
 
       <div class="side-group">
-        <div class="side-label">Regime</div>
+        <div class="side-label" data-info="regime">Regime</div>
         <div class="btn-row" id="regime-toggle">
           <button class="regime-btn primary" data-regime="JC">JC</button>
           <button class="regime-btn" data-regime="DJC">DJC</button>
@@ -59,7 +60,7 @@
           <button id="btn-reset">↺ Reset</button>
         </div>
         <label class="slider-row">
-          <span>Speed</span>
+          <span data-info="speed">Speed</span>
           <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1" />
           <span id="speed-val" class="val">1.0×</span>
         </label>
@@ -68,12 +69,12 @@
       <div class="side-group">
         <div class="side-label">Drive & window</div>
         <label class="slider-row">
-          <span>β</span>
+          <span data-info="beta">β</span>
           <input id="beta" type="range" min="-2" max="2" step="0.05" value="0.5" />
           <span id="beta-val" class="val mono">0.50</span>
         </label>
         <label class="slider-row">
-          <span>dt</span>
+          <span data-info="dt">dt</span>
           <input id="dt" type="range" min="1" max="20" step="1" value="10" />
           <span id="dt-val" class="val mono">10</span>
         </label>
@@ -81,7 +82,7 @@
       </div>
 
       <div class="side-group">
-        <div class="side-label">Input sequence <span class="tag">QRC</span></div>
+        <div class="side-label" data-info="input-sequence">Input sequence <span class="tag">QRC</span></div>
         <label class="slider-row">
           <span>windows</span>
           <input id="seq-n" type="range" min="4" max="40" step="1" value="16" />
@@ -95,13 +96,13 @@
 
       <div class="side-group">
         <div class="side-label">Parameters</div>
-        <label class="slider-row" id="row-chi"><span>χ</span><input id="chi" type="range" min="0" max="3" step="0.05" value="1" /><span id="chi-val" class="val mono">1.00</span></label>
-        <label class="slider-row" id="row-chip"><span>χ′</span><input id="chiP" type="range" min="0" max="3" step="0.05" value="1" /><span id="chiP-val" class="val mono">1.00</span></label>
-        <label class="slider-row"><span>κ</span><input id="kappa" type="range" min="0" max="1" step="0.02" value="0.1" /><span id="kappa-val" class="val mono">0.10</span></label>
-        <label class="slider-row"><span>α</span><input id="alpha" type="range" min="0" max="2" step="0.05" value="0" /><span id="alpha-val" class="val mono">0.00</span></label>
-        <label class="slider-row"><span>Δ_a</span><input id="deltaA" type="range" min="-2" max="2" step="0.05" value="1" /><span id="deltaA-val" class="val mono">1.00</span></label>
-        <label class="slider-row"><span>Δ_b</span><input id="deltaB" type="range" min="0" max="3" step="0.05" value="1" /><span id="deltaB-val" class="val mono">1.00</span></label>
-        <label class="slider-row"><span>Nc</span><input id="Nc" type="range" min="6" max="25" step="1" value="15" /><span id="Nc-val" class="val mono">15</span></label>
+        <label class="slider-row" id="row-chi"><span data-info="chi">χ</span><input id="chi" type="range" min="0" max="3" step="0.05" value="1" /><span id="chi-val" class="val mono">1.00</span></label>
+        <label class="slider-row" id="row-chip"><span data-info="chiP">χ′</span><input id="chiP" type="range" min="0" max="3" step="0.05" value="1" /><span id="chiP-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span data-info="kappa">κ</span><input id="kappa" type="range" min="0" max="1" step="0.02" value="0.1" /><span id="kappa-val" class="val mono">0.10</span></label>
+        <label class="slider-row"><span data-info="alpha">α</span><input id="alpha" type="range" min="0" max="2" step="0.05" value="0" /><span id="alpha-val" class="val mono">0.00</span></label>
+        <label class="slider-row"><span data-info="deltaA">Δ_a</span><input id="deltaA" type="range" min="-2" max="2" step="0.05" value="1" /><span id="deltaA-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span data-info="deltaB">Δ_b</span><input id="deltaB" type="range" min="0" max="3" step="0.05" value="1" /><span id="deltaB-val" class="val mono">1.00</span></label>
+        <label class="slider-row"><span data-info="Nc">Nc</span><input id="Nc" type="range" min="6" max="25" step="1" value="15" /><span id="Nc-val" class="val mono">15</span></label>
       </div>
     </aside>
 
@@ -109,7 +110,7 @@
     <main id="center">
       <section id="scene-panel">
         <div class="panel-head">
-          <h2>Qubit Bloch sphere</h2>
+          <h2 data-info="qubit-bloch">Qubit Bloch sphere</h2>
           <span class="subtitle">reduced qubit ρ (partial trace over the cavity)</span>
         </div>
         <div id="scene-container"></div>
@@ -117,7 +118,7 @@
 
       <section id="wigner-panel">
         <div class="panel-head">
-          <h2>Wigner function W(X,P)</h2>
+          <h2 data-info="wigner">Wigner function W(X,P)</h2>
           <span class="subtitle">reduced cavity state — <span class="wneg">blue = negative</span> (non-classical)</span>
           <span class="mono spacer" id="wigner-min">min(W) = —</span>
         </div>
@@ -130,17 +131,17 @@
       <h2 class="side-title">Readouts</h2>
 
       <div class="result-block">
-        <h3>Live observables</h3>
+        <h3 data-info="observables">Live observables</h3>
         <div id="obs-readout" class="obs-grid"></div>
       </div>
 
       <div class="result-block">
-        <h3>⟨N⟩ / ⟨X⟩ time trace</h3>
+        <h3 data-info="trace">⟨N⟩ / ⟨X⟩ time trace</h3>
         <canvas id="trace-canvas" width="480" height="150"></canvas>
       </div>
 
       <div class="result-block">
-        <h3>Fock populations</h3>
+        <h3 data-info="fock">Fock populations</h3>
         <canvas id="fock-canvas" width="480" height="150"></canvas>
       </div>
     </aside>

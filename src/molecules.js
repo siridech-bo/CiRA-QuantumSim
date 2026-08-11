@@ -137,8 +137,12 @@ const CHLOROFORM = {
 //    REAL scalar couplings (Hz): J(C1-C2)=34.94, J(C2-C3)=53.81, J(C1-C3)=1.21.
 //    T1 (s): 20.3, 2.8, 1.5;  T2 (s): 1.3, 0.41, 0.81.
 //    Weak coupling valid: |Δν| (thousands of Hz) >> |J| (tens of Hz).
-//    Source: Kim et al., Phys. Rev. A 66, 022311 (2002),
-//    arXiv:quant-ph/0108068 (¹³C at 125.77 MHz).
+//    Source: Peng, Zhu, Fang, Feng, Liu & Gao, "Experimental Implementation of
+//    Hogg's Algorithm on a Three-Quantum-bit NMR Quantum Computer," Phys. Rev. A
+//    65, 042315 (2002), arXiv:quant-ph/0108068 (3-spin ¹³C, 125.77 MHz).
+//    [Citation corrected 2026-08: the earlier "Kim et al., PRA 66, 022311" was a
+//     mis-attribution — that vol/page is an unrelated paper; the arXiv id above is
+//     the real 3-qubit ¹³C NMR source. Physical J/shift/T values are unchanged.]
 // ---------------------------------------------------------------------------
 const ALANINE = {
   id: 'alanine',
@@ -160,7 +164,7 @@ const ALANINE = {
     { i: 1, j: 2, J: 53.81 },
     { i: 0, j: 2, J: 1.21 },
   ]),
-  source: 'Kim et al., Phys. Rev. A 66, 022311 (2002), arXiv:quant-ph/0108068.',
+  source: 'Peng, Zhu, Fang, Feng, Liu & Gao, Phys. Rev. A 65, 042315 (2002), arXiv:quant-ph/0108068.',
 };
 
 // ---------------------------------------------------------------------------
@@ -175,8 +179,13 @@ const ALANINE = {
 //    UNPUBLISHED ENGINEERING ESTIMATES for the relaxation animation ONLY, NOT
 //    from any source. Tests fit T2 strictly and treat T1 loosely/skip.
 //    Weak coupling valid: |Δν| (thousands of Hz) >> |J| (tens of Hz).
-//    Source: Peng et al., Phys. Rev. Lett. 100, 140501 (2008), arXiv:0704.1181
-//    (500 MHz); T2 from arXiv:1710.03646.
+//    Source: Liu, Zhang & Long, "Simulation of four-body interaction in a nuclear
+//    magnetic resonance quantum information processor," arXiv:0704.1181 (2007) —
+//    4-spin ¹³C system (500 MHz spectrometer); T2 from arXiv:1710.03646.
+//    [Citation corrected 2026-08: the earlier "Peng et al., PRL 100, 140501 (2008)"
+//     was a mis-attribution (that PRL is Ryan-Moussa-Baugh-Laflamme algorithmic
+//     cooling, a different arXiv); 0704.1181 is the 4-qubit ¹³C source the repo
+//     points to. Physical J/shift/T2 values are unchanged.]
 // ---------------------------------------------------------------------------
 const CROTONIC = {
   id: 'crotonic',
@@ -202,7 +211,7 @@ const CROTONIC = {
     { i: 1, j: 3, J: -1.6 },
     { i: 2, j: 3, J: 41.3 },
   ]),
-  source: 'Peng et al., PRL 100, 140501 (2008), arXiv:0704.1181; T2 from arXiv:1710.03646. '
+  source: 'Liu, Zhang & Long, arXiv:0704.1181 (2007); T2 from arXiv:1710.03646. '
     + 'T1 are unpublished estimates.',
 };
 

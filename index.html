@@ -10,6 +10,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>NMR Spin Physics 3D Visualizer</title>
   <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="src/info.css" />
   <style>
     /* Substrate switcher in the top bar (links NMR ⇄ Jaynes-Cummings pages). */
     .substrate-nav { font-size: 12px; color: var(--muted); margin-right: 12px; }
@@ -17,6 +18,13 @@
     .substrate-nav a:hover { text-decoration: underline; }
     .substrate-nav .cur { color: var(--text); font-weight: 700; }
     .topbar-actions { display: flex; align-items: center; gap: 4px; }
+    /* Small caption overlay so the 3D scene panel can carry its own info button. */
+    .scene-caption {
+      position: absolute; top: 8px; left: 12px; z-index: 2;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      background: color-mix(in srgb, var(--bg) 70%, transparent);
+      padding: 2px 6px; border-radius: 6px; pointer-events: auto;
+    }
   </style>
   <script type="importmap">
   {
@@ -36,7 +44,7 @@
         <span class="logo">⚛</span>
         <div class="brand-text">
           <h1>NMR Spin Physics 3D Visualizer</h1>
-          <span class="subtitle" id="app-subtitle">real n-spin density-matrix (Lindblad) engine</span>
+          <span class="subtitle" id="app-subtitle" data-info="engine-overview">real n-spin density-matrix (Lindblad) engine</span>
         </div>
       </div>
       <div class="topbar-actions">
@@ -54,7 +62,7 @@
       <h2 class="side-title">Controls</h2>
 
       <div class="side-group">
-        <div class="side-label">Molecule</div>
+        <div class="side-label" data-info="molecule">Molecule</div>
         <select id="molecule-select" class="mol-select"></select>
         <div id="molecule-readout" class="mol-readout"></div>
       </div>
@@ -66,25 +74,25 @@
           <button id="btn-reset">↺ Reset</button>
         </div>
         <label class="slider-row">
-          <span>Speed</span>
+          <span data-info="speed">Speed</span>
           <input id="speed" type="range" min="0.1" max="4" step="0.1" value="1" />
           <span id="speed-val" class="val">1.0×</span>
         </label>
       </div>
 
       <div class="side-group">
-        <div class="side-label">RF Pulse</div>
+        <div class="side-label" data-info="rf-pulse">RF Pulse</div>
         <div class="btn-row wrap">
           <button class="pulse" data-angle="90"  data-axis="x">90°x</button>
           <button class="pulse" data-angle="90"  data-axis="y">90°y</button>
           <button class="pulse" data-angle="180" data-axis="x">180°x</button>
         </div>
-        <div class="side-label sub">Target nucleus</div>
+        <div class="side-label sub" data-info="target">Target nucleus</div>
         <div class="radio-row" id="target-radios"></div>
       </div>
 
       <div class="side-group">
-        <div class="side-label">Encoding <span class="tag">QRC</span></div>
+        <div class="side-label" data-info="encoding">Encoding <span class="tag">QRC</span></div>
         <label class="slider-row">
           <span>s</span>
           <input id="encode-s" type="range" min="0" max="1" step="0.01" value="0.5" />
@@ -95,8 +103,8 @@
 
       <div class="side-group">
         <div class="side-label">Physics</div>
-        <label class="check"><input id="relax" type="checkbox" checked /> Relaxation (T1/T2)</label>
-        <label class="check"><input id="coupling" type="checkbox" checked /> J-coupling</label>
+        <label class="check" data-info="relaxation"><input id="relax" type="checkbox" checked /> Relaxation (T1/T2)</label>
+        <label class="check" data-info="jcoupling"><input id="coupling" type="checkbox" checked /> J-coupling</label>
       </div>
     </aside>
 
@@ -104,7 +112,7 @@
     <main id="center">
       <section id="circuit-panel">
         <div class="panel-head">
-          <h2>Quantum Circuit</h2>
+          <h2 data-info="circuit">Quantum Circuit</h2>
           <span class="subtitle">gates → real RF pulses + J-coupling delays on the live engine</span>
         </div>
 
@@ -124,6 +132,7 @@
       </section>
 
       <section id="scene-panel">
+        <div class="scene-caption" data-info="bloch-spheres">Bloch spheres</div>
         <div id="scene-container"></div>
       </section>
     </main>
@@ -133,7 +142,7 @@
       <h2 class="side-title">Results</h2>
 
       <div class="result-block">
-        <h3>FID Signal</h3>
+        <h3 data-info="fid">FID Signal</h3>
         <canvas id="fid-canvas" width="480" height="150"></canvas>
         <div class="legend">
           <span class="swatch" style="background:#4A90D9"></span>real (Σ b<sub>x</sub>)
@@ -142,22 +151,22 @@
       </div>
 
       <div class="result-block">
-        <h3>Spectrum <span class="muted-tag">live FFT</span></h3>
+        <h3 data-info="spectrum">Spectrum <span class="muted-tag">live FFT</span></h3>
         <canvas id="spectrum-canvas" width="480" height="150"></canvas>
       </div>
 
       <div class="result-block">
-        <h3>Projection Probability</h3>
+        <h3 data-info="histogram">Projection Probability</h3>
         <canvas id="histogram-canvas" width="480" height="150"></canvas>
       </div>
 
       <div class="result-block center">
-        <h3>Density matrix |ρ|</h3>
+        <h3 data-info="heatmap">Density matrix |ρ|</h3>
         <canvas id="heatmap-canvas" width="220" height="220"></canvas>
       </div>
 
       <div class="result-block">
-        <h3>QASM</h3>
+        <h3 data-info="qasm">QASM</h3>
         <pre id="qasm-view" class="qasm"></pre>
       </div>
     </aside>

@@ -16,6 +16,12 @@ import { wignerGrid } from './wigner.js';
 import { BlochScene } from './scene.js';
 import { WignerPlot, FockBar, TracePlot } from './jc-ui.js';
 import { invalidatePlotColors } from './theme.js';
+import { initInfo } from './info.js';
+import { JC_INFO } from './jc-info.js';
+
+// Educational ⓘ info buttons: inject one next to every [data-info] label / graph
+// heading and open a sourced popup on click (src/info.js + src/jc-info.js).
+initInfo(JC_INFO);
 
 // ---- engine -----------------------------------------------------------------
 const params = {
