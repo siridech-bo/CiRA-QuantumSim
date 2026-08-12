@@ -1,0 +1,85 @@
+/* ==========================================================================
+   wizard.css — the "guided walkthrough" launch button, floating stepper panel,
+   and the control-highlight ring. Theme-aware, self-contained. Loaded on the
+   Trapped-Ion page; the component is reusable on the other substrates.
+   ========================================================================== */
+
+/* ---- launch button (sits in the sidebar Module group) -------------------- */
+.wizard-launch {
+  margin-top: 10px; width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  color: #fff; border: 1px solid var(--accent); border-radius: 8px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 92%, #fff 8%),
+    var(--accent));
+  transition: filter .12s;
+}
+.wizard-launch:hover { filter: brightness(1.08); }
+
+/* ---- floating stepper panel (non-modal) ---------------------------------- */
+.wz-panel {
+  position: fixed; right: 18px; bottom: 18px; z-index: 900;
+  width: 340px; max-width: calc(100vw - 36px);
+  display: none; flex-direction: column;
+  background: var(--panel, var(--elev)); color: var(--text);
+  border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+}
+.wz-panel.open { display: flex; }
+
+.wz-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-bottom: 1px solid var(--border);
+  cursor: move; user-select: none;
+}
+.wz-grip { color: var(--muted); font-size: 13px; letter-spacing: -1px; }
+.wz-title { flex: 1 1 auto; font-size: 12.5px; font-weight: 700; min-width: 0; }
+.wz-close {
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--btn); color: var(--text);
+  font-size: 15px; line-height: 1; cursor: pointer;
+}
+.wz-close:hover { background: var(--btn-hover); }
+
+.wz-body { padding: 13px 14px 4px; }
+.wz-steplabel {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent);
+}
+.wz-steptitle { font-size: 15px; font-weight: 700; margin: 4px 0 6px; line-height: 1.3; }
+.wz-text { font-size: 13px; line-height: 1.62; color: var(--text); }
+.wz-text code {
+  font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+  background: var(--plot, rgba(127,127,127,.14)); padding: 1px 4px; border-radius: 4px;
+}
+.wz-text b { color: var(--text); }
+
+.wz-dots { display: flex; flex-wrap: wrap; gap: 5px; margin: 13px 0 2px; }
+.wz-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background .15s; }
+.wz-dot.done { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.wz-dot.on { background: var(--accent); transform: scale(1.15); }
+
+.wz-foot {
+  display: flex; gap: 8px; padding: 11px 12px; margin-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.wz-foot button {
+  flex: 1 1 auto; padding: 7px 10px; font-size: 12.5px; font-weight: 650;
+  border-radius: 7px; border: 1px solid var(--border); cursor: pointer;
+  background: var(--btn); color: var(--text);
+}
+.wz-foot button:hover { background: var(--btn-hover); }
+.wz-foot button:disabled { opacity: 0.4; cursor: not-allowed; }
+.wz-foot .wz-next.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.wz-foot .wz-next.primary:hover { filter: brightness(1.08); background: var(--accent); }
+
+/* ---- the highlight ring drawn on the control a step refers to ------------- */
+.wizard-highlight {
+  outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px;
+  animation: wz-pulse 1.25s ease-in-out infinite;
+}
+@keyframes wz-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
