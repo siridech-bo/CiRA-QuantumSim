@@ -174,6 +174,11 @@ export class IonSystem {
     this.geometry    = opts.geometry    || 'sigma';
     this.emitLambdaNm= opts.emitLambdaNm!== undefined ? opts.emitLambdaNm : 397;
     this._etaTildeOverride = opts.etaTilde;   // undefined ⇒ compute from emitLambdaNm
+    // Drive η override: a number sets η DIRECTLY, bypassing the λ/mass/ω_z formula —
+    // used for schemes where η isn't a laser recoil (e.g. ¹⁷¹Yb⁺ MAGIC, where the
+    // effective Lamb–Dicke parameter η_eff comes from a static ∂B/∂z gradient, not a
+    // wavelength). undefined ⇒ compute from λ exactly as before.
+    this._etaOverride = opts.etaOverride;
 
     // η computed from real SI quantities (spec §2.8).
     this.eta = this._computeEta();
@@ -191,7 +196,9 @@ export class IonSystem {
     const x0 = Math.sqrt(HBAR / (2 * m * omega));      // ground-state extent (m)
     return k * x0;
   }
-  _computeEta() { return this._computeEtaFor(this.lambdaNm); }
+  _computeEta() {
+    return this._etaOverride !== undefined ? this._etaOverride : this._computeEtaFor(this.lambdaNm);
+  }
 
   // Emitted-photon Lamb–Dicke parameter η̃ (recoil doc §2): same formula, emission
   // wavelength. Overridable via opts.etaTilde; else tracks emitLambdaNm + trap.
@@ -464,10 +471,12 @@ export class IonSystem {
   }
 
   // η via trap parameters (spec §2.8): recompute η, rebuild the coupling.
-  setTrap({ massU, lambdaNm, nuTrapHz } = {}) {
+  setTrap({ massU, lambdaNm, nuTrapHz, etaOverride } = {}) {
     if (massU    !== undefined) this.massU    = massU;
     if (lambdaNm !== undefined) this.lambdaNm = lambdaNm;
     if (nuTrapHz !== undefined) this.nuTrapHz = nuTrapHz;
+    // etaOverride: a number pins η directly; null clears back to the λ-computed value.
+    if (etaOverride !== undefined) this._etaOverride = (etaOverride === null ? undefined : etaOverride);
     this.eta = this._computeEta();
     this._refreshEtaTilde();          // η̃ shares the trap (mass, ω_z), so it moves too
     this._buildDisplacement();

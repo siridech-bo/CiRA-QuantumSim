@@ -2,7 +2,7 @@
   "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
   "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
   "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
-  "count": 82,
+  "count": 90,
   "papers": [
     {
       "rank": 1,
@@ -1171,6 +1171,126 @@
       ],
       "foundational": true,
       "rank": 82
+    },
+    {
+      "title": "Controlling the quantum state of trapped ions",
+      "authors": "C. F. Roos",
+      "venue": "PhD thesis, Univ. Innsbruck (2000)",
+      "year": "2000",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-2000-roos-controlling-the-quantum-state-of-trapped-ions.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 83
+    },
+    {
+      "title": "Experimental realization of quantum gates and the Deutsch–Jozsa algorithm with trapped ⁴⁰Ca⁺ ions",
+      "authors": "S. Gulde",
+      "venue": "PhD thesis, Univ. Innsbruck (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-2003-gulde-quantum-gates-deutsch-jozsa-ca-ions.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 84
+    },
+    {
+      "title": "Preparation of entangled states and quantum teleportation with atomic qubits",
+      "authors": "M. Riebe",
+      "venue": "PhD thesis, Univ. Innsbruck (2005)",
+      "year": "2005",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-2005-riebe-entanglement-teleportation-atomic-qubits.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 85
+    },
+    {
+      "title": "Precision spectroscopy with ⁴⁰Ca⁺ ions in a Paul trap",
+      "authors": "M. Chwalla",
+      "venue": "PhD thesis, Univ. Innsbruck (2009)",
+      "year": "2009",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-2009-chwalla-precision-spectroscopy-ca-ions.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 86
+    },
+    {
+      "title": "Quantum information processing beyond ten ion-qubits",
+      "authors": "T. Monz",
+      "venue": "PhD thesis, Univ. Innsbruck (2011)",
+      "year": "2011",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-2011-monz-qip-beyond-ten-ion-qubits.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 87
+    },
+    {
+      "title": "Experimental quantum computation and quantum error correction with trapped ions",
+      "authors": "D. Nigg",
+      "venue": "PhD thesis, Univ. Innsbruck",
+      "year": "",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-nigg-quantum-computation-error-correction-trapped-ions.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 88
+    },
+    {
+      "title": "A compact ion-trap quantum computing demonstrator (PhD thesis)",
+      "authors": "I. Pogorelov",
+      "venue": "PhD thesis, Univ. Innsbruck",
+      "year": "",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "thesis-pogorelov-compact-ion-trap-qc-demonstrator.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 89
+    },
+    {
+      "title": "A compact ion-trap quantum computing demonstrator",
+      "authors": "Pogorelov, Feldker, Marciniak et al.",
+      "venue": "PRX Quantum 2, 020343 (2021)",
+      "year": "2021",
+      "arxiv": null,
+      "doi": "10.1103/PRXQuantum.2.020343",
+      "url": null,
+      "file": "paper-2021-pogorelov-compact-ion-trap-qc-demonstrator.pdf",
+      "modules": [
+        "Thesis"
+      ],
+      "thesis": true,
+      "rank": 90
     }
   ]
 }

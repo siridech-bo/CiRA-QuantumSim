@@ -29,6 +29,7 @@ import { initInfo } from './info.js';
 import { ION_INFO } from './ion-info.js';
 import { initWizard, startWizard, closeWizard } from './wizard.js';
 import { ION_WIZARDS } from './ion-wizard.js';
+import { initLab, openLab } from './ion-lab.js';
 
 // Educational ⓘ info buttons: inject one next to every [data-info] label / graph
 // heading and open a sourced popup on click (src/info.js + src/ion-info.js).
@@ -36,10 +37,13 @@ initInfo(ION_INFO);
 // Guided walkthroughs: the "🎓 Guided walkthrough" button runs a step-by-step tour
 // of the ACTIVE module (src/wizard.js + src/ion-wizard.js).
 initWizard(ION_WIZARDS);
+// "🔬 In the lab": links the active module to the real apparatus (src/ion-lab.js).
+// onApplyAtom lets the Ca⁺/Yb⁺ toggle push that atom's real numbers into the sim.
+initLab({ onApplyAtom: applyAtomPreset });
 
 // ---- engine + parameters ----------------------------------------------------
 const params = {
-  N: 20, lambdaNm: 729, nuTrapHz: 1e6, massU: 40,
+  N: 20, lambdaNm: 729, nuTrapHz: 1e6, massU: 40, atom: null,
   delta: -1, rabi: 0.30, mode: 'exact',
   gamma: 0.10, heating: 0.02, nBath: 1, gammaPhi: 0.05,
   seOn: false, bathOn: false, dephaseOn: false,
@@ -828,6 +832,9 @@ document.querySelectorAll('#center-tabs .ctab').forEach((b) =>
 document.getElementById('btn-wizard').addEventListener('click', () => {
   startWizard(state.module, (MODULES[state.module] || {}).name);
 });
+document.getElementById('btn-lab').addEventListener('click', () => {
+  openLab(state.module, (MODULES[state.module] || {}).name);
+});
 
 // -- playback --
 const playBtn = document.getElementById('btn-play');
@@ -880,14 +887,63 @@ document.getElementById('coupling-mode').addEventListener('change', (e) => {
   params.mode = e.target.value; sys.setCouplingMode(params.mode); calibrateStepBudget(); refresh();
 });
 
+// ---- atom presets: the "In the lab" atom toggle can push REAL ⁴⁰Ca⁺ / ¹⁷¹Yb⁺
+// numbers (mass, ν_z, η/η_eff, decoherence) into the live shared engine. For Yb the
+// coupling η_eff is set by the MAGIC ∂B/∂z gradient (etaOverride), NOT a laser λ; both
+// atoms are dephasing-limited (Ca: metastable D₅/₂ ⇒ negligible spontaneous emission;
+// Yb: hyperfine ground state ⇒ none), with the field-sensitive Yb qubit dephasing
+// faster (B-noise). Values are in the sim's natural units (ω_z ≡ 1), representative. --
+const ATOM_PRESETS = {
+  Ca: { sym: '⁴⁰Ca⁺', massU: 40,  lambdaNm: 729, nuTrapMHz: 1.0, etaOverride: null,
+        seOn: false, gamma: 0.02, dephaseOn: true, gammaPhi: 0.02, bathOn: false, heating: 0.01 },
+  Yb: { sym: '¹⁷¹Yb⁺', massU: 171, lambdaNm: 729, nuTrapMHz: 0.5, etaOverride: 0.0080,
+        seOn: false, gamma: 0.02, dephaseOn: true, gammaPhi: 0.04, bathOn: false, heating: 0.01 },
+};
+function _setRange(id, v, dec) {
+  const el = document.getElementById(id); if (!el) return;
+  el.value = v;
+  const span = document.getElementById(id + '-val');
+  if (span) span.textContent = Number(v).toFixed(dec);
+}
+function _setCheck(id, on) { const el = document.getElementById(id); if (el) el.checked = !!on; }
+
+function applyAtomPreset(atomKey) {
+  const p = ATOM_PRESETS[atomKey];
+  if (!p) return null;
+  params.atom = atomKey;
+  params.massU = p.massU; params.lambdaNm = p.lambdaNm; params.nuTrapHz = p.nuTrapMHz * 1e6;
+  params.seOn = p.seOn; params.gamma = p.gamma;
+  params.dephaseOn = p.dephaseOn; params.gammaPhi = p.gammaPhi;
+  params.bathOn = p.bathOn; params.heating = p.heating;
+  // live shared engine (M3/M5/M6…); M4 keeps its own 397 nm engine
+  sys.setTrap({ massU: p.massU, lambdaNm: p.lambdaNm, nuTrapHz: params.nuTrapHz, etaOverride: p.etaOverride });
+  sys.setSpontaneousEmission(p.seOn, p.gamma);
+  sys.setDephasing(p.dephaseOn, p.gammaPhi);
+  sys.setMotionalBath(p.bathOn, { heating: p.heating, nBath: params.nBath });
+  // reflect into the sidebar controls so they don't read stale
+  const lamSel = document.getElementById('lambda'); if (lamSel) lamSel.value = String(p.lambdaNm);
+  _setRange('nutrap', p.nuTrapMHz, 1);
+  _setCheck('chk-se', p.seOn);      _setRange('gamma', p.gamma, 2);
+  _setCheck('chk-dephase', p.dephaseOn); _setRange('gammaphi', p.gammaPhi, 2);
+  _setCheck('chk-bath', p.bathOn);  _setRange('heating', p.heating, 3);
+  updateEta(); calibrateStepBudget(); refresh();
+  const etaLbl = atomKey === 'Yb' ? 'η_eff' : 'η';
+  return `${p.sym} loaded — ${etaLbl}=${sys.etaValue().toFixed(4)}, ν_z=${p.nuTrapMHz.toFixed(1)} MHz, mass ${p.massU} u; dephasing γ_φ=${p.gammaPhi}, spontaneous emission ${p.seOn ? 'on' : 'off'}.`;
+}
+
 // -- trap → η --
 function updateEta() {
   const el = document.getElementById('eta-readout');
   // η is read from the LIVE engine (truthful even while M4 runs on its 397 nm engine).
   const inM4 = state.module === 'M4';
+  if (params.atom === 'Yb' && !inM4) {
+    el.innerHTML = `η_eff = <b>${sys.etaValue().toFixed(4)}</b> &nbsp; (¹⁷¹Yb⁺ · MAGIC — set by the ∂B/∂z gradient, no laser; ν_z=${(params.nuTrapHz / 1e6).toFixed(1)} MHz, ${params.massU} u).`;
+    return;
+  }
   const lam = inM4 ? 397 : params.lambdaNm, nu = inM4 ? 1.0 : params.nuTrapHz / 1e6;
   el.innerHTML = `η = <b>${sys.etaValue().toFixed(4)}</b> &nbsp; (λ=${lam} nm, ν_z=${nu.toFixed(1)} MHz, ${params.massU} u).` +
-    (inM4 ? ' <span class="muted-tag">M4: 397 nm cooling, η=η̃</span>' : ' Stiffer trap ⇒ smaller η.');
+    (inM4 ? ' <span class="muted-tag">M4: 397 nm cooling, η=η̃</span>'
+          : (params.atom === 'Ca' ? ' <span class="muted-tag">⁴⁰Ca⁺ preset</span>' : ' Stiffer trap ⇒ smaller η.'));
 }
 document.getElementById('lambda').addEventListener('change', (e) => {
   params.lambdaNm = parseFloat(e.target.value); sys.setTrap({ lambdaNm: params.lambdaNm }); updateEta(); refresh();

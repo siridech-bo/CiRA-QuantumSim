@@ -13,9 +13,9 @@ const search = document.getElementById('lib-search');
 const MODULE_LABELS = {
   M1: 'Paul trap', M2: 'Normal modes', M3: 'Sidebands', M4: 'Doppler cool',
   M5: 'Sideband cool', M6: '1-qubit gate', M7: 'MS gate', M8: 'Readout',
-  Other: 'Applications & foundations', Ref: 'Foundational references',
+  Other: 'Applications & foundations', Ref: 'Foundational references', Thesis: 'PhD theses & long-form',
 };
-const MODULE_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'Other', 'Ref'];
+const MODULE_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'Other', 'Ref', 'Thesis'];
 
 // ---- concept dictionary: a physics parameter/term → module(s) it relates to.
 // `terms` are the strings a user might type (symbols + synonyms, lowercase).
@@ -57,7 +57,7 @@ function extLinks(p) {
 }
 function tagChips(mods) {
   return (mods || []).map((m) => {
-    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational' : `${m} · ${MODULE_LABELS[m] || ''}`;
+    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational' : m === 'Thesis' ? 'Thesis' : `${m} · ${MODULE_LABELS[m] || ''}`;
     return `<span class="lib-tag ${m === 'Other' ? 'other' : ''}" title="${esc(MODULE_LABELS[m] || m)}">${esc(label)}</span>`;
   }).join('');
 }
@@ -107,7 +107,7 @@ function matchConcepts(q) {
   const chips = [`<button class="lib-chip on" data-m="all">All<span class="n">${papers.length}</span></button>`];
   for (const m of MODULE_ORDER) {
     if (!counts[m]) continue;
-    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational refs' : `${m} · ${MODULE_LABELS[m]}`;
+    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational refs' : m === 'Thesis' ? 'Theses' : `${m} · ${MODULE_LABELS[m]}`;
     chips.push(`<button class="lib-chip" data-m="${m}">${label}<span class="n">${counts[m]}</span></button>`);
   }
   filtersEl.innerHTML = chips.join('');
