@@ -8,5 +8,6 @@ __pycache__/
 .venv/
 node_modules/
 
-# Downloaded paper PDFs (copyrighted author/arXiv copies — kept local, not redistributed)
-Library/*.pdf
+# NOTE: Library/*.pdf (the 64 trapped-ion papers) are now tracked in this PRIVATE
+# repo for personal/educational archival. Keep the repo private — flipping it to
+# public (or enabling GitHub Pages) would redistribute these copyrighted PDFs.
