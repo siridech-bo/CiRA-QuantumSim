@@ -13,9 +13,9 @@ const search = document.getElementById('lib-search');
 const MODULE_LABELS = {
   M1: 'Paul trap', M2: 'Normal modes', M3: 'Sidebands', M4: 'Doppler cool',
   M5: 'Sideband cool', M6: '1-qubit gate', M7: 'MS gate', M8: 'Readout',
-  Other: 'Applications & foundations',
+  Other: 'Applications & foundations', Ref: 'Foundational references',
 };
-const MODULE_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'Other'];
+const MODULE_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'Other', 'Ref'];
 
 // ---- concept dictionary: a physics parameter/term → module(s) it relates to.
 // `terms` are the strings a user might type (symbols + synonyms, lowercase).
@@ -57,13 +57,13 @@ function extLinks(p) {
 }
 function tagChips(mods) {
   return (mods || []).map((m) => {
-    const label = m === 'Other' ? 'Other' : `${m} · ${MODULE_LABELS[m] || ''}`;
+    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational' : `${m} · ${MODULE_LABELS[m] || ''}`;
     return `<span class="lib-tag ${m === 'Other' ? 'other' : ''}" title="${esc(MODULE_LABELS[m] || m)}">${esc(label)}</span>`;
   }).join('');
 }
 function card(p) {
   const href = `pdf.html?file=${encodeURIComponent(p.file)}`;
-  const hay = (p.title + ' ' + p.authors + ' ' + (p.venue || '')).toLowerCase();
+  const hay = (p.title + ' ' + p.authors + ' ' + (p.venue || '') + ' ' + (p.arxiv || '') + ' ' + (p.doi || '')).toLowerCase();
   const mods = (p.modules || ['Other']);
   return `<div class="lib-card" data-search="${esc(hay)}" data-mods="${esc(mods.join(' '))}">
     <div class="lib-rank">${p.rank}</div>
@@ -107,7 +107,7 @@ function matchConcepts(q) {
   const chips = [`<button class="lib-chip on" data-m="all">All<span class="n">${papers.length}</span></button>`];
   for (const m of MODULE_ORDER) {
     if (!counts[m]) continue;
-    const label = m === 'Other' ? 'Other' : `${m} · ${MODULE_LABELS[m]}`;
+    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational refs' : `${m} · ${MODULE_LABELS[m]}`;
     chips.push(`<button class="lib-chip" data-m="${m}">${label}<span class="n">${counts[m]}</span></button>`);
   }
   filtersEl.innerHTML = chips.join('');
@@ -147,5 +147,8 @@ function matchConcepts(q) {
   }
 
   search.addEventListener('input', applyFilter);
+  // deep-link: library.html?q=…  (used by the info-popup reference links)
+  const qp = new URLSearchParams(location.search).get('q');
+  if (qp) search.value = qp;
   applyFilter();
 })();

@@ -69,7 +69,7 @@ export function explainStream(opts, { onDelta, onDone, onError, model = DEFAULT_
     model,
     max_tokens: 2048,
     stream: true,
-    system: systemPrompt(opts.paper),
+    system: opts.system || systemPrompt(opts.paper),
     output_config: { effort: 'medium' },
     messages,
   };

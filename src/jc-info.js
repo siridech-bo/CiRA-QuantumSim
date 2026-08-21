@@ -10,7 +10,7 @@
 const R = {
   JC63:  { tag: 'JC63',  cite: 'Jaynes & Cummings, “Comparison of quantum and semiclassical radiation theories with application to the beam maser,” Proc. IEEE 51, 89 (1963).', href: 'https://doi.org/10.1109/PROC.1963.1664' },
   SK93:  { tag: 'SK93',  cite: 'Shore & Knight, “The Jaynes–Cummings Model,” J. Mod. Opt. 40, 1195 (1993).', href: 'https://doi.org/10.1080/09500349314551321' },
-  DGZ26: { tag: 'DGZ26', cite: 'Das, Giorgi & Zambrini, “Quantum reservoir computing in Jaynes-Cummings models,” Phys. Rev. Research 8, 023148 (2026). (This substrate’s source paper.)' },
+  DGZ26: { tag: 'DGZ26', cite: 'Das, Giorgi & Zambrini, “Quantum reservoir computing in Jaynes-Cummings models,” Phys. Rev. Research 8, 023148 (2026); arXiv:2510.00171. (This substrate’s source paper.)', href: 'https://arxiv.org/abs/2510.00171' },
   Blais: { tag: 'Blais04', cite: 'Blais, Huang, Wallraff, Girvin & Schoelkopf, “Cavity quantum electrodynamics for superconducting electrical circuits,” Phys. Rev. A 69, 062320 (2004).', href: 'https://doi.org/10.1103/PhysRevA.69.062320' },
   CG69:  { tag: 'CG69',  cite: 'Cahill & Glauber, “Ordered Expansions in Boson Amplitude Operators,” Phys. Rev. 177, 1857 (1969).', href: 'https://doi.org/10.1103/PhysRev.177.1857' },
   Wig32: { tag: 'Wigner32', cite: 'Wigner, “On the Quantum Correction For Thermodynamic Equilibrium,” Phys. Rev. 40, 749 (1932).', href: 'https://doi.org/10.1103/PhysRev.40.749' },

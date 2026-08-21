@@ -33,7 +33,7 @@ h2 .info-btn, h3 .info-btn { font-size: 10px; padding: 1px 8px; }
 .info-backdrop.open { opacity: 1; pointer-events: auto; }
 
 .info-dialog {
-  width: min(680px, 100%); max-height: min(84vh, 900px);
+  width: min(940px, 100%); max-height: min(86vh, 900px);
   display: flex; flex-direction: column;
   background: var(--panel, var(--elev)); color: var(--text);
   border: 1px solid var(--border); border-radius: 14px;
@@ -65,9 +65,13 @@ h2 .info-btn, h3 .info-btn { font-size: 10px; padding: 1px 8px; }
 }
 .info-close:hover { background: var(--btn-hover); }
 
+/* two columns under the head: reading content (left) + AI copilot (right) */
+.info-cols { display: flex; flex: 1 1 auto; min-height: 0; }
+.info-main { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+
 .info-body {
-  padding: 16px 20px; overflow-y: auto; font-size: 13.5px; line-height: 1.68;
-  color: var(--text);
+  padding: 16px 20px; overflow-y: auto; flex: 1 1 auto; min-height: 0;
+  font-size: 13.5px; line-height: 1.68; color: var(--text);
 }
 .info-body p { margin: 0 0 11px; }
 .info-body p:last-child { margin-bottom: 0; }
@@ -109,4 +113,52 @@ h2 .info-btn, h3 .info-btn { font-size: 10px; padding: 1px 8px; }
 .info-refs .tag {
   display: inline-block; font-family: ui-monospace, monospace; font-weight: 700;
   color: var(--text); margin-right: 4px;
+}
+.info-refs .ref-lib { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+
+/* ---- embedded AI-copilot chat (right column) ---------------------------- */
+.info-chat {
+  flex: 1 1 50%; min-width: 0; padding: 12px 16px 14px; border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; min-height: 0;
+  background: color-mix(in srgb, var(--elev) 55%, transparent);
+}
+.info-chat > h4 {
+  margin: 0 0 8px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted);
+}
+.info-chat-key { display: flex; gap: 6px; margin-bottom: 8px; }
+.info-chat-key[hidden] { display: none; }   /* author display:flex above defeats the UA [hidden] rule — restore it */
+.info-chat-key input {
+  flex: 1; font-size: 12px; padding: 7px 9px; border: 1px solid var(--border);
+  border-radius: 7px; background: var(--btn); color: var(--text);
+}
+.info-chat-key button {
+  font-size: 12px; padding: 6px 12px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 600;
+}
+.info-chat-thread { flex: 1 1 auto; min-height: 60px; overflow-y: auto; margin-bottom: 8px; }
+.info-chat-empty { color: var(--muted); font-size: 12.5px; line-height: 1.55; margin: 2px 0; }
+.ic-msg { margin-bottom: 10px; font-size: 13px; line-height: 1.6; }
+.ic-msg .ic-who { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 2px; }
+.ic-msg.ic-user .ic-body { background: var(--plot, rgba(127,127,127,.1)); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; white-space: pre-wrap; }
+.ic-msg.ic-ai .ic-body { white-space: pre-wrap; }
+.ic-msg.err .ic-body { color: #e06c6c; }
+.info-chat-ask { display: flex; gap: 8px; }
+.info-chat-ask textarea {
+  flex: 1; resize: none; min-height: 38px; max-height: 120px; font-family: inherit;
+  font-size: 13px; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--btn); color: var(--text);
+}
+.info-chat-ask button {
+  padding: 0 16px; border-radius: 8px; cursor: pointer; font-weight: 650;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff;
+}
+.info-chat-ask button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* narrow screens: stack the copilot below the content instead of beside it */
+@media (max-width: 760px) {
+  .info-cols { flex-direction: column; }
+  .info-main { flex: 1 1 auto; }
+  .info-chat { flex: 1 1 auto; border-left: none; border-top: 1px solid var(--border); }
+  .info-chat-thread { max-height: 200px; }
 }

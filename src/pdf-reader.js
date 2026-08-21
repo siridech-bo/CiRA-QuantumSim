@@ -45,6 +45,8 @@ document.getElementById('pr-key-save').onclick = () => {
 };
 function refreshKeyPanel() { keyPanel.classList.toggle('hide', hasApiKey()); }
 refreshKeyPanel();
+// Live cross-tab sync: reflect a key saved/cleared in another tab (info popups, Library).
+window.addEventListener('storage', (e) => { if (e.key === 'anthropic-api-key' || e.key === null) refreshKeyPanel(); });
 
 // ---- load paper metadata + PDF ----------------------------------------------
 (async function init() {

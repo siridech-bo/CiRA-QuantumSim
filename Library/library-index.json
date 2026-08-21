@@ -2,7 +2,7 @@
   "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
   "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
   "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
-  "count": 64,
+  "count": 82,
   "papers": [
     {
       "rank": 1,
@@ -901,6 +901,276 @@
       "modules": [
         "Other"
       ]
+    },
+    {
+      "title": "Experimental Issues in Coherent Quantum-State Manipulation of Trapped Atomic Ions",
+      "authors": "Wineland, Monroe, Itano, Leibfried, King & Meekhof",
+      "venue": "J. Res. NIST 103, 259 (1998)",
+      "year": "1998",
+      "arxiv": null,
+      "doi": "10.6028/jres.103.019",
+      "url": "https://nvlpubs.nist.gov/nistpubs/jres/103/3/j33win.pdf",
+      "file": "ref-1998-wineland-experimental-issues-in-coherent-quantum-state.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 65
+    },
+    {
+      "title": "Generation of Nonclassical Motional States of a Trapped Atom",
+      "authors": "Meekhof, Monroe, King, Itano & Wineland",
+      "venue": "Phys. Rev. Lett. 76, 1796 (1996)",
+      "year": "1996",
+      "arxiv": null,
+      "doi": "10.1103/PhysRevLett.76.1796",
+      "url": "https://iontrap.duke.edu/files/2025/03/PhysRevLett.76.1796.pdf",
+      "file": "ref-1996-meekhof-generation-of-nonclassical-motional-states-of-a.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 66
+    },
+    {
+      "title": "The ion trap quantum information processor",
+      "authors": "Steane",
+      "venue": "Appl. Phys. B 64, 623 (1997)",
+      "year": "1997",
+      "arxiv": "quant-ph/9608011",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/quant-ph/9608011",
+      "file": "ref-1997-steane-the-ion-trap-quantum-information-processor.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 67
+    },
+    {
+      "title": "Quantum dynamics of cold trapped ions, with application to quantum computation",
+      "authors": "James",
+      "venue": "Appl. Phys. B 66, 181 (1998)",
+      "year": "1998",
+      "arxiv": "quant-ph/9702053",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/quant-ph/9702053",
+      "file": "ref-1998-james-quantum-dynamics-of-cold-trapped-ions-with-applic.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 68
+    },
+    {
+      "title": "Quantum Computation with Ions in Thermal Motion",
+      "authors": "Sørensen & Mølmer",
+      "venue": "Phys. Rev. Lett. 82, 1971 (1999)",
+      "year": "1999",
+      "arxiv": "quant-ph/9810039",
+      "doi": "10.1103/PhysRevLett.82.1971",
+      "url": "https://arxiv.org/pdf/quant-ph/9810039",
+      "file": "ref-1999-srensen-quantum-computation-with-ions-in-thermal-motion.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 69
+    },
+    {
+      "title": "Entanglement and quantum computation with ions in thermal motion",
+      "authors": "Sørensen & Mølmer",
+      "venue": "Phys. Rev. A 62, 022311 (2000)",
+      "year": "2000",
+      "arxiv": "quant-ph/0002024",
+      "doi": "10.1103/PhysRevA.62.022311",
+      "url": "https://arxiv.org/pdf/quant-ph/0002024",
+      "file": "ref-2000-srensen-entanglement-and-quantum-computation-with-ions.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 70
+    },
+    {
+      "title": "Spontaneous recoil effects of optical pumping on trapped atoms",
+      "authors": "Wallentowitz & Toschek",
+      "venue": "Phys. Rev. A 78, 043412 (2008)",
+      "year": "2008",
+      "arxiv": "0808.1272",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/0808.1272",
+      "file": "ref-2008-wallentowitz-spontaneous-recoil-effects-of-optical-pump.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 71
+    },
+    {
+      "title": "Trapped-ion recoil / spontaneous-emission cooling limits (Phatak et al.)",
+      "authors": "Phatak, Blodgett, Peana, Chen & Hood",
+      "venue": "Phys. Rev. A 110, 043116 (2024)",
+      "year": "2024",
+      "arxiv": "2406.19153",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2406.19153",
+      "file": "ref-2024-phatak-trapped-ion-recoil-spontaneous-emission-cooling.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 72
+    },
+    {
+      "title": "NMR techniques for quantum control and computation",
+      "authors": "Vandersypen & Chuang",
+      "venue": "Rev. Mod. Phys. 76, 1037 (2005)",
+      "year": "2005",
+      "arxiv": "quant-ph/0404064",
+      "doi": "10.1103/RevModPhys.76.1037",
+      "url": "https://arxiv.org/pdf/quant-ph/0404064",
+      "file": "ref-2005-vandersypen-nmr-techniques-for-quantum-control-and-comp.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 73
+    },
+    {
+      "title": "Experimental Implementation of Hogg's Algorithm on a Three-Quantum-bit NMR Quantum Computer",
+      "authors": "Peng, Zhu, Fang, Feng, Liu & Gao",
+      "venue": "Phys. Rev. A 65, 042315 (2002)",
+      "year": "2002",
+      "arxiv": "quant-ph/0108068",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/quant-ph/0108068",
+      "file": "ref-2002-peng-experimental-implementation-of-hoggs-algorithm-on.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 74
+    },
+    {
+      "title": "Simulation of four-body interaction in a nuclear magnetic resonance quantum information processor",
+      "authors": "Liu, Zhang & Long",
+      "venue": "arXiv:0704.1181 (2007)",
+      "year": "2007",
+      "arxiv": "0704.1181",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/0704.1181",
+      "file": "ref-2007-liu-simulation-of-four-body-interaction-in-a-nuclear-ma.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 75
+    },
+    {
+      "title": "¹³C-chloroform NMR quantum-computing benchmark parameters",
+      "authors": "Nakahara, Kondo et al.",
+      "venue": "arXiv:quant-ph/0405050 (2004)",
+      "year": "2004",
+      "arxiv": "quant-ph/0405050",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/quant-ph/0405050",
+      "file": "ref-2004-nakahara-13c-chloroform-nmr-quantum-computing-benchmark.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 76
+    },
+    {
+      "title": "Harnessing Disordered-Ensemble Quantum Dynamics for Machine Learning",
+      "authors": "Fujii & Nakajima",
+      "venue": "Phys. Rev. Applied 8, 024030 (2017)",
+      "year": "2017",
+      "arxiv": "1602.08159",
+      "doi": "10.1103/PhysRevApplied.8.024030",
+      "url": "https://arxiv.org/pdf/1602.08159",
+      "file": "ref-2017-fujii-harnessing-disordered-ensemble-quantum-dynamics-f.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 77
+    },
+    {
+      "title": "Quantum reservoir computing in Jaynes-Cummings models: Nonlinear memory and time-series prediction",
+      "authors": "Das, Giorgi & Zambrini",
+      "venue": "Phys. Rev. Research 8, 023148 (2026)",
+      "year": "2026",
+      "arxiv": "2510.00171",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2510.00171",
+      "file": "ref-2026-das-quantum-reservoir-computing-in-jaynes-cummings-mode.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 78
+    },
+    {
+      "title": "Cavity quantum electrodynamics for superconducting electrical circuits",
+      "authors": "Blais, Huang, Wallraff, Girvin & Schoelkopf",
+      "venue": "Phys. Rev. A 69, 062320 (2004)",
+      "year": "2004",
+      "arxiv": "cond-mat/0402216",
+      "doi": "10.1103/PhysRevA.69.062320",
+      "url": "https://arxiv.org/pdf/cond-mat/0402216",
+      "file": "ref-2004-blais-cavity-quantum-electrodynamics-for-superconductin.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 79
+    },
+    {
+      "title": "Opportunities in Quantum Reservoir Computing and Extreme Learning Machines",
+      "authors": "Mujal, Martínez-Peña, Nokkala, García-Beni, Giorgi, Soriano & Zambrini",
+      "venue": "Adv. Quantum Technol. 4, 2100027 (2021)",
+      "year": "2021",
+      "arxiv": "2102.11831",
+      "doi": "10.1002/qute.202100027",
+      "url": "https://arxiv.org/pdf/2102.11831",
+      "file": "ref-2021-mujal-opportunities-in-quantum-reservoir-computing-and.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 80
+    },
+    {
+      "title": "Quantum dynamics of single trapped ions",
+      "authors": "Leibfried, Blatt, Monroe & Wineland",
+      "venue": "Rev. Mod. Phys. 75, 281 (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": "10.1103/RevModPhys.75.281",
+      "url": "https://iontrap.duke.edu/files/2025/03/RevModPhys.75.281.pdf",
+      "file": "ref-2003-leibfried-quantum-dynamics-of-single-trapped-ions.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 81
+    },
+    {
+      "title": "SpinQ Gemini: a desktop quantum computing platform for education and research",
+      "authors": "Hou et al.",
+      "venue": "EPJ Quantum Technol. 8, 20 (2021)",
+      "year": "2021",
+      "arxiv": "2101.10017",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2101.10017",
+      "file": "ref-2021-hou-spinq-gemini-desktop-quantum-computing.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 82
     }
   ]
 }
