@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Reader — CiRA QuantumSim Library</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%E2%9A%9B%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="src/pdf-reader.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="pr-shell">
+    <header class="pr-topbar">
+      <span class="logo">⚛</span>
+      <a class="pr-back" href="library.html">← Library</a>
+      <span class="pr-title" id="pr-title">Loading…</span>
+      <span class="pr-pageinfo" id="pr-pageinfo"></span>
+      <button id="pr-region" class="pr-mode" title="Drag a box over an equation or figure to explain it">▢ Snip equation</button>
+      <button id="theme-toggle" title="Toggle light / dark">🌙</button>
+    </header>
+
+    <main class="pr-viewer" id="pr-viewer">
+      <div id="pr-pages"></div>
+      <div class="pr-selpop" id="pr-selpop">
+        <button class="primary" id="pr-explain">✨ Explain</button>
+        <button id="pr-ask-sel">Ask…</button>
+      </div>
+    </main>
+
+    <aside class="pr-copilot">
+      <h2>AI copilot <span class="muted">· Claude</span></h2>
+      <div class="pr-key" id="pr-key">
+        <input id="pr-key-input" type="password" placeholder="Paste your Anthropic API key (sk-ant-…)" autocomplete="off" />
+        <div class="row"><button id="pr-key-save">Save key</button></div>
+        <div class="hint">Stored only in this browser (localStorage) and sent directly to Anthropic. Your own key — nothing is proxied through a server. Get one at console.anthropic.com.</div>
+      </div>
+      <div class="pr-thread" id="pr-thread">
+        <div class="pr-empty" id="pr-empty">
+          Select any text and press <b>✨ Explain</b>, or use <b>▢ Snip equation</b> to drag a box over
+          an equation/figure — Claude explains it, grounded in this paper. You can then ask follow-up
+          questions below.
+        </div>
+      </div>
+      <div class="pr-ask">
+        <textarea id="pr-ask-input" placeholder="Ask a follow-up about this paper…"></textarea>
+        <button id="pr-ask-send">Send</button>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="src/pdf-reader.js"></script>
+</body>
+</html>

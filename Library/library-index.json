@@ -1,0 +1,906 @@
+{
+  "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
+  "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
+  "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
+  "count": 64,
+  "papers": [
+    {
+      "rank": 1,
+      "title": "Scalable chip-based 3D ion traps",
+      "authors": "Jordan, Brinkmann, Didier, Jansson, Steinel, Huntemann, Shao, Siebeneich, Wunderlich, Johanning, Mehlstäubler",
+      "venue": "2025",
+      "year": "2025",
+      "arxiv": "2504.04946",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2504.04946",
+      "file": "01-scalable-chip-based-3d-ion-traps.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 2,
+      "title": "The role of higher-order terms in trapped-ion quantum computing with magnetic gradient induced coupling",
+      "authors": "Nagies, Geier, Akram, Okamoto, Bantounas, Wunderlich, Johanning, Hauke",
+      "venue": "Quantum Sci. Technol. (2025)",
+      "year": "2025",
+      "arxiv": "2409.10498",
+      "doi": "10.1088/2058-9565/adc1fe",
+      "url": "https://arxiv.org/pdf/2409.10498",
+      "file": "02-the-role-of-higher-order-terms-in-trapped-ion-quantum-c.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 3,
+      "title": "Measuring a single atom's position with extreme sub-wavelength resolution and force measurements in the yoctonewton range",
+      "authors": "Huber, Barthel, Sriarunothai, Giri, Wölk, Wunderlich",
+      "venue": "2024",
+      "year": "2024",
+      "arxiv": "2407.18670",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2407.18670",
+      "file": "03-measuring-a-single-atoms-position-with-extreme-sub-wave.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 4,
+      "title": "Fast, robust and laser-free universal entangling gates for trapped-ion quantum computing",
+      "authors": "Nünnerich, Cohen, Barthel, Huber, Niroomand, Retzker, Wunderlich",
+      "venue": "Phys. Rev. X 15, 021079 (2025)",
+      "year": "2025",
+      "arxiv": "2403.04730",
+      "doi": "10.1103/PhysRevX.15.021079",
+      "url": "https://arxiv.org/pdf/2403.04730",
+      "file": "04-fast-robust-and-laser-free-universal-entangling-gates-f.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 5,
+      "title": "Robust two-qubit gates using pulsed dynamical decoupling",
+      "authors": "Barthel, Huber, Casanova, Arrazola, Niroomand, Sriarunothai, Plenio, Wunderlich",
+      "venue": "New J. Phys. 25 (2023)",
+      "year": "2023",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS57.pdf",
+      "file": "05-robust-two-qubit-gates-using-pulsed-dynamical-decouplin.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 6,
+      "title": "Classical Half-Adder using Trapped-ion Quantum Bits: Towards Energy-efficient Computation",
+      "authors": "Pratapsi, Huber, Barthel, Bose, Wunderlich, Omar",
+      "venue": "Appl. Phys. Lett. 123, 154003 (2023)",
+      "year": "2023",
+      "arxiv": "2210.10470",
+      "doi": "10.1063/5.0176719",
+      "url": "https://arxiv.org/pdf/2210.10470",
+      "file": "06-classical-half-adder-using-trapped-ion-quantum-bits-tow.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 7,
+      "title": "Realization of a quantum perceptron gate with trapped ions",
+      "authors": "Huber, Haber, Barthel, García-Ripoll, Torrontegui, Wunderlich",
+      "venue": "2021",
+      "year": "2021",
+      "arxiv": "2111.08977",
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS56.pdf",
+      "file": "07-realization-of-a-quantum-perceptron-gate-with-trapped-i.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 8,
+      "title": "Q-Match: Iterative Shape Matching via Quantum Annealing",
+      "authors": "Seelbach Benker, Lähner, Golyanik, Wunderlich, Theobalt, Moeller",
+      "venue": "ICCV (2021)",
+      "year": "2021",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS55.pdf",
+      "file": "08-q-match-iterative-shape-matching-via-quantum-annealing.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 9,
+      "title": "Genuine temporal correlations can certify the quantum dimension",
+      "authors": "Spee, Siebeneich, Gloger, Kaufmann, Johanning, Wunderlich, Kleinmann, Gühne",
+      "venue": "New J. Phys. 22, 023028 (2020)",
+      "year": "2020",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS54.pdf",
+      "file": "09-genuine-temporal-correlations-can-certify-the-quantum-d.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 10,
+      "title": "Speeding-up the decision making of a learning agent using an ion trap quantum processor",
+      "authors": "Sriarunothai, Wölk, Giri, Friis, Dunjko, Briegel, Wunderlich",
+      "venue": "Quantum Sci. Technol. 4, 015014 (2019)",
+      "year": "2019",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS53.pdf",
+      "file": "10-speeding-up-the-decision-making-of-a-learning-agent-usi.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 11,
+      "title": "Distinguishing between statistical and systematic errors in quantum process tomography",
+      "authors": "Wölk, Sriarunothai, Giri, Wunderlich",
+      "venue": "New J. Phys. 21, 013015 (2019)",
+      "year": "2019",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS55_2.pdf",
+      "file": "11-distinguishing-between-statistical-and-systematic-error.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 12,
+      "title": "Measuring Anomalous Heating in a Planar Ion Trap with Variable Ion-Surface Separation",
+      "authors": "Boldin, Kraft, Wunderlich",
+      "venue": "Phys. Rev. Lett. 120, 023201 (2018)",
+      "year": "2018",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS52.pdf",
+      "file": "12-measuring-anomalous-heating-in-a-planar-ion-trap-with-v.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 13,
+      "title": "High-fidelity preservation of quantum information during trapped ion transport",
+      "authors": "Kaufmann, Gloger, Kaufmann, Johanning, Wunderlich",
+      "venue": "Phys. Rev. Lett. 120, 010501 (2018)",
+      "year": "2018",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS51.pdf",
+      "file": "13-high-fidelity-preservation-of-quantum-information-durin.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 14,
+      "title": "Radio frequency sideband cooling and sympathetic cooling of trapped ions in a static magnetic field gradient",
+      "authors": "Sriarunothai, Giri, Wölk, Wunderlich",
+      "venue": "J. Mod. Opt. 65(5-6) (2017)",
+      "year": "2017",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS54_2.pdf",
+      "file": "14-radio-frequency-sideband-cooling-and-sympathetic-coolin.pdf",
+      "modules": [
+        "M5"
+      ]
+    },
+    {
+      "rank": 15,
+      "title": "Quantum dynamics of trapped ions in a dynamic field gradient using dressed states",
+      "authors": "Wölk, Wunderlich",
+      "venue": "New J. Phys. 19, 083021 (2017)",
+      "year": "2017",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS50.pdf",
+      "file": "15-quantum-dynamics-of-trapped-ions-in-a-dynamic-field-gra.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 16,
+      "title": "Blueprint for a microwave trapped ion quantum computer",
+      "authors": "Lekitsch, Weidt, Fowler, Mølmer, Devitt, Wunderlich, Hensinger",
+      "venue": "Sci. Adv. 3 (2017)",
+      "year": "2017",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS46.pdf",
+      "file": "16-blueprint-for-a-microwave-trapped-ion-quantum-computer.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 17,
+      "title": "Analog Quantum Simulation of (1+1)D Lattice QED with Trapped Ions",
+      "authors": "Yang, Giri, Johanning, Wunderlich, Zoller, Hauke",
+      "venue": "Phys. Rev. A 94, 052321 (2016)",
+      "year": "2016",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS49.pdf",
+      "file": "17-analog-quantum-simulation-of-11d-lattice-qed-with-trapp.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 18,
+      "title": "Versatile microwave-driven trapped ion spin system for quantum information processing",
+      "authors": "Piltz, Sriarunothai, Ivanov, Wölk, Wunderlich",
+      "venue": "Sci. Adv. 2, e1600093 (2016)",
+      "year": "2016",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS47.pdf",
+      "file": "18-versatile-microwave-driven-trapped-ion-spin-system-for.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 19,
+      "title": "Ultrasensitive Magnetometer using a Single Atom",
+      "authors": "Baumgart, Cai, Retzker, Plenio, Wunderlich",
+      "venue": "Phys. Rev. Lett. 116, 240801 (2016)",
+      "year": "2016",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS42.pdf",
+      "file": "19-ultrasensitive-magnetometer-using-a-single-atom.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 20,
+      "title": "Isospaced Linear Ion Strings",
+      "authors": "Johanning",
+      "venue": "Appl. Phys. B 122:71 (2016)",
+      "year": "2016",
+      "arxiv": null,
+      "doi": "10.1007/s00340-016-6340-0",
+      "url": "https://www.physik.uni-siegen.de/quantenoptik/forschung/publikationen/publis/apb_122_71.pdf",
+      "file": "20-isospaced-linear-ion-strings.pdf",
+      "modules": [
+        "M2"
+      ]
+    },
+    {
+      "rank": 21,
+      "title": "Ion-trajectory analysis for micromotion minimization and the measurement of small forces",
+      "authors": "Gloger, Kaufmann, Kaufmann, Baig, Collath, Johanning, Wunderlich",
+      "venue": "Phys. Rev. A 92, 043421 (2015)",
+      "year": "2015",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS44.pdf",
+      "file": "21-ion-trajectory-analysis-for-micromotion-minimization-an.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 22,
+      "title": "Investigating the emergence of time in stationary states with trapped ions",
+      "authors": "Massar, Spindel, Varón, Wunderlich",
+      "venue": "Phys. Rev. A 92, 030102(R) (2015)",
+      "year": "2015",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS41.pdf",
+      "file": "22-investigating-the-emergence-of-time-in-stationary-state.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 23,
+      "title": "Simplified implementation of the quantum Fourier transform with Ising-type Hamiltonians: Example with ion traps",
+      "authors": "Ivanov, Johanning, Wunderlich",
+      "venue": "2015",
+      "year": "2015",
+      "arxiv": "1503.08806",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/1503.08806",
+      "file": "23-simplified-implementation-of-the-quantum-fourier-transf.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 24,
+      "title": "Fault-tolerant Hahn-Ramsey interferometry with pulse sequences of alternating detuning",
+      "authors": "Vitanov, Gloger, Kaufmann, Kaufmann, Collath, Baig, Johanning, Wunderlich",
+      "venue": "Phys. Rev. A 91, 033406 (2015)",
+      "year": "2015",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS43.pdf",
+      "file": "24-fault-tolerant-hahn-ramsey-interferometry-with-pulse-se.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 25,
+      "title": "State selective detection of hyperfine qubits",
+      "authors": "Wölk, Piltz, Sriarunothai, Wunderlich",
+      "venue": "J. Phys. B 48, 075101 (2015)",
+      "year": "2015",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS38.pdf",
+      "file": "25-state-selective-detection-of-hyperfine-qubits.pdf",
+      "modules": [
+        "M8"
+      ]
+    },
+    {
+      "rank": 26,
+      "title": "Cooling techniques for trapped ions",
+      "authors": "Segal, Wunderlich",
+      "venue": "Les Houches Winter School (2014)",
+      "year": "2014",
+      "arxiv": "1409.6927",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/1409.6927",
+      "file": "26-cooling-techniques-for-trapped-ions.pdf",
+      "modules": [
+        "M4",
+        "M5"
+      ]
+    },
+    {
+      "rank": 27,
+      "title": "A trapped-ion-based quantum byte with 10⁻⁵ next-neighbour cross-talk",
+      "authors": "Piltz, Sriarunothai, Varón, Wunderlich",
+      "venue": "Nat. Commun. 5, 4679 (2014)",
+      "year": "2014",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS39.pdf",
+      "file": "27-a-trapped-ion-based-quantum-byte-with-105-next-neighbou.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 28,
+      "title": "A planar ion trap chip with integrated structures for an adjustable magnetic field gradient",
+      "authors": "Kunert, Georgen, Bogunia, Baig, Baggash, Johanning, Wunderlich",
+      "venue": "Appl. Phys. B 114, 27-36 (2014)",
+      "year": "2014",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS36.pdf",
+      "file": "28-a-planar-ion-trap-chip-with-integrated-structures-for-a.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 29,
+      "title": "Adiabatic quantum simulation with a segmented ion trap: long-distance entanglement in quantum spin systems",
+      "authors": "Zippilli, Johanning, Giampaolo, Wunderlich, Illuminati",
+      "venue": "Phys. Rev. A 89, 042308 (2014)",
+      "year": "2014",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS35.pdf",
+      "file": "29-adiabatic-quantum-simulation-with-a-segmented-ion-trap.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 30,
+      "title": "A scalable, fast and multichannel arbitrary waveform generator",
+      "authors": "Baig, Johanning, Wiese, Heidbrink, Ziolkowski, Wunderlich",
+      "venue": "Rev. Sci. Instrum. 84, 124701 (2013)",
+      "year": "2013",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS37.pdf",
+      "file": "30-a-scalable-fast-and-multichannel-arbitrary-waveform-gen.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 31,
+      "title": "Protecting conditional quantum gates by robust dynamical decoupling",
+      "authors": "Piltz, Scharfenberger, Khromova, Varón, Wunderlich",
+      "venue": "Phys. Rev. Lett. 110, 200501 (2013)",
+      "year": "2005",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS34.pdf",
+      "file": "31-protecting-conditional-quantum-gates-by-robust-dynamica.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 32,
+      "title": "Designer Spin Pseudomolecule Implemented with Trapped Ions in a Magnetic Gradient",
+      "authors": "Khromova, Piltz, Scharfenberger, Gloger, Johanning, Varón, Wunderlich",
+      "venue": "Phys. Rev. Lett. 108, 220502 (2012)",
+      "year": "2050",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS33.pdf",
+      "file": "32-designer-spin-pseudomolecule-implemented-with-trapped-i.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 33,
+      "title": "Thick-film technology for ultra high vacuum interfaces of micro-structured traps",
+      "authors": "Kaufmann, Collath, Baig, Kaufmann, Asenwar, Johanning, Wunderlich",
+      "venue": "Appl. Phys. B 107, 935-943 (2012)",
+      "year": "2012",
+      "arxiv": null,
+      "doi": "10.1007/s00340-012-4951-7",
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS32.pdf",
+      "file": "33-thick-film-technology-for-ultra-high-vacuum-interfaces.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 34,
+      "title": "Designing Spin-Spin Interactions with One and Two Dimensional Ion Crystals in Planar Micro Traps",
+      "authors": "Welzel, Bautista-Salvador, Abarbanel, Wineman-Fisher, Wunderlich, Folman, Schmidt-Kaler",
+      "venue": "Eur. Phys. J. D (2011)",
+      "year": "2011",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS31.pdf",
+      "file": "34-designing-spin-spin-interactions-with-one-and-two-dimen.pdf",
+      "modules": [
+        "M2",
+        "M7"
+      ]
+    },
+    {
+      "rank": 35,
+      "title": "Quantum Gates and Memory using Microwave Dressed States",
+      "authors": "Timoney, Baumgart, Johanning, Varón, Plenio, Retzker, Wunderlich",
+      "venue": "Nature 476, 185-188 (2011)",
+      "year": "2011",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS30.pdf",
+      "file": "35-quantum-gates-and-memory-using-microwave-dressed-states.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 36,
+      "title": "Quantum gates using electronic and nuclear spins of Yb⁺ in a magnetic field gradient",
+      "authors": "Wang, Johanning, Feng, Mintert, Wunderlich",
+      "venue": "Eur. Phys. J. D (2011)",
+      "year": "2011",
+      "arxiv": null,
+      "doi": "10.1140/epjd/e2011-20108-2",
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS29.pdf",
+      "file": "36-quantum-gates-using-electronic-and-nuclear-spins-of-yb.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 37,
+      "title": "Resonance-enhanced isotope-selective photoionization of YbI for ion trap loading",
+      "authors": "Johanning, Braun, Eiteneuer, Paape, Balzer, Neuhauser, Wunderlich",
+      "venue": "Appl. Phys. B 103, 327-338 (2011)",
+      "year": "2011",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS28.pdf",
+      "file": "37-resonance-enhanced-isotope-selective-photoionization-of.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 38,
+      "title": "Enhancement of laser cooling by the use of magnetic gradients",
+      "authors": "Albrecht, Retzker, Wunderlich, Plenio",
+      "venue": "New J. Phys. 13, 033009 (2011)",
+      "year": "2011",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS27.pdf",
+      "file": "38-enhancement-of-laser-cooling-by-the-use-of-magnetic-gra.pdf",
+      "modules": [
+        "M4"
+      ]
+    },
+    {
+      "rank": 39,
+      "title": "Quantum physics: Trapped ion set to quiver",
+      "authors": "Wunderlich",
+      "venue": "Nature 463, 37-39 (2010)",
+      "year": "2010",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS26.pdf",
+      "file": "39-quantum-physics-trapped-ion-set-to-quiver.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 40,
+      "title": "Invited Review Article: Quantum Simulations with Cold Trapped Ions",
+      "authors": "Johanning, Varón, Wunderlich",
+      "venue": "J. Phys. B 42, 154009 (2009)",
+      "year": "2009",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS25.pdf",
+      "file": "40-invited-review-article-quantum-simulations-with-cold-tr.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 41,
+      "title": "Two-dimensional cluster-state preparation with linear ion traps",
+      "authors": "Wunderlich, Wunderlich, Singer, Schmidt-Kaler",
+      "venue": "Phys. Rev. A 79, 052324 (2009)",
+      "year": "2009",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS24.pdf",
+      "file": "41-two-dimensional-cluster-state-preparation-with-linear-i.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 42,
+      "title": "Scrutinizing single-qubit quantum channels: Theory and experiment with trapped ions",
+      "authors": "Hannemann, Wunderlich, Plesch, Ziman, Buzek",
+      "venue": "2009",
+      "year": "2009",
+      "arxiv": "0904.0923",
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS23a.pdf",
+      "file": "42-scrutinizing-single-qubit-quantum-channels-theory-and-e.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 43,
+      "title": "Quantitative verification of entanglement and fidelities from incomplete measurement data",
+      "authors": "Wunderlich, Plenio",
+      "venue": "2009",
+      "year": "2009",
+      "arxiv": "0902.2093",
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS23.pdf",
+      "file": "43-quantitative-verification-of-entanglement-and-fidelitie.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 44,
+      "title": "Individual addressing of trapped ions and coupling of motional and spin states using rf radiation",
+      "authors": "Johanning, Braun, Timoney, Elman, Neuhauser, Wunderlich",
+      "venue": "Phys. Rev. Lett. 102, 073004 (2009)",
+      "year": "2009",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS22.pdf",
+      "file": "44-individual-addressing-of-trapped-ions-and-coupling-of-m.pdf",
+      "modules": [
+        "M3"
+      ]
+    },
+    {
+      "rank": 45,
+      "title": "Error-resistant Single Qubit Gates with Trapped Ions",
+      "authors": "Timoney, Elman, Glaser, Weiß, Johanning, Neuhauser, Wunderlich",
+      "venue": "Phys. Rev. A 77, 052334 (2008)",
+      "year": "2008",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS21.pdf",
+      "file": "45-error-resistant-single-qubit-gates-with-trapped-ions.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 46,
+      "title": "Trapped Ion Chain as a Neural Network: Error-Resistant Quantum Computation",
+      "authors": "Pons, Ahufinger, Wunderlich, Sanpera, Braungardt, Sen(De), Sen, Lewenstein",
+      "venue": "Phys. Rev. Lett. 98, 023003 (2007)",
+      "year": "2007",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS20.pdf",
+      "file": "46-trapped-ion-chain-as-a-neural-network-error-resistant-q.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 47,
+      "title": "Robust state preparation of a single trapped ion by adiabatic passage",
+      "authors": "Wunderlich, Hannemann, Körber, Häffner, Roos, Hänsel, Blatt, Schmidt-Kaler",
+      "venue": "J. Mod. Opt. 54(11), 1541-1549 (2007)",
+      "year": "2007",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS19.pdf",
+      "file": "47-robust-state-preparation-of-a-single-trapped-ion-by-adi.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 48,
+      "title": "Electrodynamically trapped Yb⁺ ions for quantum information processing",
+      "authors": "Balzer, Braun, Hannemann, Paape, Ettler, Neuhauser, Wunderlich",
+      "venue": "Phys. Rev. A 73, 041407(R) (2006)",
+      "year": "2006",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS18.pdf",
+      "file": "48-electrodynamically-trapped-yb-ions-for-quantum-informat.pdf",
+      "modules": [
+        "M1"
+      ]
+    },
+    {
+      "rank": 49,
+      "title": "Simultaneous cooling of axial vibrational modes in a linear ion trap",
+      "authors": "Wunderlich, Morigi, Reiß",
+      "venue": "Phys. Rev. A 72, 023421 (2005)",
+      "year": "2005",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS16.pdf",
+      "file": "49-simultaneous-cooling-of-axial-vibrational-modes-in-a-li.pdf",
+      "modules": [
+        "M5"
+      ]
+    },
+    {
+      "rank": 50,
+      "title": "Thermally activated hopping of two ions trapped in a bistable potential well",
+      "authors": "Abich, Keil, Wunderlich, Neuhauser, Toschek",
+      "venue": "J. Opt. B 6, S18-S23 (2004)",
+      "year": "2004",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS15.pdf",
+      "file": "50-thermally-activated-hopping-of-two-ions-trapped-in-a-bi.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 51,
+      "title": "Quantum measurements and new concepts for experiments with trapped ions",
+      "authors": "Wunderlich, Balzer",
+      "venue": "Adv. At. Mol. Opt. Phys. 49, 295-376 (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS14.pdf",
+      "file": "51-quantum-measurements-and-new-concepts-for-experiments-w.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 52,
+      "title": "Spin resonance with trapped ions",
+      "authors": "Wunderlich, Balzer, Hannemann, Mintert, Neuhauser, Reiß, Toschek",
+      "venue": "J. Phys. B 36, 1063-1072 (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS13.pdf",
+      "file": "52-spin-resonance-with-trapped-ions.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 53,
+      "title": "Entanglement and Inhibited Quantum Evolution",
+      "authors": "Toschek, Balzer, Hannemann, Wunderlich, Neuhauser",
+      "venue": "J. Phys. B 36, 1049-1061 (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS12.pdf",
+      "file": "53-entanglement-and-inhibited-quantum-evolution.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 54,
+      "title": "A Relaxation-Free Verification of the Quantum Zeno Paradox on an Individual Atom",
+      "authors": "Balzer, Hannemann, Reiß, Wunderlich, Neuhauser, Toschek",
+      "venue": "Quantum Inf. Process. (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS11.pdf",
+      "file": "54-a-relaxation-free-verification-of-the-quantum-zeno-para.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 55,
+      "title": "Spin resonance with trapped ions: experiments and new concepts",
+      "authors": "Abich, Balzer, Hannemann, Mintert, Neuhauser, Reiß, Toschek, Wunderlich",
+      "venue": "Quantum Inf. Process. (2003)",
+      "year": "2003",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS10.pdf",
+      "file": "55-spin-resonance-with-trapped-ions-experiments-and-new-co.pdf",
+      "modules": [
+        "M6"
+      ]
+    },
+    {
+      "rank": 56,
+      "title": "From spectral relaxation to quantified decoherence",
+      "authors": "Balzer, Hannemann, Reiß, Neuhauser, Toschek, Wunderlich",
+      "venue": "Laser Physics at the Limit (2002)",
+      "year": "2002",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS9.pdf",
+      "file": "56-from-spectral-relaxation-to-quantified-decoherence.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 57,
+      "title": "Conditional spin resonance with trapped ions",
+      "authors": "Wunderlich",
+      "venue": "Laser Physics at the Limit (2002)",
+      "year": "2002",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS8.pdf",
+      "file": "57-conditional-spin-resonance-with-trapped-ions.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 58,
+      "title": "A Relaxationless demonstration of the quantum Zeno paradox on an individual atom",
+      "authors": "Balzer, Hannemann, Reiß, Wunderlich, Neuhauser, Toschek",
+      "venue": "Opt. Commun. 211, 235-241 (2002)",
+      "year": "2002",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS7.pdf",
+      "file": "58-a-relaxationless-demonstration-of-the-quantum-zeno-para.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 59,
+      "title": "Self-learning estimation of quantum states",
+      "authors": "Hannemann, Reiß, Balzer, Neuhauser, Toschek, Wunderlich",
+      "venue": "Phys. Rev. A 65, 050303(R) (2002)",
+      "year": "2002",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS6.pdf",
+      "file": "59-self-learning-estimation-of-quantum-states.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 60,
+      "title": "Light-induced decoherence in the driven evolution of an atom",
+      "authors": "Balzer, Hannemann, Reiß, Neuhauser, Toschek, Wunderlich",
+      "venue": "Laser Physics 12, 729-735 (2002)",
+      "year": "2002",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS5.pdf",
+      "file": "60-light-induced-decoherence-in-the-driven-evolution-of-an.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 61,
+      "title": "Raman laser cooling and heating of two trapped Ba⁺ ions",
+      "authors": "Reiß, Abich, Neuhauser, Wunderlich, Toschek",
+      "venue": "Phys. Rev. A 65, 053401 (2002)",
+      "year": "2002",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS4.pdf",
+      "file": "61-raman-laser-cooling-and-heating-of-two-trapped-ba-ions.pdf",
+      "modules": [
+        "M4"
+      ]
+    },
+    {
+      "rank": 62,
+      "title": "Ion trap quantum logic using long wavelength radiation",
+      "authors": "Mintert, Wunderlich",
+      "venue": "Phys. Rev. Lett. 87, 257904 (2001)",
+      "year": "2001",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS3.pdf",
+      "file": "62-ion-trap-quantum-logic-using-long-wavelength-radiation.pdf",
+      "modules": [
+        "M7"
+      ]
+    },
+    {
+      "rank": 63,
+      "title": "What does an observed quantum system reveal to its observer?",
+      "authors": "Toschek, Wunderlich",
+      "venue": "Eur. Phys. J. D 14, 387-396 (2001)",
+      "year": "2001",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS2.pdf",
+      "file": "63-what-does-an-observed-quantum-system-reveal-to-its-obse.pdf",
+      "modules": [
+        "Other"
+      ]
+    },
+    {
+      "rank": 64,
+      "title": "Evolution of an atom impeded by measurement: The quantum Zeno effect",
+      "authors": "Wunderlich, Balzer, Toschek",
+      "venue": "Z. Naturforsch. 56a, 160-164 (2001)",
+      "year": "2001",
+      "arxiv": null,
+      "doi": null,
+      "url": "https://quantenoptik.tp.nt.uni-siegen.de/wp-content/uploads/sites/7/2024/05/QIS1.pdf",
+      "file": "64-evolution-of-an-atom-impeded-by-measurement-the-quantum.pdf",
+      "modules": [
+        "Other"
+      ]
+    }
+  ]
+}

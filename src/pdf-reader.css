@@ -1,0 +1,100 @@
+/* ==========================================================================
+   pdf-reader.css — SciSpace-style PDF reader: pdf.js page canvas + text layer,
+   a selection popup ("Explain"/"Ask"), a region (equation) capture box, and the
+   right-hand AI copilot panel. Theme-aware via style.css tokens.
+   ========================================================================== */
+
+html, body { height: auto; overflow: hidden; }   /* app-shell scroll is internal here */
+
+.pr-shell {
+  display: grid; grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-rows: auto 1fr; height: 100vh;
+}
+.pr-topbar {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 12px;
+  padding: 9px 16px; border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.pr-topbar .logo { font-size: 20px; }
+.pr-topbar .pr-title { flex: 1 1 auto; min-width: 0; font-size: 13.5px; font-weight: 650;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-topbar a.pr-back { font-size: 12.5px; color: var(--accent); text-decoration: none;
+  border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; }
+.pr-topbar a.pr-back:hover { background: var(--btn-hover); }
+.pr-topbar button, .pr-topbar .pr-mode {
+  font-size: 12px; border: 1px solid var(--border); background: var(--btn); color: var(--text);
+  border-radius: 8px; padding: 5px 9px; cursor: pointer;
+}
+.pr-topbar button:hover { background: var(--btn-hover); }
+.pr-topbar .pr-mode.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pr-pageinfo { font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }
+
+/* ---- PDF viewport ---- */
+.pr-viewer { overflow: auto; background: var(--plot); padding: 18px; position: relative; }
+.pr-page { position: relative; margin: 0 auto 18px; width: max-content;
+  box-shadow: 0 2px 14px rgba(0,0,0,.35); background: #fff; }
+.pr-page canvas { display: block; }
+/* pdf.js text layer: invisible selectable text aligned over the canvas */
+.pr-textlayer {
+  position: absolute; inset: 0; overflow: hidden; line-height: 1;
+  opacity: 0.25; }
+.pr-textlayer > span, .pr-textlayer > br {
+  color: transparent; position: absolute; white-space: pre; cursor: text;
+  transform-origin: 0 0; }
+.pr-textlayer ::selection { background: rgba(74,144,217,.45); }
+.pr-textlayer.region-mode { pointer-events: none; }   /* let the region overlay grab drags */
+
+/* ---- region (equation) capture overlay ---- */
+.pr-region-overlay { position: absolute; inset: 0; cursor: crosshair; display: none; }
+.pr-page.region-mode .pr-region-overlay { display: block; }
+.pr-region-rect { position: absolute; border: 1.5px dashed var(--accent);
+  background: rgba(74,144,217,.12); pointer-events: none; }
+
+/* ---- floating selection popup ---- */
+.pr-selpop {
+  position: absolute; z-index: 40; display: none; gap: 6px;
+  background: var(--elev); border: 1px solid var(--border); border-radius: 9px;
+  padding: 5px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.pr-selpop.show { display: flex; }
+.pr-selpop button { font-size: 12px; font-weight: 600; border: 1px solid var(--border);
+  background: var(--btn); color: var(--text); border-radius: 7px; padding: 5px 9px; cursor: pointer; }
+.pr-selpop button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pr-selpop button:hover { filter: brightness(1.06); }
+
+/* ---- copilot panel ---- */
+.pr-copilot { border-left: 1px solid var(--border); display: flex; flex-direction: column;
+  min-height: 0; background: var(--bg); }
+.pr-copilot h2 { font-size: 13px; margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; }
+.pr-copilot h2 .muted { color: var(--muted); font-weight: 500; font-size: 11.5px; }
+.pr-key { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.pr-key.hide { display: none; }
+.pr-key input { width: 100%; box-sizing: border-box; font-size: 12px; padding: 7px 9px;
+  border: 1px solid var(--border); border-radius: 7px; background: var(--btn); color: var(--text); }
+.pr-key .hint { font-size: 10.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.pr-key .row { display: flex; gap: 6px; margin-top: 6px; }
+.pr-key button { flex: 1; font-size: 12px; padding: 6px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+
+.pr-thread { flex: 1 1 auto; overflow-y: auto; padding: 12px 14px; }
+.pr-msg { margin-bottom: 14px; font-size: 13px; line-height: 1.6; }
+.pr-msg .who { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--muted); margin-bottom: 3px; }
+.pr-msg.user .bubble { background: var(--elev); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.pr-msg.user .sel { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; color: var(--muted);
+  white-space: pre-wrap; max-height: 90px; overflow: auto; }
+.pr-msg.user img { max-width: 100%; border: 1px solid var(--border); border-radius: 6px; margin-top: 4px; }
+.pr-msg.ai .bubble { white-space: pre-wrap; }
+.pr-msg.ai .bubble code { font-family: ui-monospace, monospace; background: var(--plot); padding: 1px 4px; border-radius: 4px; }
+.pr-msg.err .bubble { color: #e06c6c; }
+.pr-empty { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+
+.pr-ask { border-top: 1px solid var(--border); padding: 10px 12px; display: flex; gap: 8px; }
+.pr-ask textarea { flex: 1; resize: none; height: 38px; font-size: 12.5px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--btn); color: var(--text); font-family: inherit; }
+.pr-ask button { align-self: stretch; padding: 0 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 650; }
+.pr-ask button:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 900px) { .pr-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  .pr-copilot { border-left: none; border-top: 1px solid var(--border); max-height: 45vh; } }

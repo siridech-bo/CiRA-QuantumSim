@@ -61,17 +61,27 @@ function createAxisTube(axis, len, color) {
 }
 
 function makeLabel(text, color) {
+  const FONT = 'bold 64px system-ui, sans-serif';
+  const H = 128;
+  // Measure first so long labels (e.g. "qubit") aren't clipped by a fixed-width
+  // canvas. Short labels (¹H, ³¹P …) stay at the 128px minimum ⇒ no change.
+  const meas = document.createElement('canvas').getContext('2d');
+  meas.font = FONT;
+  const W = Math.max(128, Math.ceil(meas.measureText(text).width) + 40);
+
   const canvas = document.createElement('canvas');
-  canvas.width = 128; canvas.height = 128;
+  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
-  ctx.font = 'bold 64px system-ui, sans-serif';
+  ctx.font = FONT;                       // font resets when canvas is sized — re-set it
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, 64, 64);
+  ctx.fillText(text, W / 2, H / 2);
+
   const tex = new THREE.CanvasTexture(canvas);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-  sprite.scale.set(0.8, 0.8, 0.8);
+  // Scale x by the canvas aspect so wider textures don't stretch the glyphs.
+  sprite.scale.set(0.8 * (W / H), 0.8, 1);
   return sprite;
 }
 

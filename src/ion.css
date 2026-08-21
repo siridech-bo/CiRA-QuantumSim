@@ -36,6 +36,14 @@
 .mod-btn:disabled, .mod-btn.disabled {
   opacity: 0.4; cursor: not-allowed;
 }
+/* Link to the standalone parameter-reference page (below the wizard button). */
+.ref-link {
+  display: block; margin-top: 8px; text-align: center;
+  font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none;
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px;
+}
+.ref-link:hover { background: var(--btn-hover); text-decoration: none; }
+
 .module-desc { margin-top: 8px; font-size: 10.5px; color: var(--muted); line-height: 1.5; }
 .module-desc code { font-family: ui-monospace, Consolas, monospace; color: var(--code-text); font-size: 10px; }
 .break-it { margin-top: 6px; font-size: 10.5px; color: #d08a4a; line-height: 1.45; }

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Trapped-Ion Parameter Reference — CiRA QuantumSim</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="src/ion.css" />
+  <link rel="stylesheet" href="src/info.css" />
+  <link rel="stylesheet" href="src/reference.css" />
+</head>
+<body>
+  <!-- ===== Top bar ===== -->
+  <header class="ref-topbar">
+    <span class="logo">⚛</span>
+    <div>
+      <h1>Trapped-Ion Parameter Reference</h1>
+      <div class="sub">every control, graph &amp; readout — with the physics and the sources</div>
+    </div>
+    <span class="spacer"></span>
+    <a class="ref-back" href="ion.html">← Back to the visualizer</a>
+    <button id="theme-toggle" class="icon-btn" title="Toggle light / dark">🌙</button>
+  </header>
+
+  <div class="ref-shell">
+    <!-- ===== Sticky table of contents + search ===== -->
+    <aside class="ref-toc">
+      <input id="ref-search" class="ref-search" type="search"
+             placeholder="Search parameters… (η, δ, Doppler, Wigner…)" autocomplete="off" />
+      <nav id="ref-toc-nav"></nav>
+    </aside>
+
+    <!-- ===== Content (rendered from ION_INFO) ===== -->
+    <main id="ref-main" class="ref-main">
+      <p class="ref-lead">
+        A single-page cheat-sheet for the Trapped-Ion visualizer. Every entry is the
+        same sourced explanation you get from the in-app <b>ⓘ info</b> buttons, grouped by
+        topic so you can study or revise them all at once. Use the search box to jump to a
+        symbol or term; each entry links to its primary reference, and the full
+        bibliography is at the bottom.
+      </p>
+      <div id="ref-noresults" class="ref-noresults">No parameters match that search.</div>
+    </main>
+  </div>
+
+  <script type="module" src="src/ion-reference.js"></script>
+</body>
+</html>

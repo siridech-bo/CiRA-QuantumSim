@@ -12,10 +12,15 @@ sends `no-store` on every response, so the browser always fetches fresh files.
 Then open http://localhost:8000/  (a normal reload now always loads fresh code).
 """
 import sys
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 
 class NoCacheHandler(SimpleHTTPRequestHandler):
+    # HTTP/1.1 keep-alive so the browser can pipeline the many small module
+    # requests a page makes; combined with ThreadingHTTPServer below this keeps
+    # a large PDF download from blocking CSS/JS (the "endless spinner" bug).
+    protocol_version = "HTTP/1.1"
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         self.send_header("Pragma", "no-cache")
@@ -30,7 +35,9 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
     print(f"Serving http://localhost:{port}/  (caching DISABLED — Ctrl+C to stop)")
+    server = ThreadingHTTPServer(("", port), NoCacheHandler)
+    server.daemon_threads = True          # don't let in-flight downloads block Ctrl+C
     try:
-        HTTPServer(("", port), NoCacheHandler).serve_forever()
+        server.serve_forever()
     except KeyboardInterrupt:
         print("\nstopped")
