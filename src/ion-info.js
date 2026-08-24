@@ -1010,4 +1010,126 @@ c₊ = √(Γ ξ η̃²) · σ⁻⊗a†      (recoil adds a phonon,   rate ∝ 
       This is the whole state the engine integrates — nothing here is summarized or faked.</p>`,
     refs: [R.W98, R.RMP],
   },
+
+  // ===== M9 Rabi oscillations =====
+  'm9-rabi': {
+    kicker: 'Parameter',
+    title: 'Rabi frequency  Ω / ω_z',
+    symbol: 'P_e(t) = sin²(Ωt/2),  period 2π/Ω',
+    body: `
+      <p>Drive the carrier on resonance and the qubit undergoes <b>Rabi flopping</b>: the excited-state
+      population oscillates as <code>P_e(t)=sin²(Ω·t/2)</code>, sweeping cleanly between |g⟩ and |e⟩ at
+      the Rabi frequency <b>Ω</b> (set by the drive strength — laser intensity for ⁴⁰Ca⁺, microwave
+      power for ¹⁷¹Yb⁺).</p>
+      <p>This is the most basic calibration in the lab: the flop period <code>2π/Ω</code> defines the
+      pulse areas — a <b>π-pulse</b> (t=π/Ω) fully inverts the qubit (P_e=1), a <b>π/2-pulse</b> makes an
+      equal superposition (P_e=½). In a trapped ion the carrier Rabi is reduced by the Debye–Waller
+      factor <code>e^{−η²/2}</code> and is only weakly n-dependent, so the flops stay coherent at low n̄.</p>`,
+    refs: [R.W98, R.RMP],
+  },
+  'm9-delta': {
+    kicker: 'Parameter',
+    title: 'Detuning  δ / ω_z  (generalized Rabi)',
+    symbol: 'Ω_eff = √(δ²+Ω²),  contrast Ω²/(δ²+Ω²)',
+    body: `
+      <p>Move the drive off resonance and the flopping changes in two ways at once: it speeds up to the
+      <b>generalized Rabi frequency</b> <code>Ω_eff=√(δ²+Ω²)</code>, and its amplitude shrinks — the qubit
+      no longer reaches |e⟩, peaking at a contrast <code>Ω²/(δ²+Ω²)</code>.</p>
+      <p>So a detuned drive is <b>faster but shallower</b>. This is the same physics behind the M6 AC-Stark
+      tilt (the rotation axis leaves the equator), seen here directly in the flop curve.</p>`,
+    refs: [R.W98, R.RMP],
+  },
+  'm9-gphi': {
+    kicker: 'Parameter (break-it)',
+    title: 'Dephasing  γ_φ  (damped flops)',
+    symbol: 'coherence decays → oscillations damp',
+    body: `
+      <p>Pure dephasing (magnetic-field noise, laser phase noise) randomizes the qubit phase during the
+      drive, so the Rabi oscillations <b>lose amplitude over time</b> and settle toward P_e=½. At γ_φ=0
+      the ideal engine flops forever; raise γ_φ and the envelope decays — the same Lindblad dissipator
+      that limits real gate fidelity.</p>
+      <p>This is honest, emergent decoherence: the engine integrates the full master equation, so the
+      damping is a consequence of the dissipator, never a hand-added envelope.</p>`,
+    refs: [R.W98, R.RMP],
+  },
+  'm9-trace': {
+    kicker: 'Plot',
+    title: 'P_e vs drive time (the Rabi flop)',
+    symbol: 'oscillation frequency = Ω_eff',
+    body: `
+      <p>Excited-state population versus how long the carrier has been driven. On resonance it is a clean
+      <code>sin²(Ωt/2)</code>; the first maximum is the π-pulse time, the first crossing of ½ the π/2 time.
+      Detuning raises the frequency and lowers the peaks; dephasing damps them toward ½. Read Ω off the
+      period, read the coherence off how fast the flops fade.</p>`,
+    refs: [R.W98],
+  },
+  'm9-floor': {
+    kicker: 'Readout',
+    title: 'Flop readout',
+    symbol: 'Ω_eff, period, peak P_e',
+    body: `
+      <p>After a run this reports the generalized Rabi frequency <code>Ω_eff=√(δ²+Ω²)</code>, the flop
+      period <code>2π/Ω_eff</code>, and the measured peak P_e (which should equal the ideal contrast
+      <code>Ω²/Ω_eff²</code> unless dephasing has reduced it).</p>`,
+    refs: [R.W98],
+  },
+
+  // ===== M10 Ramsey interferometry =====
+  'm10-delta': {
+    kicker: 'Parameter',
+    title: 'Detuning  δ / ω_z  (fringe frequency)',
+    symbol: 'P_e(T) = ½[1 + cos(δT)]',
+    body: `
+      <p>In a Ramsey sequence — <code>π/2</code>, free precession for time <code>T</code>, <code>π/2</code> —
+      the qubit sits on the Bloch equator during the wait and precesses at the detuning δ. The final π/2
+      converts that accumulated phase into a population, giving <b>Ramsey fringes</b>
+      <code>P_e(T)=½[1+cos(δT)]</code>.</p>
+      <p>The <b>fringe frequency is the detuning</b>: reading the fringe period <code>2π/δ</code> measures how
+      far the drive is from the qubit resonance. This is the basis of precision spectroscopy and of atomic
+      clocks — Ramsey's separated-oscillatory-fields method.</p>`,
+    refs: [R.W98, R.RMP],
+  },
+  'm10-gphi': {
+    kicker: 'Parameter (break-it)',
+    title: 'Dephasing  γ_φ  →  coherence time T₂*',
+    symbol: 'fringe contrast ∝ e^{−T/T₂*},  T₂* ≈ 1/γ_φ',
+    body: `
+      <p>The whole point of Ramsey is measuring <b>coherence</b>. Phase noise during the free-precession
+      interval T scrambles the accumulated phase, so the <b>fringe contrast decays</b> as the delay grows —
+      the envelope is the coherence time <code>T₂*≈1/γ_φ</code>.</p>
+      <p><b>Break it:</b> raise γ_φ and the fringes collapse to a flat line at P_e=½ sooner. There is no
+      free-parameter fudge here: the contrast decay falls straight out of the pure-dephasing Lindblad term
+      integrated across the wait.</p>`,
+    refs: [R.W98, R.RMP],
+  },
+  'm10-tmax': {
+    kicker: 'Parameter',
+    title: 'Maximum Ramsey delay  T_max',
+    symbol: 'sets the range of the fringe scan',
+    body: `
+      <p>How far out in free-precession time T the scan sweeps. Longer T_max shows more fringe periods and
+      more of the decay envelope — but if T_max ≫ T₂* the tail is just flat noise at ½. Pick T_max to see a
+      few fringes AND the envelope fall.</p>`,
+    refs: [R.W98],
+  },
+  'm10-trace': {
+    kicker: 'Plot',
+    title: 'P_e vs Ramsey delay T (the fringes)',
+    symbol: 'frequency = δ · envelope = T₂*',
+    body: `
+      <p>Excited-state population versus the free-precession delay. Two independent things are visible at
+      once: the <b>fringe frequency</b> (= the detuning δ) and the <b>decay of the fringe contrast</b>
+      (= the coherence time T₂*). Every point is a full π/2–wait–π/2 sequence run on the real Lindblad
+      engine, so the decaying fringes are the genuine simulated coherence, not a drawn-on envelope.</p>`,
+    refs: [R.W98, R.RMP],
+  },
+  'm10-floor': {
+    kicker: 'Readout',
+    title: 'Fringe readout',
+    symbol: 'δ (fringe freq), T₂* ≈ 1/γ_φ',
+    body: `
+      <p>After a scan this reports the fringe frequency <code>δ</code> and its period <code>2π/δ</code>, plus
+      the coherence time <code>T₂*≈1/γ_φ</code> that sets how fast the fringe envelope decays.</p>`,
+    refs: [R.W98],
+  },
 };

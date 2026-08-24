@@ -180,6 +180,8 @@
    right sidebar; its histograms + fidelity live in the center panel. */
 #app-shell.mode-readout { grid-template-columns: 286px minmax(0, 1fr); }
 #app-shell.mode-readout #sidebar-right { display: none; }
+#app-shell.mode-plain { grid-template-columns: 286px minmax(0, 1fr); }
+#app-shell.mode-plain #sidebar-right { display: none; }
 .m8-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .m8-row .mode-cell { flex: 1 1 260px; min-width: 240px; }
 #m8-hist {

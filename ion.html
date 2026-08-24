@@ -59,6 +59,8 @@
           <button class="mod-btn" data-module="M6">M6</button>
           <button class="mod-btn" data-module="M7">M7</button>
           <button class="mod-btn" data-module="M8">M8</button>
+          <button class="mod-btn" data-module="M9">M9</button>
+          <button class="mod-btn" data-module="M10">M10</button>
         </div>
         <div class="module-desc" id="module-desc"></div>
         <div class="break-it" id="break-it"></div>
@@ -184,6 +186,43 @@
         </div>
       </div>
 
+      <!-- ===== M9 Rabi-oscillation controls (engine; shown only for M9) ===== -->
+      <div class="side-group engine-only m9-only" id="m9-controls" hidden>
+        <div class="side-label">Carrier drive (δ=0 → Rabi flop)</div>
+        <label class="slider-row"><span data-info="m9-rabi">Ω / ω_z</span>
+          <input id="m9-rabi" type="range" min="0.05" max="2" step="0.05" value="1.00" />
+          <span id="m9-rabi-val" class="val mono">1.00</span></label>
+        <div class="module-desc">Rabi frequency Ω sets the flop rate; the period is 2π/Ω. A π-pulse (P_e=1) is t=π/Ω.</div>
+        <label class="slider-row"><span data-info="m9-delta">δ / ω_z</span>
+          <input id="m9-delta" type="range" min="0" max="2" step="0.05" value="0.00" />
+          <span id="m9-delta-val" class="val mono">0.00</span></label>
+        <div class="module-desc">Detune off resonance → generalized Rabi <code>√(δ²+Ω²)</code>: faster but shallower (contrast Ω²/(δ²+Ω²)).</div>
+        <div class="side-label" style="margin-top:12px" data-info="m9-gphi">Dephasing γ_φ <span class="tag">break it</span></div>
+        <label class="slider-row"><span>γ_φ</span>
+          <input id="m9-gphi" type="range" min="0" max="0.5" step="0.01" value="0.00" />
+          <span id="m9-gphi-val" class="val mono">0.00</span></label>
+        <div class="break-it">Raise γ_φ and the flops <b>damp</b> — coherence loss during the drive. At γ_φ=0 they oscillate forever.</div>
+        <button id="m9-run" class="primary full" style="margin-top:10px">Run Rabi flops</button>
+      </div>
+
+      <!-- ===== M10 Ramsey-interferometry controls (engine; shown only for M10) ===== -->
+      <div class="side-group engine-only m10-only" id="m10-controls" hidden>
+        <div class="side-label">Ramsey sequence (π/2 · T · π/2)</div>
+        <label class="slider-row"><span data-info="m10-delta">δ / ω_z</span>
+          <input id="m10-delta" type="range" min="0.1" max="2" step="0.05" value="1.00" />
+          <span id="m10-delta-val" class="val mono">1.00</span></label>
+        <div class="module-desc">Detuning δ sets the <b>fringe frequency</b>: P_e(T)=½[1+cos(δT)]. Reading the fringe period measures δ.</div>
+        <div class="side-label" style="margin-top:12px" data-info="m10-gphi">Dephasing γ_φ → T₂* <span class="tag">break it</span></div>
+        <label class="slider-row"><span>γ_φ</span>
+          <input id="m10-gphi" type="range" min="0" max="0.3" step="0.01" value="0.05" />
+          <span id="m10-gphi-val" class="val mono">0.05</span></label>
+        <div class="break-it">Raise γ_φ and the fringe envelope <b>collapses faster</b> — a shorter coherence time T₂*≈1/γ_φ. This is how T₂* is measured.</div>
+        <label class="slider-row"><span data-info="m10-tmax">T max</span>
+          <input id="m10-tmax" type="range" min="10" max="60" step="2" value="30" />
+          <span id="m10-tmax-val" class="val mono">30</span></label>
+        <button id="m10-run" class="primary full" style="margin-top:10px">Run Ramsey scan</button>
+      </div>
+
       <div class="side-group engine-only" id="playback-group">
         <div class="side-label">Playback</div>
         <div class="btn-row">
@@ -303,6 +342,8 @@
         <button class="ctab" data-module="M6">M6 · 1-qubit gate</button>
         <button class="ctab" data-module="M7">M7 · MS gate</button>
         <button class="ctab" data-module="M8">M8 · Readout</button>
+        <button class="ctab" data-module="M9">M9 · Rabi</button>
+        <button class="ctab" data-module="M10">M10 · Ramsey</button>
       </nav>
       <section id="levels-panel">
         <div class="panel-head">
@@ -454,6 +495,48 @@
           </div>
         </div>
         <div class="break-it" id="m8-note"></div>
+      </section>
+
+      <!-- ===== M9 — Rabi oscillations: P_e(t) carrier flop ===== -->
+      <section id="m9-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Rabi oscillations — driving the carrier</h2>
+          <span class="subtitle">a resonant (δ=0) carrier drive flops the qubit: P_e(t)=sin²(Ω_eff·t/2), real Lindblad RK4. Detune for the generalized Rabi √(δ²+Ω²); add dephasing to damp the flops.</span>
+        </div>
+        <div class="mode-body">
+          <div class="mode-cell">
+            <div class="mode-cap" data-info="m9-trace">P_e vs drive time — Rabi flops at Ω (damped by γ_φ)</div>
+            <canvas id="m9-trace-canvas" width="620" height="320"></canvas>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap" data-info="m9-floor">flop readout</div>
+            <div class="m4-readout" id="m9-readout">
+              <span class="lbl">Press <b>Run Rabi flops</b> to drive the carrier and watch P_e oscillate at Ω.</span>
+            </div>
+          </div>
+        </div>
+        <div class="break-it" id="m9-note"></div>
+      </section>
+
+      <!-- ===== M10 — Ramsey interferometry: fringes vs free-precession T ===== -->
+      <section id="m10-panel" class="mode-panel" hidden>
+        <div class="panel-head">
+          <h2>Ramsey interferometry — fringes &amp; coherence time</h2>
+          <span class="subtitle">π/2 → free precession T → π/2. Real Lindblad RK4 per delay T. Fringes at the detuning δ; their decaying envelope is the coherence time T₂*.</span>
+        </div>
+        <div class="mode-body">
+          <div class="mode-cell">
+            <div class="mode-cap" data-info="m10-trace">P_e vs Ramsey delay T — fringes at δ, contrast decaying at T₂*</div>
+            <canvas id="m10-trace-canvas" width="620" height="320"></canvas>
+          </div>
+          <div class="mode-cell">
+            <div class="mode-cap" data-info="m10-floor">fringe readout</div>
+            <div class="m4-readout" id="m10-readout">
+              <span class="lbl">Press <b>Run Ramsey scan</b> to sweep T and build the fringes; raise γ_φ to shrink T₂*.</span>
+            </div>
+          </div>
+        </div>
+        <div class="break-it" id="m10-note"></div>
       </section>
     </main>
 

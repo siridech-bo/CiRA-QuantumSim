@@ -702,6 +702,290 @@ ION_LAB.M8 = {
   },
 };
 
+// =============================================================================
+// M9 · Rabi oscillations and M10 · Ramsey interferometry — single-qubit
+// characterization. The experiment diagram is atom-agnostic (the pulse story);
+// the atom differs only in the drive (⁴⁰Ca⁺ 729 nm laser vs ¹⁷¹Yb⁺ 12.6 GHz μw).
+// Curves are computed so the sin²/fringe shapes are exact.
+// =============================================================================
+const _rabiPath = (() => {
+  let d = '';
+  for (let i = 0; i <= 72; i++) { const t = i / 72; const pe = Math.sin(3 * Math.PI * t) ** 2;
+    const x = 200 + t * 224, y = 185 - pe * 130; d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' '; }
+  return d.trim();
+})();
+const M9_FLOP_SVG = `
+<svg class="lab-svg" viewBox="0 0 460 232" role="img" aria-label="Rabi flopping">
+  <defs><marker id="r9" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="6.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" class="arh"/></marker></defs>
+  <line class="lvl" x1="42" y1="178" x2="150" y2="178"/><text class="lvl-lbl" x="36" y="182" text-anchor="end">|g⟩</text>
+  <line class="lvl" x1="42" y1="66" x2="150" y2="66"/><text class="lvl-lbl" x="36" y="70" text-anchor="end">|e⟩</text>
+  <line class="tr tr-qubit" x1="96" y1="178" x2="96" y2="70" marker-end="url(#r9)"/>
+  <text class="tr-lbl q" x="104" y="116">carrier</text><text class="tr-lbl q" x="104" y="130">δ=0, Ω</text>
+  <line class="axis" x1="200" y1="185" x2="440" y2="185" marker-end="url(#r9)"/><text class="cap" x="444" y="189">t</text>
+  <line class="axis" x1="200" y1="185" x2="200" y2="48" marker-end="url(#r9)"/><text class="cap" x="196" y="46" text-anchor="end">P_e</text>
+  <line class="dim dash" x1="200" y1="55" x2="424" y2="55"/><text class="cap" x="196" y="59" text-anchor="end">1</text>
+  <path class="loopdir" d="${_rabiPath}"/>
+  <text class="tr-note" x="40" y="212">P_e(t)=sin²(Ω_eff·t/2) — first peak = π-pulse, first ½-crossing = π/2; γ_φ damps it</text>
+</svg>`;
+const _ramseyPath = (() => {
+  let d = '';
+  for (let i = 0; i <= 90; i++) { const T = i / 90; const env = Math.exp(-2.0 * T);
+    const pe = 0.5 * (1 + env * Math.cos(9 * Math.PI * T)); const x = 34 + T * 404, y = 236 - pe * 74;
+    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' '; }
+  return d.trim();
+})();
+const M10_RAMSEY_SVG = `
+<svg class="lab-svg" viewBox="0 0 470 250" role="img" aria-label="Ramsey sequence and fringes">
+  <defs><marker id="r10" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="6.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" class="arh"/></marker></defs>
+  <line class="axis" x1="30" y1="86" x2="444" y2="86" marker-end="url(#r10)"/><text class="cap" x="448" y="90">t</text>
+  <rect class="aom" x="60" y="66" width="26" height="40" rx="3"/><text class="tr-lbl q" x="73" y="58" text-anchor="middle">π/2</text>
+  <rect class="aom" x="330" y="66" width="26" height="40" rx="3"/><text class="tr-lbl q" x="343" y="58" text-anchor="middle">π/2</text>
+  <line class="dim" x1="86" y1="116" x2="330" y2="116"/>
+  <text class="cap q" x="208" y="132" text-anchor="middle">free precession T (Bloch winds by δ·T)</text>
+  <text class="tr-lbl" x="366" y="90">measure P_e</text>
+  <line class="axis" x1="34" y1="240" x2="444" y2="240" marker-end="url(#r10)"/><text class="cap" x="448" y="244">T</text>
+  <line class="axis" x1="34" y1="240" x2="34" y2="156" marker-end="url(#r10)"/><text class="cap" x="30" y="154" text-anchor="end">P_e</text>
+  <line class="dim dash" x1="34" y1="199" x2="438" y2="199"/><text class="cap" x="30" y="203" text-anchor="end">½</text>
+  <path class="loopdir" d="${_ramseyPath}"/>
+  <text class="tr-note" x="150" y="152">fringes P_e(T)=½[1+cos δT] — envelope decays at T₂*</text>
+</svg>`;
+const M9_SOURCES_CA = [
+  ['Chwalla PhD thesis (Innsbruck, 2009)', 'thesis-2009-chwalla-precision-spectroscopy-ca-ions.pdf', '729 nm carrier Rabi &amp; pulse calibration'],
+  ['Wineland et al. 1998 (W98)', 'ref-1998-wineland-experimental-issues-in-coherent-quantum-state.pdf', 'Rabi flopping &amp; the carrier Rabi frequency'],
+];
+const M9_SOURCES_YB = [
+  ['Versatile microwave-driven trapped-ion spin system', '18-versatile-microwave-driven-trapped-ion-spin-system-for.pdf', 'microwave-driven Rabi oscillations in ¹⁷¹Yb⁺'],
+  ['Wineland et al. 1998 (W98)', 'ref-1998-wineland-experimental-issues-in-coherent-quantum-state.pdf', 'Rabi flopping fundamentals'],
+];
+ION_LAB.M9 = {
+  heading: 'M9 · In the lab — Rabi oscillations',
+  atoms: {
+    Ca: {
+      label: '⁴⁰Ca⁺ · optical (Innsbruck)',
+      intro: `Rabi flopping is the first calibration on any ion: drive the carrier and the qubit oscillates between |g⟩ and |e⟩ at the
+        Rabi frequency Ω. For ⁴⁰Ca⁺ the drive is the <b>729 nm</b> laser (gated by an AOM); the flop period 2π/Ω defines the π and π/2
+        pulse times used by every other gate.`,
+      energySvg: M9_FLOP_SVG,
+      energyCaption: `<b>⁴⁰Ca⁺ Rabi flop.</b> A resonant 729 nm carrier pulse rotates the qubit; P_e(t)=sin²(Ωt/2). Ω is set by the 729
+        beam intensity (AOM amplitude), and the pulse length (AOM gate time) picks the rotation angle. Detuning → generalized Rabi √(δ²+Ω²).`,
+      paramRows: [
+        ['Ω / ω_z', '729 carrier Rabi frequency — set by the 729 nm laser intensity via the AOM; the flop period is 2π/Ω', '2π×(10–100 kHz)', 'flop rate / π-pulse time'],
+        ['δ / ω_z', '729 detuning from the qubit line (AOM frequency offset) → generalized Rabi √(δ²+Ω²), lower contrast', 'AOM offset', 'flop frequency &amp; contrast'],
+        ['γ_φ', 'dephasing during the drive — 729 laser phase noise + magnetic-field noise; damps the flops', 'laser / B-field noise', 'flop decay'],
+      ],
+      paramNote: `Rabi flopping <b>calibrates</b> the pulse areas (π, π/2) that every M6/M7/M10 sequence relies on. The flop frequency is
+        read straight off the period; the decay measures coherence during the drive.`,
+      sources: M9_SOURCES_CA,
+    },
+    Yb: {
+      label: '¹⁷¹Yb⁺ · microwave / MAGIC (Wunderlich)',
+      intro: `Same flop, laser-free drive: ¹⁷¹Yb⁺ is driven by a <b>12.6 GHz microwave</b> pulse, so P_e oscillates at the microwave Rabi
+        frequency Ω (set by the microwave power). Microwave Rabi flopping calibrates the π/2 and π pulses for the hyperfine qubit.`,
+      energySvg: M9_FLOP_SVG,
+      energyCaption: `<b>¹⁷¹Yb⁺ Rabi flop.</b> A resonant 12.6 GHz microwave pulse flops the hyperfine qubit; P_e(t)=sin²(Ωt/2). Ω is set by
+        the microwave power, the pulse length by the sequence generator. No qubit laser needed.`,
+      paramRows: [
+        ['Ω / ω_z', '12.6 GHz microwave Rabi — set by the microwave power; laser-free and can be fast', '2π×(1–100 kHz)', 'flop rate / π-pulse time'],
+        ['δ / ω_z', 'microwave detuning from the qubit (synthesizer offset) → generalized Rabi √(δ²+Ω²)', 'synth offset', 'flop frequency &amp; contrast'],
+        ['γ_φ', 'dephasing — magnetic-field noise on the field-sensitive transition; damps the flops', 'B-field noise', 'flop decay'],
+      ],
+      paramNote: `Microwave Rabi flopping is very clean (no photon-scattering error); the main limit is B-noise dephasing on the
+        field-sensitive transition. The flop frequency is the microwave Rabi Ω.`,
+      sources: M9_SOURCES_YB,
+    },
+  },
+};
+ION_LAB.M10 = {
+  heading: 'M10 · In the lab — Ramsey interferometry',
+  atoms: {
+    Ca: {
+      label: '⁴⁰Ca⁺ · optical (Innsbruck)',
+      intro: `Ramsey is the coherence-time measurement: <b>π/2 → wait T → π/2</b>. During the wait the qubit precesses at the detuning δ,
+        so scanning T gives fringes P_e(T)=½[1+cos δT]. For ⁴⁰Ca⁺ the two π/2 pulses are 729 nm; the fringe decay measures the optical
+        qubit's T₂* (laser + magnetic-field noise).`,
+      energySvg: M10_RAMSEY_SVG,
+      energyCaption: `<b>⁴⁰Ca⁺ Ramsey sequence.</b> Two 729 nm π/2 pulses bracket a free-precession interval T. The fringe frequency reads
+        the detuning δ; the decaying envelope reads the coherence time T₂*.`,
+      paramRows: [
+        ['δ / ω_z', 'the 729 detuning from the qubit — read out as the fringe frequency (fringe period 2π/δ)', 'AOM / synth offset', 'fringe frequency'],
+        ['γ_φ → T₂*', 'dephasing during the free precession — 729 laser + magnetic-field noise; sets the fringe-envelope decay', 'B-field / laser noise', 'T₂* (fringe decay)'],
+        ['T (free precession)', 'the wait between the two π/2 pulses, set by the sequence generator', 'µs – ms', 'accumulated phase δT'],
+      ],
+      paramNote: `Ramsey is <b>the</b> way coherence time is measured: fringe frequency = detuning, envelope decay = T₂*. Optical ⁴⁰Ca⁺
+        qubits reach ms-scale T₂* (laser-linewidth / field-noise limited).`,
+      sources: [
+        ['Fault-tolerant Hahn–Ramsey interferometry with pulsed sequences', '24-fault-tolerant-hahn-ramsey-interferometry-with-pulse-se.pdf', 'Ramsey interferometry &amp; robust variants'],
+        ['Chwalla PhD thesis (Innsbruck, 2009)', 'thesis-2009-chwalla-precision-spectroscopy-ca-ions.pdf', '729 nm Ramsey spectroscopy &amp; coherence'],
+        ['Wineland et al. 1998 (W98)', 'ref-1998-wineland-experimental-issues-in-coherent-quantum-state.pdf', 'Ramsey method &amp; coherence limits'],
+      ],
+    },
+    Yb: {
+      label: '¹⁷¹Yb⁺ · microwave / MAGIC (Wunderlich)',
+      intro: `Same interferometer, microwave pulses: two <b>12.6 GHz</b> π/2 pulses bracket a free-precession time T. The fringe frequency
+        reads the microwave detuning; the envelope decay reads T₂*. For the field-sensitive hyperfine qubit T₂* is B-noise limited —
+        extended in practice with dynamical decoupling / dressed states.`,
+      energySvg: M10_RAMSEY_SVG,
+      energyCaption: `<b>¹⁷¹Yb⁺ Ramsey sequence.</b> Two 12.6 GHz microwave π/2 pulses bracket a free-precession interval T; fringes at δ,
+        contrast decaying at T₂*. Laser-free — the qubit sees only microwaves during the sequence.`,
+      paramRows: [
+        ['δ / ω_z', 'microwave detuning from the 12.6 GHz qubit → fringe frequency (period 2π/δ)', 'synth offset', 'fringe frequency'],
+        ['γ_φ → T₂*', 'dephasing from magnetic-field noise (field-sensitive qubit); Ramsey measures T₂* directly', 'B-field noise', 'T₂* (fringe decay)'],
+        ['T (free precession)', 'the wait between π/2 pulses, set by the microwave sequence', 'µs – ms', 'accumulated phase δT'],
+      ],
+      paramNote: `The field-sensitive ¹⁷¹Yb⁺ qubit has a shorter bare T₂* than the field-insensitive clock line, but Ramsey + dynamical
+        decoupling recovers long coherence. The fringe frequency reads the detuning δ.`,
+      sources: [
+        ['Fault-tolerant Hahn–Ramsey interferometry with pulsed sequences', '24-fault-tolerant-hahn-ramsey-interferometry-with-pulse-se.pdf', 'Ramsey / decoupling for microwave qubits'],
+        ['Versatile microwave-driven trapped-ion spin system', '18-versatile-microwave-driven-trapped-ion-spin-system-for.pdf', 'microwave Ramsey &amp; coherence in ¹⁷¹Yb⁺'],
+        ['Wineland et al. 1998 (W98)', 'ref-1998-wineland-experimental-issues-in-coherent-quantum-state.pdf', 'Ramsey method fundamentals'],
+      ],
+    },
+  },
+};
+
+// =============================================================================
+// Full optical setup — a beam-path layout per atom (shared across that atom's
+// modules), with callouts mapping each key optic to the sim control it sets.
+// ⁴⁰Ca⁺ = laser table (Innsbruck-style); ¹⁷¹Yb⁺ = microwave + MAGIC gradient.
+// =============================================================================
+const CA_SETUP_SVG = `
+<svg class="lab-svg" viewBox="0 0 940 560" role="img" aria-label="⁴⁰Ca⁺ full optical setup">
+  <defs><marker id="sb" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" class="arh"/></marker></defs>
+
+  <!-- lasers -->
+  <rect class="laser" x="12" y="54" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="72" text-anchor="middle">729 nm</text>
+  <rect class="laser" x="12" y="176" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="194" text-anchor="middle">397 nm</text>
+  <rect class="laser" x="12" y="300" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="318" text-anchor="middle">866 / 854</text>
+  <rect class="laser" x="12" y="424" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="442" text-anchor="middle">375 / 422</text>
+
+  <!-- 729 addressed beam (red): AOM · f=50 · λ/2 · f=200 · λ/2 · xyz-focus -->
+  <line class="beam b729" x1="106" y1="68" x2="120" y2="68"/>
+  <rect class="aom" x="120" y="55" width="32" height="26" rx="3"/><text class="opt-lbl sm" x="136" y="72" text-anchor="middle">AOM</text>
+  <line class="beam b729" x1="152" y1="68" x2="372" y2="68"/>
+  <ellipse class="lens" cx="188" cy="68" rx="4" ry="11"/><text class="opt-lbl sm" x="188" y="47" text-anchor="middle">f=50</text>
+  <rect class="wp" x="222" y="56" width="7" height="24"/><text class="opt-lbl sm" x="225" y="49" text-anchor="middle">λ/2</text>
+  <ellipse class="lens" cx="262" cy="68" rx="4" ry="11"/><text class="opt-lbl sm" x="262" y="47" text-anchor="middle">f=200</text>
+  <rect class="wp" x="300" y="56" width="7" height="24"/><text class="opt-lbl sm" x="303" y="49" text-anchor="middle">λ/2</text>
+  <ellipse class="lens" cx="342" cy="68" rx="4" ry="11"/><text class="opt-lbl sm" x="342" y="92" text-anchor="middle">f=35·xyz</text>
+  <line class="mirror" x1="364" y1="60" x2="380" y2="76"/>
+  <line class="beam b729" x1="372" y1="68" x2="656" y2="248" marker-end="url(#sb)"/>
+  <text class="call q" x="150" y="106">729 addressed → δ, Ω (M3·M5·M6·M7)</text>
+
+  <!-- 397 Doppler/detection (blue) + Raman branch -->
+  <line class="beam b397" x1="106" y1="190" x2="120" y2="190"/>
+  <rect class="aom" x="120" y="177" width="32" height="26" rx="3"/><text class="opt-lbl sm" x="136" y="194" text-anchor="middle">AOM</text>
+  <line class="beam b397" x1="152" y1="190" x2="378" y2="190"/>
+  <rect class="pbs" x="176" y="178" width="24" height="24"/><line class="pbs-d" x1="176" y1="202" x2="200" y2="178"/>
+  <rect class="wp" x="230" y="178" width="7" height="24"/><text class="opt-lbl sm" x="233" y="172" text-anchor="middle">λ/2</text>
+  <ellipse class="lens" cx="272" cy="190" rx="4" ry="11"/><text class="opt-lbl sm" x="272" y="169" text-anchor="middle">f=100</text>
+  <ellipse class="lens" cx="330" cy="190" rx="4" ry="11"/><text class="opt-lbl sm" x="330" y="214" text-anchor="middle">f=300·xyz</text>
+  <line class="mirror" x1="370" y1="182" x2="386" y2="198"/>
+  <line class="beam b397" x1="378" y1="190" x2="656" y2="262" marker-end="url(#sb)"/>
+  <text class="call" x="150" y="232">397: Doppler cool (M4) + detect (M8)</text>
+  <line class="beam b397" x1="188" y1="178" x2="188" y2="126"/>
+  <rect class="wp" x="184" y="122" width="7" height="8"/><text class="opt-lbl sm" x="202" y="118" text-anchor="middle">λ/4</text>
+  <line class="mirror" x1="180" y1="118" x2="196" y2="134"/>
+  <line class="beam b397" x1="188" y1="126" x2="652" y2="242" marker-end="url(#sb)"/>
+  <text class="call" x="412" y="150">Raman σ (397 nm)</text>
+
+  <!-- 866/854 repump/quench (orange) -->
+  <line class="beam brep" x1="106" y1="314" x2="200" y2="314"/><line class="mirror" x1="192" y1="306" x2="208" y2="322"/>
+  <line class="beam brep" x1="200" y1="314" x2="656" y2="278" marker-end="url(#sb)"/>
+  <text class="call" x="150" y="338">866 repump (M4/M8) · 854 quench (M5)</text>
+
+  <!-- 375/422 photoionization (purple) -->
+  <line class="beam bload" x1="106" y1="438" x2="260" y2="438"/>
+  <ellipse class="lens" cx="188" cy="438" rx="4" ry="11"/><text class="opt-lbl sm" x="188" y="417" text-anchor="middle">f=35</text>
+  <line class="mirror" x1="252" y1="430" x2="268" y2="446"/>
+  <line class="beam bload" x1="260" y1="438" x2="656" y2="292" marker-end="url(#sb)"/>
+  <text class="call" x="150" y="462">375/422: photoionize → load ion (M1)</text>
+
+  <!-- 8-blade trap + magnetic coils (B_D, B_σ, B_grad) -->
+  <polygon class="elec-gnd" points="710,208 750,208 736,234 724,234"/>
+  <polygon class="elec-gnd" points="710,312 724,286 736,286 750,312"/>
+  <polygon class="elec-gnd" points="668,238 696,250 696,270 668,282"/>
+  <polygon class="elec-gnd" points="792,238 792,282 764,270 764,250"/>
+  <circle class="ion" cx="730" cy="260" r="6"/>
+  <rect class="coil-bd" x="684" y="208" width="26" height="24" rx="2"/><text class="coil-lbl" x="697" y="224" text-anchor="middle">B_D</text>
+  <rect class="coil-bd" x="752" y="288" width="26" height="24" rx="2"/><text class="coil-lbl" x="765" y="304" text-anchor="middle">B_D</text>
+  <rect class="coil-bs" x="752" y="208" width="26" height="24" rx="2"/><text class="coil-lbl" x="765" y="224" text-anchor="middle">B_σ</text>
+  <rect class="coil-bs" x="684" y="288" width="26" height="24" rx="2"/><text class="coil-lbl" x="697" y="304" text-anchor="middle">B_σ</text>
+  <rect class="coil-bg" x="717" y="176" width="26" height="24" rx="2"/><text class="coil-lbl" x="730" y="192" text-anchor="middle">B_g</text>
+  <text class="opt-lbl" x="730" y="342" text-anchor="middle">linear Paul trap (8 blades) + B_D / B_σ / B_grad coils</text>
+
+  <!-- imaging → camera / PMT -->
+  <line class="beam b397 dash" x1="794" y1="252" x2="874" y2="176" marker-end="url(#sb)"/>
+  <ellipse class="lens" cx="836" cy="214" rx="11" ry="5"/><text class="opt-lbl sm" x="836" y="234" text-anchor="middle">f=300</text>
+  <rect class="box small" x="866" y="144" width="66" height="26" rx="4"/><text class="opt-lbl sm" x="899" y="161" text-anchor="middle">camera</text>
+  <text class="call" x="812" y="134">detection (397 nm) — M8</text>
+</svg>`;
+const YB_SETUP_SVG = `
+<svg class="lab-svg" viewBox="0 0 940 560" role="img" aria-label="¹⁷¹Yb⁺ full microwave / MAGIC setup">
+  <defs><marker id="sb2" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" class="arh"/></marker></defs>
+
+  <!-- microwave chain: synth → amplifier → horn -->
+  <rect class="laser" x="12" y="54" width="108" height="28" rx="4"/><text class="opt-lbl sm" x="66" y="72" text-anchor="middle">μw synth 12.6 GHz</text>
+  <polygon class="aom" points="128,57 128,81 154,69"/><text class="opt-lbl sm" x="139" y="51" text-anchor="middle">amp</text>
+  <polygon class="aom" points="164,55 164,83 202,69"/><text class="opt-lbl sm" x="176" y="49" text-anchor="middle">horn</text>
+  <line class="beam bmw" x1="202" y1="69" x2="656" y2="250" marker-end="url(#sb2)"/>
+  <text class="call q" x="150" y="112">μw 12.6 GHz → δ, Ω (M3·M5·M6·M7)</text>
+
+  <!-- 369.5 Doppler/detection -->
+  <rect class="laser" x="12" y="176" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="194" text-anchor="middle">369.5 nm</text>
+  <line class="beam b397" x1="106" y1="190" x2="120" y2="190"/>
+  <rect class="aom" x="120" y="177" width="32" height="26" rx="3"/><text class="opt-lbl sm" x="136" y="194" text-anchor="middle">AOM</text>
+  <line class="beam b397" x1="152" y1="190" x2="378" y2="190"/>
+  <rect class="pbs" x="176" y="178" width="24" height="24"/><line class="pbs-d" x1="176" y1="202" x2="200" y2="178"/>
+  <rect class="wp" x="230" y="178" width="7" height="24"/><text class="opt-lbl sm" x="233" y="172" text-anchor="middle">λ/2</text>
+  <ellipse class="lens" cx="272" cy="190" rx="4" ry="11"/><text class="opt-lbl sm" x="272" y="169" text-anchor="middle">f=100</text>
+  <ellipse class="lens" cx="330" cy="190" rx="4" ry="11"/><text class="opt-lbl sm" x="330" y="214" text-anchor="middle">f=300·xyz</text>
+  <line class="mirror" x1="370" y1="182" x2="386" y2="198"/>
+  <line class="beam b397" x1="378" y1="190" x2="656" y2="262" marker-end="url(#sb2)"/>
+  <text class="call" x="150" y="232">369: Doppler cool (M4) + detect (M8)</text>
+
+  <!-- 935/638 repumps -->
+  <rect class="laser" x="12" y="300" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="318" text-anchor="middle">935 / 638</text>
+  <line class="beam brep" x1="106" y1="314" x2="200" y2="314"/><line class="mirror" x1="192" y1="306" x2="208" y2="322"/>
+  <line class="beam brep" x1="200" y1="314" x2="656" y2="278" marker-end="url(#sb2)"/>
+  <text class="call" x="150" y="338">935 repump (D₃/₂) · 638 repump (F₇/₂)</text>
+
+  <!-- 399/369 photoionization -->
+  <rect class="laser" x="12" y="424" width="94" height="28" rx="4"/><text class="opt-lbl" x="59" y="442" text-anchor="middle">399 / 369</text>
+  <line class="beam bload" x1="106" y1="438" x2="260" y2="438"/>
+  <ellipse class="lens" cx="188" cy="438" rx="4" ry="11"/><text class="opt-lbl sm" x="188" y="417" text-anchor="middle">f=35</text>
+  <line class="mirror" x1="252" y1="430" x2="268" y2="446"/>
+  <line class="beam bload" x1="260" y1="438" x2="656" y2="292" marker-end="url(#sb2)"/>
+  <text class="call" x="150" y="462">399/369: photoionize → load ion (M1)</text>
+
+  <!-- trap + MAGIC gradient coils -->
+  <rect class="coil grad" x="676" y="198" width="110" height="15" rx="3"/><rect class="coil grad" x="676" y="309" width="110" height="15" rx="3"/>
+  <line class="gradv" x1="696" y1="236" x2="696" y2="228"/><line class="gradv" x1="718" y1="238" x2="718" y2="224"/><line class="gradv" x1="740" y1="240" x2="740" y2="220"/><line class="gradv" x1="762" y1="242" x2="762" y2="216"/>
+  <polygon class="elec-gnd" points="712,242 750,242 737,260 725,260"/>
+  <polygon class="elec-gnd" points="712,298 725,280 737,280 750,298"/>
+  <polygon class="elec-gnd" points="674,250 700,260 700,280 674,290"/>
+  <polygon class="elec-gnd" points="788,250 788,290 762,280 762,260"/>
+  <circle class="ion" cx="730" cy="270" r="6"/>
+  <text class="opt-lbl" x="730" y="348" text-anchor="middle">Paul trap + static ∂B/∂z gradient (MAGIC)</text>
+  <text class="call q" x="632" y="196">∂B/∂z → η_eff (M3·M5·M7)</text>
+
+  <!-- detection → camera -->
+  <line class="beam b397 dash" x1="794" y1="262" x2="874" y2="186" marker-end="url(#sb2)"/>
+  <ellipse class="lens" cx="836" cy="224" rx="11" ry="5"/><text class="opt-lbl sm" x="836" y="244" text-anchor="middle">f=300</text>
+  <rect class="box small" x="866" y="154" width="66" height="26" rx="4"/><text class="opt-lbl sm" x="899" y="171" text-anchor="middle">camera</text>
+  <text class="call" x="812" y="144">detection (369 nm) — M8</text>
+</svg>`;
+const ATOM_SETUP = {
+  Ca: { svg: CA_SETUP_SVG, caption: `<b>⁴⁰Ca⁺ laser table.</b> Each beam is shaped by lenses (f=50/100/200/300/35 mm), λ/2 &amp; λ/4 plates, PBS cubes and fold
+    mirrors, and frequency/amplitude-controlled by an <b>AOM</b> before the trap: the 729 nm AOM <i>is</i> the δ &amp; Ω knobs (M3·M5·M6·M7);
+    397 nm does M4 Doppler cooling, M8 detection and the Raman σ beams; 866/854 repump &amp; quench; 375/422 photoionize to load (M1). The
+    ion sits in an 8-blade linear trap with <b>B_D / B_σ</b> (quantization) and <b>B_grad</b> coils; fluorescence is imaged (f=300) onto a
+    camera/PMT (M8). Faithful to the Innsbruck-style layout in the thesis sources (a real table folds the paths more tightly).` },
+  Yb: { svg: YB_SETUP_SVG, caption: `<b>¹⁷¹Yb⁺ microwave + MAGIC layout.</b> The qubit is driven by a <b>microwave chain</b> (synth → amp → horn, 12.6 GHz → δ, Ω) —
+    no qubit laser. A static <b>∂B/∂z gradient</b> across the trap supplies the effective Lamb–Dicke η_eff for sidebands &amp; gates (M3·M5·M7).
+    369.5 nm (AOM, f=100/300 lenses, λ/2, PBS) does M4 cooling and M8 detection; 935/638 repump the D₃/₂ &amp; F₇/₂ leaks; 399/369 photoionize
+    to load (M1); fluorescence is imaged (f=300) onto a camera. The entangling physics moves from the laser table to the magnetic gradient.` },
+};
+
 // ---------------------------------------------------------------------------
 let backdrop = null, titleEl = null, atomBar = null, contentEl = null;
 let chatThread = null, chatInput = null, chatSend = null, chatKeyRow = null, chatKeyInput = null;
@@ -780,12 +1064,25 @@ function renderAtom(atomKey) {
       <tbody>${rows}</tbody></table></div>
     <p class="lab-note">${a.paramNote}</p>
     <h4 class="lab-h4">Read the real thing (opens in the AI reader)</h4>
-    <ul class="lab-sources">${sources}</ul>`;
+    <ul class="lab-sources">${sources}</ul>
+    ${ATOM_SETUP[atomKey] ? `<div class="lab-setup">
+      <button type="button" class="lab-setup-btn">🔧 Full optical setup — map every knob to the real table</button>
+      <div class="lab-setup-body"><figure class="lab-fig wide">${ATOM_SETUP[atomKey].svg}<figcaption>${ATOM_SETUP[atomKey].caption}</figcaption></figure></div>
+    </div>` : ''}`;
   const applyBtn = contentEl.querySelector('.lab-apply-btn');
   if (applyBtn && onApplyAtom) applyBtn.addEventListener('click', () => {
     const summary = onApplyAtom(curAtom);
     const noteEl = contentEl.querySelector('.lab-apply-note');
     if (noteEl) noteEl.textContent = summary ? '✓ ' + summary : '✓ Loaded into the simulator.';
+  });
+  // "Full optical setup" accordion — a real <button> + class toggle (bulletproof
+  // clicks, no <details> quirks); scroll it into view so the diagram isn't left
+  // below the fold when it expands at the bottom of the scroll area.
+  const setupBtn = contentEl.querySelector('.lab-setup-btn');
+  if (setupBtn) setupBtn.addEventListener('click', () => {
+    const box = setupBtn.closest('.lab-setup');
+    const opened = box.classList.toggle('open');
+    if (opened) setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
   });
   // chat context = plain text of this atom's content
   curContext = [a.intro, a.energyCaption, a.apparatusCaption,

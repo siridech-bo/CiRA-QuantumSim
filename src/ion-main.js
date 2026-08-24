@@ -9,7 +9,7 @@
 import { IonSystem } from './ion.js';
 import { MSGate } from './ion-ms.js';
 import { LevelDiagram } from './ion-levels.js';
-import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum, DopplerScan, poissonSample } from './ion-traces.js';
+import { PeTrace, FluorescenceTrace, NbarTrace, ExcitationSpectrum, DopplerScan, RabiTrace, RamseyTrace, poissonSample } from './ion-traces.js';
 import { optimalThreshold, poissonPMFArray } from './ion-readout.js';
 import { DensityHeatmap } from './heatmap.js';
 import { BlochScene } from './scene.js';
@@ -20,6 +20,7 @@ import {
   MODULES, ModuleTabs, wireSlider, prepareState,
   excitationPoint, scanGrid, measureAsymmetry, measureFFT,
   dopplerScanPoint, dopplerFloorExtrap, dopplerScanGrid,
+  ramseyPoint, timeGrid,
 } from './ion-ui.js';
 import { MathieuView, ChainView } from './ion-modes-ui.js';
 import {
@@ -61,6 +62,11 @@ const params = {
   // in its own namespace — M8 touches no engine and never writes the shared
   // params.gamma/delta/rabi (no M4-style leak).
   m8: { td: 1.0, R: 20, Rbg: 0.5 },
+  // M9 Rabi flops: a live carrier drive on a DEDICATED engine (state.m9run), recording
+  // P_e(t). M10 Ramsey: a chunked scan of ramseyPoint over the delay T. Both keep their
+  // knobs entirely in params.m9/m10 and build their own engines — never the shared sys.
+  m9: { rabi: 1.0, delta: 0.0, gammaPhi: 0.0, tMax: 24 },
+  m10: { delta: 1.0, gammaPhi: 0.05, tMax: 30 },
 };
 let sys = buildEngine();
 
@@ -87,6 +93,8 @@ const fluorTrace = new FluorescenceTrace(document.getElementById('fluor-canvas')
 const nbarTrace = new NbarTrace(document.getElementById('nbar-canvas'));
 const excSpectrum = new ExcitationSpectrum(document.getElementById('spectrum-canvas'));
 const m4Scan = new DopplerScan(document.getElementById('m4-scan-canvas'));
+const m9Trace = new RabiTrace(document.getElementById('m9-trace-canvas'));
+const m10Trace = new RamseyTrace(document.getElementById('m10-trace-canvas'));
 const heatmap = new DensityHeatmap(document.getElementById('heatmap-canvas'));
 const obsEl = document.getElementById('obs-readout');
 const truncEl = document.getElementById('trunc-warn');
@@ -101,6 +109,8 @@ const state = {
   m6gate: null,         // { kind, tTotal, tElapsed, theta } while an M6 gate runs
   m7: null,             // { engine (MSGate), running, tElapsed, tTotal, traj, ... } — M7's own namespace
   m8: null,             // { kMax, bright[], dark[], shots, lamB, lamD, opt } — M8's Poisson readout (no engine)
+  m9run: null,          // { sys, t, tMax, dt, tArr[], peArr[] } — M9's live Rabi run (dedicated engine)
+  m10scan: null,        // { grid, i, cfg, t[], pe[] } — M10's chunked Ramsey T-scan
 };
 let lastHeatMs = 0;
 const HEAT_HZ = 8;
@@ -720,10 +730,88 @@ function drawM8Sweep() {
 
 function m8Enter() { m8Recompute(); }
 
+// ---- M9 Rabi oscillations (live carrier drive on a dedicated engine) --------
+function setM9Readout(html) { document.getElementById('m9-readout').innerHTML = html; }
+function buildRabiEngine() {
+  const s = new IonSystem({
+    N_FOCK: Math.min(params.N, 8), lambdaNm: params.lambdaNm, nuTrapHz: params.nuTrapHz, massU: params.massU,
+    omegaZ: 1, delta: params.m9.delta, rabi: params.m9.rabi, mode: params.mode,
+  });
+  if (params.m9.gammaPhi > 0) s.setDephasing(true, params.m9.gammaPhi);
+  s.reset();
+  return s;
+}
+function m9Enter() {
+  state.m9run = null;
+  m9Trace.clear(); m9Trace.draw();
+  document.getElementById('m9-note').innerHTML =
+    'On resonance (δ=0) P_e flops 0→1→0 at Ω; a π-pulse (t=π/Ω) fully inverts. Detune → generalized Rabi √(δ²+Ω²); add γ_φ to damp.';
+  setM9Readout('<span class="lbl">Press <b>Run Rabi flops</b> — the qubit oscillates between |g⟩ and |e⟩ at the Rabi frequency Ω.</span>');
+}
+function m9StartRun() {
+  if (state.module !== 'M9') return;
+  const sys9 = buildRabiEngine();
+  state.m9run = { sys: sys9, t: 0, tMax: params.m9.tMax, dt: 0.15, tArr: [0], peArr: [sys9.pExcited()] };
+  document.getElementById('m9-note').innerHTML =
+    `driving Ω=${params.m9.rabi.toFixed(2)}, δ=${params.m9.delta.toFixed(2)}, γ_φ=${params.m9.gammaPhi.toFixed(2)}…`;
+  setM9Readout('<span class="lbl">flopping…</span>');
+}
+function m9StepRun() {
+  const r = state.m9run;
+  if (!r) return;
+  const perFrame = 6;
+  for (let k = 0; k < perFrame && r.t < r.tMax; k++) {
+    r.sys.step(r.dt); r.t += r.dt;
+    r.tArr.push(r.t); r.peArr.push(r.sys.pExcited());
+  }
+  m9Trace.set({ t: r.tArr, pe: r.peArr }); m9Trace.draw();
+  if (r.t >= r.tMax) {
+    const Ogen = Math.sqrt(params.m9.delta ** 2 + params.m9.rabi ** 2);
+    const contrast = params.m9.rabi ** 2 / (Ogen * Ogen);
+    const peak = Math.max(...r.peArr);
+    setM9Readout(
+      `<div><span class="lbl">Ω_eff = √(δ²+Ω²):</span> ${Ogen.toFixed(3)} &nbsp; → period 2π/Ω_eff = ${(2 * Math.PI / Ogen).toFixed(2)}</div>` +
+      `<div><span class="lbl">peak P_e:</span> ${peak.toFixed(3)} &nbsp; (ideal contrast Ω²/Ω_eff² = ${contrast.toFixed(3)}${params.m9.gammaPhi > 0 ? '; reduced by γ_φ damping' : ''})</div>`);
+    document.getElementById('m9-note').innerHTML = 'flops done ✓ — the oscillation frequency is Ω_eff and the contrast is Ω²/Ω_eff². Raise γ_φ to watch them damp.';
+    state.m9run = null;
+  }
+}
+
+// ---- M10 Ramsey interferometry (chunked T-scan of ramseyPoint) --------------
+function setM10Readout(html) { document.getElementById('m10-readout').innerHTML = html; }
+function m10Enter() {
+  state.m10scan = null;
+  m10Trace.clear(); m10Trace.draw();
+  document.getElementById('m10-note').innerHTML =
+    'Fringes P_e(T)=½[1+cos(δT)] at the detuning δ; the envelope decays at the coherence time T₂*≈1/γ_φ.';
+  setM10Readout('<span class="lbl">Press <b>Run Ramsey scan</b> to sweep the free-precession delay T and build the fringes.</span>');
+}
+function m10StartScan() {
+  if (state.module !== 'M10') return;
+  const grid = timeGrid(params.m10.tMax, 81);
+  const cfg = {
+    N: 6, lambdaNm: params.lambdaNm, nuTrapHz: params.nuTrapHz, massU: params.massU,
+    rabi: 1.0, mode: params.mode, delta: params.m10.delta, gammaPhi: params.m10.gammaPhi,
+  };
+  state.m10scan = { grid, i: 0, cfg, t: [], pe: [] };
+  document.getElementById('m10-note').innerHTML = `scanning T… (δ=${params.m10.delta.toFixed(2)}, γ_φ=${params.m10.gammaPhi.toFixed(2)})`;
+  setM10Readout('<span class="lbl">building fringes…</span>');
+}
+function m10FinishScan() {
+  const d = params.m10.delta, gphi = params.m10.gammaPhi;
+  setM10Readout(
+    `<div><span class="lbl">fringe frequency δ:</span> ${d.toFixed(3)} &nbsp; → fringe period 2π/δ = ${(2 * Math.PI / d).toFixed(2)}</div>` +
+    `<div><span class="lbl">coherence T₂* ≈ 1/γ_φ:</span> ${gphi > 0 ? (1 / gphi).toFixed(1) : '∞ (no dephasing)'}</div>`);
+  document.getElementById('m10-note').innerHTML = 'fringes built ✓ — the fringe frequency reads out δ; the decaying envelope reads out T₂*.';
+  state.m10scan = null;
+}
+
 const m4Panel = document.getElementById('m4-panel');
 const m6Panel = document.getElementById('m6-panel');
 const m7Panel = document.getElementById('m7-panel');
 const m8Panel = document.getElementById('m8-panel');
+const m9Panel = document.getElementById('m9-panel');
+const m10Panel = document.getElementById('m10-panel');
 const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const m = MODULES[id];
   const prev = state.module;
@@ -748,27 +836,34 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   const isM4 = id === 'M4';
   const isM7 = id === 'M7';
   const isM8 = id === 'M8';
+  const isM9 = id === 'M9';
+  const isM10 = id === 'M10';
+  const isSelf = isM6 || isM4 || isM7 || isM8 || isM9 || isM10;   // modules with their own engine/controls
   state.classical = classical;
-  if (classical || isM6 || isM4 || isM7 || isM8) { state.playing = false; playBtn.textContent = '▶ Play'; }
+  if (classical || isSelf) { state.playing = false; playBtn.textContent = '▶ Play'; }
   if (!isM6) state.m6gate = null;
   if (!isM4) state.m4scan = null;
   if (!isM7) state.m7 = null;
   if (!isM8) state.m8 = null;
+  if (!isM9) state.m9run = null;
+  if (!isM10) state.m10scan = null;
 
   // toggle side-groups: engine controls vs classical controls. M4/M6/M7 are
   // engine-based but swap the M3/M5 drive/state/diagram groups for their own controls.
   document.querySelectorAll('.engine-only').forEach((el) => { el.hidden = classical; });
-  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isM6 || isM4 || isM7 || isM8; });
+  document.querySelectorAll('.m35-only').forEach((el) => { el.hidden = classical || isSelf; });
   document.getElementById('m6-controls').hidden = classical || !isM6;
   document.getElementById('m4-controls').hidden = classical || !isM4;
   document.getElementById('m7-controls').hidden = classical || !isM7;
   document.getElementById('m8-controls').hidden = classical || !isM8;
-  // M4/M7 run their own dedicated engine, M8 runs a pure Poisson model → hide the
-  // shared trap/dissipator/truncation controls (they target the M3/M5 engine) to
-  // avoid desyncing. M7/M8 also hide the global Playback group (they have their own
-  // buttons / loop; the shared frame loop is idle).
-  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4 || isM7 || isM8; });
-  document.getElementById('playback-group').hidden = classical || isM7 || isM8;
+  document.getElementById('m9-controls').hidden = classical || !isM9;
+  document.getElementById('m10-controls').hidden = classical || !isM10;
+  // M4/M7 run their own dedicated engine, M8 a pure Poisson model, M9/M10 their own
+  // engines → hide the shared trap/dissipator/truncation controls (they target the
+  // M3/M5 engine) to avoid desyncing. M7/M8/M9/M10 also hide the global Playback group
+  // (they have their own buttons; the shared frame loop is idle for them).
+  document.querySelectorAll('.hide-m4').forEach((el) => { el.hidden = classical || isM4 || isM7 || isM8 || isM9 || isM10; });
+  document.getElementById('playback-group').hidden = classical || isM7 || isM8 || isM9 || isM10;
   document.getElementById('m1-controls').hidden = id !== 'M1';
   document.getElementById('m2-controls').hidden = id !== 'M2';
 
@@ -777,14 +872,17 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   appShell.classList.toggle('mode-classical', classical);
   appShell.classList.toggle('mode-ms', isM7);
   appShell.classList.toggle('mode-readout', isM8);
-  levelsPanel.hidden = classical || isM6 || isM4 || isM7 || isM8;
-  moduleActions.hidden = classical || isM6 || isM4 || isM7 || isM8;
+  appShell.classList.toggle('mode-plain', isM9 || isM10);   // M9/M10 plots live in their center panel
+  levelsPanel.hidden = classical || isSelf;
+  moduleActions.hidden = classical || isSelf;
   m1Panel.hidden = id !== 'M1';
   m2Panel.hidden = id !== 'M2';
   m6Panel.hidden = !isM6;
   m4Panel.hidden = !isM4;
   m7Panel.hidden = !isM7;
   m8Panel.hidden = !isM8;
+  m9Panel.hidden = !isM9;
+  m10Panel.hidden = !isM10;
 
   // stop the inactive classical view; show/refresh the active one
   if (id === 'M1') { ensureMathieuView().show(); } else if (mathieuView) mathieuView.hide();
@@ -818,6 +916,10 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
   } else if (isM8) {
     // Entering M8: build the Poisson readout histograms + fidelity. No engine touched.
     m8Enter();
+  } else if (isM9) {
+    m9Enter();
+  } else if (isM10) {
+    m10Enter();
   } else if (!classical && !isM6) {
     // Entering M3/M5 (incl. from M4/M7): redraw the level diagram with the live engine.
     refresh(true);
@@ -1088,6 +1190,18 @@ wireSlider('m8-r', (v) => { params.m8.R = v; if (state.module === 'M8') m8Recomp
 wireSlider('m8-rbg', (v) => { params.m8.Rbg = v; if (state.module === 'M8') m8Recompute(); }, (v) => v.toFixed(1));
 document.getElementById('m8-resample').addEventListener('click', () => { if (state.module === 'M8') m8Recompute(); });
 
+// -- M9: Rabi oscillations (own dedicated engine; knobs stay in params.m9.*) --
+wireSlider('m9-rabi', (v) => { params.m9.rabi = v; }, (v) => v.toFixed(2));
+wireSlider('m9-delta', (v) => { params.m9.delta = v; }, (v) => v.toFixed(2));
+wireSlider('m9-gphi', (v) => { params.m9.gammaPhi = v; }, (v) => v.toFixed(2));
+document.getElementById('m9-run').addEventListener('click', m9StartRun);
+
+// -- M10: Ramsey interferometry (fresh engines per T point; knobs in params.m10.*) --
+wireSlider('m10-delta', (v) => { params.m10.delta = v; }, (v) => v.toFixed(2));
+wireSlider('m10-gphi', (v) => { params.m10.gammaPhi = v; }, (v) => v.toFixed(2));
+wireSlider('m10-tmax', (v) => { params.m10.tMax = v; }, (v) => String(Math.round(v)));
+document.getElementById('m10-run').addEventListener('click', m10StartScan);
+
 // Chunked Doppler-floor δ-scan (stays responsive), then an accurate extrapolated
 // floor at −Γ/2 for the readout vs the canonical Γ/2ω_z.
 document.getElementById('m4-scan').addEventListener('click', () => {
@@ -1142,6 +1256,31 @@ function frame() {
   if (state.module === 'M8') {
     const m = state.m8;
     if (m && m.shots < 20000) { m8SampleBatch(250); m8Refresh(); }
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  // M9 Rabi: advance the live carrier-drive run on its dedicated engine, recording P_e(t).
+  if (state.module === 'M9') {
+    if (state.m9run) m9StepRun();
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  // M10 Ramsey: drain the T-scan a few points/frame (each a fresh π/2·T·π/2 sequence).
+  if (state.module === 'M10') {
+    if (state.m10scan) {
+      const q = state.m10scan;
+      const perFrame = 3;
+      for (let k = 0; k < perFrame && q.i < q.grid.length; k++, q.i++) {
+        const T = q.grid[q.i];
+        q.t.push(T); q.pe.push(ramseyPoint(q.cfg, T));
+      }
+      m10Trace.set({ t: q.t, pe: q.pe, delta: q.cfg.delta });
+      m10Trace.draw();
+      if (q.i >= q.grid.length) m10FinishScan();
+      else document.getElementById('m10-note').innerHTML = `scanning T… ${q.i}/${q.grid.length}`;
+    }
     requestAnimationFrame(frame);
     return;
   }

@@ -303,3 +303,101 @@ export class DopplerScan {
     ctx.textAlign = 'right'; ctx.fillText('δ / ω_z', w - 4, 12); ctx.textAlign = 'left';
   }
 }
+
+// ---------------------------------------------------------------------------
+// 6. RabiTrace (M9) — P_e vs drive time as a resonant/off-resonant carrier flops
+// the qubit. Consumes { t[], pe[] } (P_e locked to [0,1]); dashed guide at P_e=½.
+// The oscillation at Ω (and its damping under dephasing) is the whole M9 story.
+// ---------------------------------------------------------------------------
+export class RabiTrace {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.data = null;
+  }
+  set(data) { this.data = data; }
+  clear() { this.data = null; }
+  draw() {
+    const { ctx, canvas } = this;
+    const w = canvas.width, h = canvas.height;
+    const col = plotColors();
+    ctx.clearRect(0, 0, w, h);
+    const padL = 26, padR = 8, padB = 18, padT = 8;
+    if (!this.data || this.data.t.length < 2) {
+      ctx.fillStyle = col.text; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('press Run — drive the carrier and watch P_e flop…', 8, h / 2); return;
+    }
+    const { t, pe } = this.data;
+    const tMax = t[t.length - 1] || 1;
+    const xOf = (x) => padL + (x / tMax) * (w - padL - padR);
+    const yOf = (p) => padT + (1 - p) * (h - padT - padB);
+
+    // axes + P_e=½ guide
+    ctx.strokeStyle = col.line; ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB); ctx.stroke();
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(padL, yOf(0.5)); ctx.lineTo(w - padR, yOf(0.5)); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+    // P_e(t) curve
+    ctx.strokeStyle = col.accent; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i < t.length; i++) {
+      const x = xOf(t[i]), y = yOf(pe[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = col.text; ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText('P_e vs drive time (Rabi flop)', 6, 12);
+    ctx.textAlign = 'right'; ctx.fillText('t · ω_z', w - 4, 12); ctx.textAlign = 'left';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. RamseyTrace (M10) — P_e vs free-precession time T: Ramsey fringes at the
+// detuning δ, whose contrast decays at T₂*. Consumes { t[], pe[], delta }. The
+// decaying fringes ARE the coherence-time measurement.
+// ---------------------------------------------------------------------------
+export class RamseyTrace {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.data = null;
+  }
+  set(data) { this.data = data; }
+  clear() { this.data = null; }
+  draw() {
+    const { ctx, canvas } = this;
+    const w = canvas.width, h = canvas.height;
+    const col = plotColors();
+    ctx.clearRect(0, 0, w, h);
+    const padL = 26, padR = 8, padB = 18, padT = 8;
+    if (!this.data || this.data.t.length < 2) {
+      ctx.fillStyle = col.text; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('press Run — sweep the Ramsey delay T to build the fringes…', 8, h / 2); return;
+    }
+    const { t, pe, delta } = this.data;
+    const tMax = t[t.length - 1] || 1;
+    const xOf = (x) => padL + (x / tMax) * (w - padL - padR);
+    const yOf = (p) => padT + (1 - p) * (h - padT - padB);
+
+    // axes + P_e=½ guide (the fringe midline)
+    ctx.strokeStyle = col.line; ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB); ctx.stroke();
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(padL, yOf(0.5)); ctx.lineTo(w - padR, yOf(0.5)); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+    // fringe curve
+    ctx.strokeStyle = col.accent; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i < t.length; i++) {
+      const x = xOf(t[i]), y = yOf(pe[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = col.text; ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText(`Ramsey fringes  (δ=${(delta || 0).toFixed(2)})`, 6, 12);
+    ctx.textAlign = 'right'; ctx.fillText('T · ω_z', w - 4, 12); ctx.textAlign = 'left';
+  }
+}

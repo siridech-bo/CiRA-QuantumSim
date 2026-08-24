@@ -137,4 +137,36 @@ export const ION_WIZARDS = {
         body: 'Raise <b>R scatter</b> to pull the histograms apart again at the same t_d — the alternative to simply integrating longer.' },
     ],
   },
+
+  M9: {
+    title: 'M9 · Rabi oscillations',
+    steps: [
+      { title: 'What you’ll do', target: '#m9-trace-canvas',
+        body: 'Drive the carrier and watch the qubit <b>flop</b> between |g⟩ and |e⟩ — the most basic calibration in the lab. On resonance <code>P_e(t)=sin²(Ωt/2)</code>.' },
+      { title: 'Set the Rabi frequency', target: '#m9-rabi',
+        body: 'Set <b>Ω/ω_z ≈ 1</b>. Ω sets the flop rate: the period is <code>2π/Ω</code>, a <b>π-pulse</b> (full inversion) takes t=π/Ω, a <b>π/2</b> half that.' },
+      { title: 'Run it', target: '#m9-run',
+        body: 'Press <b>Run Rabi flops</b>. P_e draws live, oscillating 0→1→0 at Ω. The first peak is your π-pulse; the first crossing of ½ is your π/2.' },
+      { title: 'Detune it', target: '#m9-delta',
+        body: 'Raise <b>δ</b> and re-run: the flops speed up to <code>√(δ²+Ω²)</code> but no longer reach 1 — the contrast drops to <code>Ω²/(δ²+Ω²)</code>. That is the generalized Rabi.' },
+      { title: 'Break it — dephasing', target: '#m9-gphi',
+        body: 'Raise <b>γ_φ</b> and re-run: the flops <b>damp</b> toward P_e=½ as coherence is lost during the drive — real decoherence straight from the master equation.' },
+    ],
+  },
+
+  M10: {
+    title: 'M10 · Ramsey interferometry',
+    steps: [
+      { title: 'What you’ll do', target: '#m10-trace-canvas',
+        body: 'Measure coherence: <b>π/2 → wait T → π/2</b>. Sweeping T builds <b>Ramsey fringes</b> whose decaying envelope is the coherence time T₂*.' },
+      { title: 'Set the detuning', target: '#m10-delta',
+        body: 'Set <b>δ ≈ 1</b>. The detuning is the <b>fringe frequency</b>: <code>P_e(T)=½[1+cos(δT)]</code>, so the fringe period 2π/δ reads δ back out.' },
+      { title: 'Run the scan', target: '#m10-run',
+        body: 'Press <b>Run Ramsey scan</b>. Each point is a full π/2–wait–π/2 sequence on the real engine; the fringes build up left to right.' },
+      { title: 'Break it — kill coherence', target: '#m10-gphi',
+        body: 'Raise <b>γ_φ</b> and re-run: the fringe envelope <b>collapses faster</b> — a shorter <code>T₂*≈1/γ_φ</code>. This is exactly how coherence time is measured.' },
+      { title: 'Longer delays', target: '#m10-tmax',
+        body: 'Increase <b>T max</b> to see more fringe periods and the full envelope decay. Beyond T₂* the fringes wash out to a flat ½.' },
+    ],
+  },
 };

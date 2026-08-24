@@ -56,6 +56,16 @@ export const MODULES = {
     desc: 'State-selective fluorescence detection: <b>bright</b> <code>|g⟩</code> (S₁/₂) scatters the 397 nm probe, <b>dark</b>/shelved <code>|e⟩</code> (D₅/₂) does not. Over a window <code>t_d</code> the PMT collects a Poisson photon count — mean <code>n̄_bright=R·t_d</code> vs <code>n̄_dark=R_bg·t_d≈0</code>. A <b>threshold</b> discriminates the two; readout fidelity <code>F=1−½[P(&lt;thr|bright)+P(≥thr|dark)]</code> at the <b>optimal threshold</b> (minimizing the Poisson overlap).',
     breakIt: 'Break it: shorten <code>t_d</code> — <code>n̄_bright</code> shrinks below the Poisson width <code>√n̄</code>, the bright &amp; dark histograms overlap and <code>F</code> drops. Longer <code>t_d</code> (or higher <code>R</code>) → clean separation → <code>F→1</code>. Emergent from <code>t_d·R</code> vs <code>√n̄</code>, never hard-wired.',
   },
+  M9: {
+    name: 'Rabi oscillations',
+    desc: 'Drive the carrier (<code>δ=0</code>) continuously and watch the qubit flop: <code>P_e(t)=sin²(Ω_eff·t/2)</code>, oscillating at the Rabi frequency Ω. Detune (<code>δ≠0</code>) and it flops at the generalized Rabi <code>√(δ²+Ω²)</code> — faster but shallower (contrast <code>Ω²/(δ²+Ω²)</code>). Real dephasing damps the flops.',
+    breakIt: 'Break it: raise <code>γ_φ</code> and the oscillations decay; or detune <code>δ</code> and the contrast drops to <code>Ω²/(δ²+Ω²)</code>. The Rabi period 2π/Ω is how you calibrate a π-pulse.',
+  },
+  M10: {
+    name: 'Ramsey interferometry',
+    desc: 'The T₂* experiment: <code>π/2</code> → free precession for time <code>T</code> → <code>π/2</code>, then read <code>P_e</code>. In the frame rotating at the drive, a detuning δ winds the Bloch vector by <code>δ·T</code>, so <code>P_e(T)=½[1+cos(δT)]</code> — <b>Ramsey fringes</b> at frequency δ. Dephasing collapses the fringe contrast at the coherence time <code>T₂*</code>.',
+    breakIt: 'Break it: raise <code>γ_φ</code> — the fringe envelope decays faster (shorter T₂*). Ramsey IS how coherence time is measured; the fringe frequency reads out the detuning δ.',
+  },
 };
 
 // ---- generic slider wiring --------------------------------------------------
@@ -115,6 +125,31 @@ export function scanGrid(dMax = 1.5, steps = 61) {
   const g = [];
   for (let i = 0; i < steps; i++) g.push(-dMax + (2 * dMax) * i / (steps - 1));
   return g;
+}
+
+// Build a time grid 0..tMax (for Rabi/Ramsey sweeps).
+export function timeGrid(tMax, steps = 81) {
+  const g = [];
+  for (let i = 0; i < steps; i++) g.push((tMax * i) / (steps - 1));
+  return g;
+}
+
+// One Ramsey point (M10): fresh engine, π/2 → free precess δ·T → π/2, return P_e.
+// The two π/2 pulses are on resonance (δ=0); the free interval carries the detuning
+// δ so the Bloch vector winds by δ·T. Dephasing (cfg.gammaPhi) decays the fringes.
+// cfg: { N, lambdaNm, nuTrapHz, massU, rabi, mode, delta, gammaPhi }
+export function ramseyPoint(cfg, T) {
+  const s = new IonSystem({
+    N_FOCK: cfg.N, lambdaNm: cfg.lambdaNm, nuTrapHz: cfg.nuTrapHz, massU: cfg.massU,
+    omegaZ: 1, delta: 0, rabi: cfg.rabi, mode: cfg.mode,
+  });
+  if (cfg.gammaPhi > 0) s.setDephasing(true, cfg.gammaPhi);
+  s.reset();
+  const t90 = (Math.PI / 2) / s.couplingMatrix()[0];   // π/2 area at the |n=0⟩ carrier Rabi
+  s.setDetuning(0); s.setRabi(cfg.rabi); s.step(t90);   // first π/2
+  s.setRabi(0); s.setDetuning(cfg.delta); s.step(T);    // free precession, phase δ·T
+  s.setDetuning(0); s.setRabi(cfg.rabi); s.step(t90);   // second π/2
+  return s.pExcited();
 }
 
 // =============================================================================
