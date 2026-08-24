@@ -74,7 +74,6 @@ function card(p) {
       <div class="lib-tags">${tagChips(mods)}</div>
       <div class="lib-actions">
         <a class="read" href="${href}">📖 Read + AI copilot</a>
-        <a href="Library/${encodeURIComponent(p.file)}" target="_blank" rel="noopener">Open PDF</a>
         ${extLinks(p)}
       </div>
     </div>
