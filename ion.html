@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="src/info.css" />
   <link rel="stylesheet" href="src/wizard.css" />
   <link rel="stylesheet" href="src/ion-lab.css" />
+  <link rel="stylesheet" href="src/ion-flow.css" />
   <script type="importmap">
   {
     "imports": {
@@ -50,19 +51,22 @@
 
       <div class="side-group">
         <div class="side-label" data-info="modules-overview">Module</div>
+        <!-- Tabs in EXPERIMENTAL order (Prepare → Cool → Characterize → Compute → Read). -->
         <div class="module-tabs" id="module-tabs">
-          <button class="mod-btn primary" data-module="M3">M3</button>
-          <button class="mod-btn" data-module="M5">M5</button>
           <button class="mod-btn" data-module="M1">M1</button>
           <button class="mod-btn" data-module="M2">M2</button>
           <button class="mod-btn" data-module="M4">M4</button>
+          <button class="mod-btn" data-module="M5">M5</button>
+          <button class="mod-btn primary" data-module="M3">M3</button>
+          <button class="mod-btn" data-module="M9">M9</button>
+          <button class="mod-btn" data-module="M10">M10</button>
           <button class="mod-btn" data-module="M6">M6</button>
           <button class="mod-btn" data-module="M7">M7</button>
           <button class="mod-btn" data-module="M8">M8</button>
-          <button class="mod-btn" data-module="M9">M9</button>
-          <button class="mod-btn" data-module="M10">M10</button>
         </div>
+        <button id="btn-flow" class="flow-launch" type="button">🧭 Experiment map — how the modules chain</button>
         <div class="module-desc" id="module-desc"></div>
+        <div id="pipeline-crumb" hidden></div>
         <div class="break-it" id="break-it"></div>
         <button id="btn-wizard" class="wizard-launch" type="button">🎓 Guided walkthrough</button>
         <button id="btn-lab" class="lab-launch" type="button">🔬 In the lab (real apparatus)</button>
@@ -333,17 +337,23 @@
     <!-- ===== Center: level diagram ===== -->
     <main id="center">
       <!-- Center module tabs: one panel visible at a time (pedagogical order). -->
+      <!-- Center tabs in EXPERIMENTAL order, grouped by phase (see the 🧭 Experiment map). -->
       <nav id="center-tabs" class="center-tabs" aria-label="Module">
+        <span class="ctab-phase" data-phase="prep">Prepare</span>
         <button class="ctab" data-module="M1">M1 · Paul trap</button>
         <button class="ctab" data-module="M2">M2 · Normal modes</button>
-        <button class="ctab active" data-module="M3">M3 · Sidebands</button>
+        <span class="ctab-phase" data-phase="cool">Cool</span>
         <button class="ctab" data-module="M4">M4 · Doppler cool</button>
         <button class="ctab" data-module="M5">M5 · Sideband cool</button>
-        <button class="ctab" data-module="M6">M6 · 1-qubit gate</button>
-        <button class="ctab" data-module="M7">M7 · MS gate</button>
-        <button class="ctab" data-module="M8">M8 · Readout</button>
+        <span class="ctab-phase" data-phase="char">Characterize</span>
+        <button class="ctab active" data-module="M3">M3 · Sidebands</button>
         <button class="ctab" data-module="M9">M9 · Rabi</button>
         <button class="ctab" data-module="M10">M10 · Ramsey</button>
+        <span class="ctab-phase" data-phase="comp">Compute</span>
+        <button class="ctab" data-module="M6">M6 · 1-qubit gate</button>
+        <button class="ctab" data-module="M7">M7 · MS gate</button>
+        <span class="ctab-phase" data-phase="read">Read</span>
+        <button class="ctab" data-module="M8">M8 · Readout</button>
       </nav>
       <section id="levels-panel">
         <div class="panel-head">

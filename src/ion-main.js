@@ -31,6 +31,7 @@ import { ION_INFO } from './ion-info.js';
 import { initWizard, startWizard, closeWizard } from './wizard.js';
 import { ION_WIZARDS } from './ion-wizard.js';
 import { initLab, openLab } from './ion-lab.js';
+import { initFlow, openFlowMap, renderCrumb } from './ion-flow.js';
 
 // Educational ⓘ info buttons: inject one next to every [data-info] label / graph
 // heading and open a sourced popup on click (src/info.js + src/ion-info.js).
@@ -828,6 +829,7 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
 
   document.getElementById('module-desc').innerHTML = `<b>${m.name}</b> — ${m.desc}`;
   document.getElementById('break-it').innerHTML = m.breakIt;
+  renderCrumb(document.getElementById('pipeline-crumb'), id, (mid) => tabs.select(mid));
   moduleActions.querySelectorAll('[data-for]').forEach((el) =>
     el.style.display = el.dataset.for === id ? '' : 'none');
 
@@ -930,6 +932,10 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
 document.querySelectorAll('#center-tabs .ctab').forEach((b) =>
   b.addEventListener('click', () => tabs.select(b.dataset.module)));
 
+// "🧭 Experiment map": the pipeline overlay + per-module breadcrumb navigate here.
+initFlow({ onSelect: (id) => tabs.select(id) });
+document.getElementById('btn-flow').addEventListener('click', openFlowMap);
+
 // "🎓 Guided walkthrough" launches the step-by-step tour for the active module.
 document.getElementById('btn-wizard').addEventListener('click', () => {
   startWizard(state.module, (MODULES[state.module] || {}).name);
@@ -1000,6 +1006,13 @@ const ATOM_PRESETS = {
         seOn: false, gamma: 0.02, dephaseOn: true, gammaPhi: 0.02, bathOn: false, heating: 0.01 },
   Yb: { sym: '¹⁷¹Yb⁺', massU: 171, lambdaNm: 729, nuTrapMHz: 0.5, etaOverride: 0.0080,
         seOn: false, gamma: 0.02, dephaseOn: true, gammaPhi: 0.04, bathOn: false, heating: 0.01 },
+  // ¹⁷¹Yb⁺ hyperfine qubit driven by laser Raman beams (IonQ/Quantinuum). Same
+  // hyperfine encoding as Yb·MAGIC, but the coupling is a REAL Lamb–Dicke η from the
+  // Raman Δk (counter-propagating 355 nm beams) → η≈0.19 at 1 MHz, comparable to
+  // optical. lambdaNm=177.5 = 355/2 (the effective Δk wavelength), so η is computed,
+  // not overridden — it scales with ν_z like a real recoil coupling.
+  YbRaman: { sym: '¹⁷¹Yb⁺ (Raman)', massU: 171, lambdaNm: 177.5, nuTrapMHz: 1.0, etaOverride: null,
+        seOn: false, gamma: 0.02, dephaseOn: true, gammaPhi: 0.03, bathOn: false, heating: 0.01 },
 };
 function _setRange(id, v, dec) {
   const el = document.getElementById(id); if (!el) return;
@@ -1040,6 +1053,10 @@ function updateEta() {
   const inM4 = state.module === 'M4';
   if (params.atom === 'Yb' && !inM4) {
     el.innerHTML = `η_eff = <b>${sys.etaValue().toFixed(4)}</b> &nbsp; (¹⁷¹Yb⁺ · MAGIC — set by the ∂B/∂z gradient, no laser; ν_z=${(params.nuTrapHz / 1e6).toFixed(1)} MHz, ${params.massU} u).`;
+    return;
+  }
+  if (params.atom === 'YbRaman' && !inM4) {
+    el.innerHTML = `η = <b>${sys.etaValue().toFixed(4)}</b> &nbsp; (¹⁷¹Yb⁺ · laser Raman — from the Δk of the 355 nm Raman beams; ν_z=${(params.nuTrapHz / 1e6).toFixed(1)} MHz, ${params.massU} u).`;
     return;
   }
   const lam = inM4 ? 397 : params.lambdaNm, nu = inM4 ? 1.0 : params.nuTrapHz / 1e6;

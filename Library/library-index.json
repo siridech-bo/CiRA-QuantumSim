@@ -2,7 +2,7 @@
   "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
   "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
   "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
-  "count": 90,
+  "count": 95,
   "papers": [
     {
       "rank": 1,
@@ -16,7 +16,8 @@
       "file": "01-scalable-chip-based-3d-ion-traps.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 2,
@@ -30,7 +31,8 @@
       "file": "02-the-role-of-higher-order-terms-in-trapped-ion-quantum-c.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 3,
@@ -44,7 +46,8 @@
       "file": "03-measuring-a-single-atoms-position-with-extreme-sub-wave.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 4,
@@ -58,7 +61,8 @@
       "file": "04-fast-robust-and-laser-free-universal-entangling-gates-f.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 5,
@@ -72,7 +76,8 @@
       "file": "05-robust-two-qubit-gates-using-pulsed-dynamical-decouplin.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 6,
@@ -86,7 +91,8 @@
       "file": "06-classical-half-adder-using-trapped-ion-quantum-bits-tow.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 7,
@@ -100,7 +106,8 @@
       "file": "07-realization-of-a-quantum-perceptron-gate-with-trapped-i.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 8,
@@ -114,7 +121,8 @@
       "file": "08-q-match-iterative-shape-matching-via-quantum-annealing.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 9,
@@ -128,7 +136,8 @@
       "file": "09-genuine-temporal-correlations-can-certify-the-quantum-d.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 10,
@@ -142,7 +151,8 @@
       "file": "10-speeding-up-the-decision-making-of-a-learning-agent-usi.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 11,
@@ -156,7 +166,8 @@
       "file": "11-distinguishing-between-statistical-and-systematic-error.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 12,
@@ -170,7 +181,8 @@
       "file": "12-measuring-anomalous-heating-in-a-planar-ion-trap-with-v.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 13,
@@ -184,7 +196,8 @@
       "file": "13-high-fidelity-preservation-of-quantum-information-durin.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 14,
@@ -198,7 +211,8 @@
       "file": "14-radio-frequency-sideband-cooling-and-sympathetic-coolin.pdf",
       "modules": [
         "M5"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 15,
@@ -212,7 +226,8 @@
       "file": "15-quantum-dynamics-of-trapped-ions-in-a-dynamic-field-gra.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 16,
@@ -226,7 +241,8 @@
       "file": "16-blueprint-for-a-microwave-trapped-ion-quantum-computer.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 17,
@@ -240,7 +256,8 @@
       "file": "17-analog-quantum-simulation-of-11d-lattice-qed-with-trapp.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 18,
@@ -254,7 +271,8 @@
       "file": "18-versatile-microwave-driven-trapped-ion-spin-system-for.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 19,
@@ -268,7 +286,8 @@
       "file": "19-ultrasensitive-magnetometer-using-a-single-atom.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 20,
@@ -282,7 +301,8 @@
       "file": "20-isospaced-linear-ion-strings.pdf",
       "modules": [
         "M2"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 21,
@@ -296,7 +316,8 @@
       "file": "21-ion-trajectory-analysis-for-micromotion-minimization-an.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 22,
@@ -310,7 +331,8 @@
       "file": "22-investigating-the-emergence-of-time-in-stationary-state.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 23,
@@ -324,7 +346,8 @@
       "file": "23-simplified-implementation-of-the-quantum-fourier-transf.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 24,
@@ -338,7 +361,8 @@
       "file": "24-fault-tolerant-hahn-ramsey-interferometry-with-pulse-se.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 25,
@@ -352,7 +376,8 @@
       "file": "25-state-selective-detection-of-hyperfine-qubits.pdf",
       "modules": [
         "M8"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 26,
@@ -367,7 +392,8 @@
       "modules": [
         "M4",
         "M5"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 27,
@@ -381,7 +407,8 @@
       "file": "27-a-trapped-ion-based-quantum-byte-with-105-next-neighbou.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 28,
@@ -395,7 +422,8 @@
       "file": "28-a-planar-ion-trap-chip-with-integrated-structures-for-a.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 29,
@@ -409,7 +437,8 @@
       "file": "29-adiabatic-quantum-simulation-with-a-segmented-ion-trap.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 30,
@@ -423,7 +452,8 @@
       "file": "30-a-scalable-fast-and-multichannel-arbitrary-waveform-gen.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 31,
@@ -437,7 +467,8 @@
       "file": "31-protecting-conditional-quantum-gates-by-robust-dynamica.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 32,
@@ -451,7 +482,8 @@
       "file": "32-designer-spin-pseudomolecule-implemented-with-trapped-i.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 33,
@@ -465,7 +497,8 @@
       "file": "33-thick-film-technology-for-ultra-high-vacuum-interfaces.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 34,
@@ -480,7 +513,8 @@
       "modules": [
         "M2",
         "M7"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 35,
@@ -494,7 +528,8 @@
       "file": "35-quantum-gates-and-memory-using-microwave-dressed-states.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 36,
@@ -508,7 +543,8 @@
       "file": "36-quantum-gates-using-electronic-and-nuclear-spins-of-yb.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 37,
@@ -522,7 +558,8 @@
       "file": "37-resonance-enhanced-isotope-selective-photoionization-of.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 38,
@@ -536,7 +573,8 @@
       "file": "38-enhancement-of-laser-cooling-by-the-use-of-magnetic-gra.pdf",
       "modules": [
         "M4"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 39,
@@ -550,7 +588,8 @@
       "file": "39-quantum-physics-trapped-ion-set-to-quiver.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 40,
@@ -564,7 +603,8 @@
       "file": "40-invited-review-article-quantum-simulations-with-cold-tr.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "general"
     },
     {
       "rank": 41,
@@ -578,7 +618,8 @@
       "file": "41-two-dimensional-cluster-state-preparation-with-linear-i.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 42,
@@ -592,7 +633,8 @@
       "file": "42-scrutinizing-single-qubit-quantum-channels-theory-and-e.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 43,
@@ -606,7 +648,8 @@
       "file": "43-quantitative-verification-of-entanglement-and-fidelitie.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 44,
@@ -620,7 +663,8 @@
       "file": "44-individual-addressing-of-trapped-ions-and-coupling-of-m.pdf",
       "modules": [
         "M3"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 45,
@@ -634,7 +678,8 @@
       "file": "45-error-resistant-single-qubit-gates-with-trapped-ions.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 46,
@@ -648,7 +693,8 @@
       "file": "46-trapped-ion-chain-as-a-neural-network-error-resistant-q.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 47,
@@ -662,7 +708,8 @@
       "file": "47-robust-state-preparation-of-a-single-trapped-ion-by-adi.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 48,
@@ -676,7 +723,8 @@
       "file": "48-electrodynamically-trapped-yb-ions-for-quantum-informat.pdf",
       "modules": [
         "M1"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 49,
@@ -690,7 +738,8 @@
       "file": "49-simultaneous-cooling-of-axial-vibrational-modes-in-a-li.pdf",
       "modules": [
         "M5"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 50,
@@ -704,7 +753,8 @@
       "file": "50-thermally-activated-hopping-of-two-ions-trapped-in-a-bi.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 51,
@@ -718,7 +768,8 @@
       "file": "51-quantum-measurements-and-new-concepts-for-experiments-w.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 52,
@@ -732,7 +783,8 @@
       "file": "52-spin-resonance-with-trapped-ions.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 53,
@@ -746,7 +798,8 @@
       "file": "53-entanglement-and-inhibited-quantum-evolution.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 54,
@@ -760,7 +813,8 @@
       "file": "54-a-relaxation-free-verification-of-the-quantum-zeno-para.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 55,
@@ -774,7 +828,8 @@
       "file": "55-spin-resonance-with-trapped-ions-experiments-and-new-co.pdf",
       "modules": [
         "M6"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 56,
@@ -788,7 +843,8 @@
       "file": "56-from-spectral-relaxation-to-quantified-decoherence.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 57,
@@ -802,7 +858,8 @@
       "file": "57-conditional-spin-resonance-with-trapped-ions.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 58,
@@ -816,7 +873,8 @@
       "file": "58-a-relaxationless-demonstration-of-the-quantum-zeno-para.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 59,
@@ -830,7 +888,8 @@
       "file": "59-self-learning-estimation-of-quantum-states.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 60,
@@ -844,7 +903,8 @@
       "file": "60-light-induced-decoherence-in-the-driven-evolution-of-an.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 61,
@@ -858,7 +918,8 @@
       "file": "61-raman-laser-cooling-and-heating-of-two-trapped-ba-ions.pdf",
       "modules": [
         "M4"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 62,
@@ -872,7 +933,8 @@
       "file": "62-ion-trap-quantum-logic-using-long-wavelength-radiation.pdf",
       "modules": [
         "M7"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 63,
@@ -886,7 +948,8 @@
       "file": "63-what-does-an-observed-quantum-system-reveal-to-its-obse.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "rank": 64,
@@ -900,7 +963,8 @@
       "file": "64-evolution-of-an-atom-impeded-by-measurement-the-quantum.pdf",
       "modules": [
         "Other"
-      ]
+      ],
+      "approach": "magic"
     },
     {
       "title": "Experimental Issues in Coherent Quantum-State Manipulation of Trapped Atomic Ions",
@@ -915,7 +979,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 65
+      "rank": 65,
+      "approach": "general"
     },
     {
       "title": "Generation of Nonclassical Motional States of a Trapped Atom",
@@ -930,7 +995,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 66
+      "rank": 66,
+      "approach": "general"
     },
     {
       "title": "The ion trap quantum information processor",
@@ -945,7 +1011,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 67
+      "rank": 67,
+      "approach": "general"
     },
     {
       "title": "Quantum dynamics of cold trapped ions, with application to quantum computation",
@@ -960,7 +1027,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 68
+      "rank": 68,
+      "approach": "general"
     },
     {
       "title": "Quantum Computation with Ions in Thermal Motion",
@@ -975,7 +1043,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 69
+      "rank": 69,
+      "approach": "general"
     },
     {
       "title": "Entanglement and quantum computation with ions in thermal motion",
@@ -990,7 +1059,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 70
+      "rank": 70,
+      "approach": "general"
     },
     {
       "title": "Spontaneous recoil effects of optical pumping on trapped atoms",
@@ -1005,7 +1075,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 71
+      "rank": 71,
+      "approach": "general"
     },
     {
       "title": "Trapped-ion recoil / spontaneous-emission cooling limits (Phatak et al.)",
@@ -1020,7 +1091,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 72
+      "rank": 72,
+      "approach": "general"
     },
     {
       "title": "NMR techniques for quantum control and computation",
@@ -1035,7 +1107,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 73
+      "rank": 73,
+      "approach": "general"
     },
     {
       "title": "Experimental Implementation of Hogg's Algorithm on a Three-Quantum-bit NMR Quantum Computer",
@@ -1050,7 +1123,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 74
+      "rank": 74,
+      "approach": "general"
     },
     {
       "title": "Simulation of four-body interaction in a nuclear magnetic resonance quantum information processor",
@@ -1065,7 +1139,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 75
+      "rank": 75,
+      "approach": "general"
     },
     {
       "title": "¹³C-chloroform NMR quantum-computing benchmark parameters",
@@ -1080,7 +1155,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 76
+      "rank": 76,
+      "approach": "general"
     },
     {
       "title": "Harnessing Disordered-Ensemble Quantum Dynamics for Machine Learning",
@@ -1095,7 +1171,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 77
+      "rank": 77,
+      "approach": "general"
     },
     {
       "title": "Quantum reservoir computing in Jaynes-Cummings models: Nonlinear memory and time-series prediction",
@@ -1110,7 +1187,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 78
+      "rank": 78,
+      "approach": "general"
     },
     {
       "title": "Cavity quantum electrodynamics for superconducting electrical circuits",
@@ -1125,7 +1203,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 79
+      "rank": 79,
+      "approach": "general"
     },
     {
       "title": "Opportunities in Quantum Reservoir Computing and Extreme Learning Machines",
@@ -1140,7 +1219,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 80
+      "rank": 80,
+      "approach": "general"
     },
     {
       "title": "Quantum dynamics of single trapped ions",
@@ -1155,7 +1235,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 81
+      "rank": 81,
+      "approach": "general"
     },
     {
       "title": "SpinQ Gemini: a desktop quantum computing platform for education and research",
@@ -1170,7 +1251,8 @@
         "Ref"
       ],
       "foundational": true,
-      "rank": 82
+      "rank": 82,
+      "approach": "general"
     },
     {
       "title": "Controlling the quantum state of trapped ions",
@@ -1185,7 +1267,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 83
+      "rank": 83,
+      "approach": "optical"
     },
     {
       "title": "Experimental realization of quantum gates and the Deutsch–Jozsa algorithm with trapped ⁴⁰Ca⁺ ions",
@@ -1200,7 +1283,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 84
+      "rank": 84,
+      "approach": "optical"
     },
     {
       "title": "Preparation of entangled states and quantum teleportation with atomic qubits",
@@ -1215,7 +1299,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 85
+      "rank": 85,
+      "approach": "optical"
     },
     {
       "title": "Precision spectroscopy with ⁴⁰Ca⁺ ions in a Paul trap",
@@ -1230,7 +1315,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 86
+      "rank": 86,
+      "approach": "optical"
     },
     {
       "title": "Quantum information processing beyond ten ion-qubits",
@@ -1245,7 +1331,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 87
+      "rank": 87,
+      "approach": "optical"
     },
     {
       "title": "Experimental quantum computation and quantum error correction with trapped ions",
@@ -1260,7 +1347,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 88
+      "rank": 88,
+      "approach": "optical"
     },
     {
       "title": "A compact ion-trap quantum computing demonstrator (PhD thesis)",
@@ -1275,7 +1363,8 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 89
+      "rank": 89,
+      "approach": "optical"
     },
     {
       "title": "A compact ion-trap quantum computing demonstrator",
@@ -1290,7 +1379,88 @@
         "Thesis"
       ],
       "thesis": true,
-      "rank": 90
+      "rank": 90,
+      "approach": "optical"
+    },
+    {
+      "title": "Quantum computing with trapped ions",
+      "authors": "Häffner, Roos & Blatt",
+      "venue": "Phys. Rep. 469, 155 (2008)",
+      "year": "2008",
+      "arxiv": "0809.4368",
+      "doi": "10.1016/j.physrep.2008.09.003",
+      "url": "https://arxiv.org/abs/0809.4368",
+      "file": "ref-2008-haffner-quantum-computing-with-trapped-ions.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "foundational": true,
+      "rank": 91,
+      "approach": "general"
+    },
+    {
+      "title": "Benchmarking an 11-qubit quantum computer",
+      "authors": "Wright, Beck, Debnath, Amini, Nam, Grzesiak, Chen, Pisenti, Chmielewski, Collins, Hudek, Mizrahi, Wong-Campos, Allen, Apisdorf, Solomon, Williams, Ducore, Blinov, Kreikemeier, Chaplin, Keesan, Monroe, Kim (IonQ)",
+      "venue": "Nat. Commun. 10, 5464 (2019)",
+      "year": "2019",
+      "arxiv": "1903.08181",
+      "doi": "10.1038/s41467-019-13534-2",
+      "url": "https://arxiv.org/abs/1903.08181",
+      "file": "raman-2019-wright-ionq-benchmarking-11-qubit.pdf",
+      "modules": [
+        "M7",
+        "Other"
+      ],
+      "approach": "raman",
+      "rank": 92
+    },
+    {
+      "title": "Demonstration of the trapped-ion quantum CCD computer architecture",
+      "authors": "Pino, Dreiling, Figgatt, Gaebler, Moses, Allman, Baldwin, Foss-Feig, Hayes, Mayer, Ryan-Anderson, Neyenhuis (Quantinuum/Honeywell)",
+      "venue": "Nature 592, 209 (2021)",
+      "year": "2021",
+      "arxiv": "2003.01293",
+      "doi": "10.1038/s41586-021-03318-4",
+      "url": "https://arxiv.org/abs/2003.01293",
+      "file": "raman-2021-pino-quantinuum-qccd-architecture.pdf",
+      "modules": [
+        "M7",
+        "Other"
+      ],
+      "approach": "raman",
+      "rank": 93
+    },
+    {
+      "title": "High-fidelity quantum logic gates using trapped-ion hyperfine qubits",
+      "authors": "Ballance, Harty, Linke, Sepiol & Lucas",
+      "venue": "Phys. Rev. Lett. 117, 060504 (2016)",
+      "year": "2016",
+      "arxiv": "1512.04600",
+      "doi": "10.1103/PhysRevLett.117.060504",
+      "url": "https://arxiv.org/abs/1512.04600",
+      "file": "raman-2016-ballance-high-fidelity-hyperfine-gates.pdf",
+      "modules": [
+        "M6",
+        "M7"
+      ],
+      "approach": "raman",
+      "rank": 94
+    },
+    {
+      "title": "Trapped-Ion Quantum Computing: Progress and Challenges",
+      "authors": "Bruzewicz, Chiaverini, McConnell & Sage",
+      "venue": "Appl. Phys. Rev. 6, 021314 (2019)",
+      "year": "2019",
+      "arxiv": "1904.04178",
+      "doi": "10.1063/1.5088164",
+      "url": "https://arxiv.org/abs/1904.04178",
+      "file": "ref-2019-bruzewicz-trapped-ion-qc-progress-and-challenges.pdf",
+      "modules": [
+        "Ref"
+      ],
+      "approach": "general",
+      "foundational": true,
+      "rank": 95
     }
   ]
 }

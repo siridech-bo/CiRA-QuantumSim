@@ -9,6 +9,22 @@ const filtersEl = document.getElementById('lib-filters');
 const hintEl = document.getElementById('lib-hint');
 const suggestEl = document.getElementById('lib-suggest');
 const search = document.getElementById('lib-search');
+const introEl = document.getElementById('lib-approach-intro');
+const apprEl = document.getElementById('lib-approaches');
+
+// ---- the three main approaches (qubit encoding × gate drive) ----------------
+const APPROACHES = {
+  optical: { short: 'Optical · Ca⁺', label: 'Optical qubit (⁴⁰Ca⁺, laser)', color: '#4A90D9',
+    desc: 'Optical qubit on the narrow S₁/₂–D₅/₂ line (⁴⁰Ca⁺, 729 nm), driven directly by a narrow laser — Innsbruck / AQT.' },
+  raman: { short: 'Raman · Yb⁺', label: 'Laser Raman (¹⁷¹Yb⁺ hyperfine)', color: '#50C878',
+    desc: 'Hyperfine qubit (¹⁷¹Yb⁺, 12.6 GHz) driven by two-photon laser Raman beams — the commercial mainstream: IonQ / Quantinuum.' },
+  magic: { short: 'MAGIC · Yb⁺', label: 'Microwave / MAGIC (¹⁷¹Yb⁺, laser-free)', color: '#FF8C00',
+    desc: 'Hyperfine qubit driven by microwaves + a static ∂B/∂z gradient (MAGIC) for the spin–motion coupling — laser-free gates: Wunderlich / Siegen / eleQtron.' },
+  general: { short: 'General', label: 'Foundational & general', color: '#b57edc',
+    desc: 'Reviews, trap physics, and technique papers that apply across all approaches.' },
+};
+const APPROACH_ORDER = ['optical', 'raman', 'magic', 'general'];
+let activeApproach = 'all';
 
 const MODULE_LABELS = {
   M1: 'Paul trap', M2: 'Normal modes', M3: 'Sidebands', M4: 'Doppler cool',
@@ -65,13 +81,15 @@ function card(p) {
   const href = `pdf.html?file=${encodeURIComponent(p.file)}`;
   const hay = (p.title + ' ' + p.authors + ' ' + (p.venue || '') + ' ' + (p.arxiv || '') + ' ' + (p.doi || '')).toLowerCase();
   const mods = (p.modules || ['Other']);
-  return `<div class="lib-card" data-search="${esc(hay)}" data-mods="${esc(mods.join(' '))}">
+  const appr = APPROACHES[p.approach] ? p.approach : 'general';
+  const apprBadge = `<span class="lib-appr appr-${appr}" title="${esc(APPROACHES[appr].label)}">${esc(APPROACHES[appr].short)}</span>`;
+  return `<div class="lib-card" data-search="${esc(hay)}" data-mods="${esc(mods.join(' '))}" data-appr="${appr}">
     <div class="lib-rank">${p.rank}</div>
     <div class="lib-main">
       <div class="lib-title">${esc(p.title)}</div>
       <div class="lib-auth">${esc(p.authors)}</div>
       <div class="lib-venue">${esc(p.venue || '')}</div>
-      <div class="lib-tags">${tagChips(mods)}</div>
+      <div class="lib-tags">${apprBadge}${tagChips(mods)}</div>
       <div class="lib-actions">
         <a class="read" href="${href}">📖 Read + AI copilot</a>
         ${extLinks(p)}
@@ -93,7 +111,7 @@ function matchConcepts(q) {
   catch (e) { listEl.innerHTML = `<div class="lib-count">Couldn't load the library index (${e.message}). Run the downloader first.</div>`; return; }
   papers = idx.papers || [];
   listEl.innerHTML = papers.map(card).join('');
-  noteEl.innerHTML = `Source: <a href="${esc(idx.source)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(idx.group || 'publication list')}</a>. Type a parameter and the search maps it to the relevant module(s) and shows the related papers. Papers are tagged by the visualizer module (M1–M8) they most relate to; “Other” covers applications, simulation, sensing, and foundations. PDFs are freely-available author/arXiv copies, for personal/educational use.`;
+  noteEl.innerHTML = `Papers are grouped by the <b>three main approaches</b> (optical Ca⁺ · laser-Raman Yb⁺ · microwave-MAGIC Yb⁺) and tagged by the visualizer module (M1–M8) they most relate to; “Other” covers applications, simulation, sensing, and foundations. The collection is Wunderlich-group-centric (MAGIC), with the Innsbruck theses for the optical approach and added IonQ/Quantinuum references for the Raman approach. PDFs are freely-available author/arXiv copies, for personal/educational use.`;
 
   // autocomplete suggestions: concept labels + a couple of readable terms each
   const opts = new Set();
@@ -116,6 +134,25 @@ function matchConcepts(q) {
     applyFilter();
   }));
 
+  // ---- the three-approach explainer + filter chips ----
+  const acounts = {};
+  for (const p of papers) { const a = APPROACHES[p.approach] ? p.approach : 'general'; acounts[a] = (acounts[a] || 0) + 1; }
+  introEl.innerHTML = '<b>Three ways to build a trapped-ion qubit.</b> ' +
+    APPROACH_ORDER.filter((a) => a !== 'general').map((a) =>
+      `<span class="ai-item" style="--ac:${APPROACHES[a].color}"><b>${APPROACHES[a].short}</b> — ${APPROACHES[a].desc}</span>`).join('') +
+    ' Pick one to filter the references, or combine with a module / parameter search.';
+  const achips = [`<button class="lib-appr-chip on" data-a="all">All approaches<span class="n">${papers.length}</span></button>`];
+  for (const a of APPROACH_ORDER) {
+    if (!acounts[a]) continue;
+    achips.push(`<button class="lib-appr-chip" data-a="${a}" style="--ac:${APPROACHES[a].color}" title="${esc(APPROACHES[a].label)}">${esc(APPROACHES[a].short)}<span class="n">${acounts[a]}</span></button>`);
+  }
+  apprEl.innerHTML = achips.join('');
+  apprEl.querySelectorAll('.lib-appr-chip').forEach((b) => b.addEventListener('click', () => {
+    activeApproach = b.dataset.a;
+    apprEl.querySelectorAll('.lib-appr-chip').forEach((c) => c.classList.toggle('on', c === b));
+    applyFilter();
+  }));
+
   function applyFilter() {
     const q = search.value.trim().toLowerCase();
     const matched = matchConcepts(q);
@@ -123,13 +160,14 @@ function matchConcepts(q) {
     let n = 0;
     listEl.querySelectorAll('.lib-card').forEach((c) => {
       const okChip = activeModule === 'all' || c.dataset.mods.split(' ').includes(activeModule);
+      const okAppr = activeApproach === 'all' || c.dataset.appr === activeApproach;
       let okQuery = true;
       if (q) {
         const textHit = c.dataset.search.includes(q);
         const conceptHit = matched.length > 0 && c.dataset.mods.split(' ').some((m) => relMods.has(m));
         okQuery = textHit || conceptHit;
       }
-      const show = okChip && okQuery; c.classList.toggle('hidden', !show); if (show) n++;
+      const show = okChip && okAppr && okQuery; c.classList.toggle('hidden', !show); if (show) n++;
     });
 
     // parameter-match hint
@@ -142,7 +180,8 @@ function matchConcepts(q) {
     } else { hintEl.classList.remove('show'); }
 
     const scope = activeModule === 'all' ? '' : ` in ${activeModule === 'Other' ? 'Other' : activeModule + ' · ' + MODULE_LABELS[activeModule]}`;
-    countEl.textContent = `${n} of ${papers.length} papers${scope}`;
+    const ascope = activeApproach === 'all' ? '' : ` · ${APPROACHES[activeApproach].short}`;
+    countEl.textContent = `${n} of ${papers.length} papers${scope}${ascope}`;
   }
 
   search.addEventListener('input', applyFilter);

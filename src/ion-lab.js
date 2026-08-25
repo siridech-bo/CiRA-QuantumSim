@@ -844,6 +844,124 @@ ION_LAB.M10 = {
 };
 
 // =============================================================================
+// ¹⁷¹Yb⁺ · laser Raman (IonQ / Quantinuum) — a THIRD atom variant for the gate &
+// characterization modules. Same hyperfine encoding as Yb·MAGIC (so we spread that
+// entry and reuse its abstract diagrams), but the qubit is driven by two-photon
+// 355 nm Raman beams whose Δk gives a REAL Lamb–Dicke η (≈0.1–0.2) — the commercial
+// mainstream. Only added where the drive/gate differs (M6/M7/M9/M10); M1/M2/M4/M8
+// hardware is identical to the microwave-Yb⁺, so those keep the Ca/Yb toggle.
+// =============================================================================
+const RAMAN_SRC_1Q = [
+  ['High-fidelity quantum logic gates using trapped-ion hyperfine qubits (Ballance et al.)', 'raman-2016-ballance-high-fidelity-hyperfine-gates.pdf', 'record-fidelity laser Raman gates on a hyperfine qubit'],
+  ['Benchmarking an 11-qubit quantum computer (IonQ)', 'raman-2019-wright-ionq-benchmarking-11-qubit.pdf', 'a full ¹⁷¹Yb⁺ Raman-gate processor'],
+];
+const RAMAN_SRC_2Q = [
+  ['High-fidelity quantum logic gates using trapped-ion hyperfine qubits (Ballance et al.)', 'raman-2016-ballance-high-fidelity-hyperfine-gates.pdf', 'record-fidelity laser Raman two-qubit gate'],
+  ['Trapped-ion quantum CCD computer architecture (Quantinuum)', 'raman-2021-pino-quantinuum-qccd-architecture.pdf', 'Raman gates in a shuttling QCCD machine'],
+  ['Benchmarking an 11-qubit quantum computer (IonQ)', 'raman-2019-wright-ionq-benchmarking-11-qubit.pdf', 'MS gates via laser Raman on ¹⁷¹Yb⁺'],
+];
+const RAMAN_LABEL = '¹⁷¹Yb⁺ · laser Raman (IonQ/Quantinuum)';
+
+ION_LAB.M6.atoms.YbRaman = {
+  ...ION_LAB.M6.atoms.Yb, label: RAMAN_LABEL,
+  intro: `The commercial-mainstream ¹⁷¹Yb⁺: the <b>same hyperfine qubit</b> as the MAGIC variant, but rotated by two-photon
+    <b>laser Raman</b> beams (typically <b>355 nm</b>). The Raman beams' effective wavevector Δk gives a real Lamb–Dicke coupling and
+    their intensity sets the Rabi Ω — fast, tightly-focusable single-qubit gates (IonQ, Quantinuum).`,
+  energyCaption: `<b>¹⁷¹Yb⁺ Raman carrier gate.</b> Two 355 nm Raman beams drive <code>|g⟩↔|e⟩</code> at Rabi Ω (set by beam intensity) —
+    a bit-flip at area π. Individual addressing by focusing the beams; the main error is off-resonant scattering (minimized by the large 355 nm detuning).`,
+  paramRows: [
+    ['θ / π', 'rotation angle = area Ω·t of the Raman pulse, set by pulse duration', 'π, π/2', 'rotation angle'],
+    ['Ω / ω_z (pulse)', 'Raman Rabi ∝ the two 355 nm beam intensities / detuning; fast &amp; individually addressable', '2π×(0.1–1 MHz)', 'pulse speed'],
+    ['δ / ω_z (AC Stark)', 'Raman two-photon detuning → generalized Rabi √(δ²+Ω²); differential AC Stark is calibrated out', 'small', 'axis tilt / phase'],
+  ],
+  paramNote: `Laser Raman single-qubit gates are fast and tightly focusable (individual addressing). The fidelity limit is off-resonant
+    photon scattering from the Raman beams — pushed down by the large 355 nm detuning from the 369 nm P level.`,
+  sources: RAMAN_SRC_1Q,
+};
+ION_LAB.M7.atoms.YbRaman = {
+  ...ION_LAB.M7.atoms.Yb, label: RAMAN_LABEL,
+  intro: `The mainstream two-qubit gate: a <b>bichromatic laser Raman</b> spin-dependent force drives the same phase-space loop as the
+    Ca⁺ optical MS gate, but on the hyperfine ¹⁷¹Yb⁺ qubit. This is how <b>IonQ and Quantinuum</b> entangle — the highest-fidelity route today.`,
+  energyCaption: `<b>Phase-space loop.</b> Same geometric-phase entangler; here the spin-dependent force is a bichromatic 355 nm Raman pair
+    (a real Δk Lamb–Dicke coupling), not a magnetic gradient — fast, high-fidelity, laser-driven.`,
+  paramRows: [
+    ['δ (symmetric)', 'bichromatic Raman detuning ±δ from the carrier (red+blue sidebands); the loop closes at τ_g=2πK/δ', 'δ ~ 2π×(10–200 kHz)', 'gate time & closure'],
+    ['K loops', 'same geometric-phase / phase-space-loop structure', '1', 'phase / gate time'],
+    ['ηΩ', 'η is the REAL Raman Δk Lamb–Dicke (η≈0.1–0.2); set ηΩ=δ/(2√K) for a Bell gate', 'ηΩ = δ/(2√K)', 'entangling strength'],
+    ['δ mismatch (break it)', 'same closure sensitivity — off-closure leaves residual spin–motion entanglement', '0 (ideal)', 'gate error'],
+  ],
+  paramNote: `Laser Raman MS gates hold the trapped-ion two-qubit fidelity records (>99.9%) and power the leading commercial systems.
+    Faster than gradient-MAGIC gates because η is a full recoil coupling, not a small gradient-induced one.`,
+  sources: RAMAN_SRC_2Q,
+};
+ION_LAB.M9.atoms.YbRaman = {
+  ...ION_LAB.M9.atoms.Yb, label: RAMAN_LABEL,
+  intro: `Rabi flopping on the ¹⁷¹Yb⁺ hyperfine qubit driven by <b>355 nm Raman</b> beams. The flop rate Ω is set by the Raman beam
+    intensity — the calibration IonQ/Quantinuum run to set their π and π/2 pulses.`,
+  energyCaption: `<b>¹⁷¹Yb⁺ Raman flop.</b> A resonant two-photon Raman pulse flops the qubit; P_e(t)=sin²(Ωt/2). Ω is set by the 355 nm beam intensity.`,
+  paramRows: [
+    ['Ω / ω_z', 'Raman Rabi — set by the 355 nm beam intensity; fast', '2π×(0.1–1 MHz)', 'flop rate / π-pulse time'],
+    ['δ / ω_z', 'Raman two-photon detuning → generalized Rabi √(δ²+Ω²)', 'small', 'flop frequency &amp; contrast'],
+    ['γ_φ', 'B-noise dephasing + Raman photon-scattering error; damps the flops', 'B-noise + scattering', 'flop decay'],
+  ],
+  paramNote: `Raman Rabi flops calibrate the pulses; the extra error versus a pure microwave drive is off-resonant scattering (small at the far 355 nm detuning).`,
+  sources: RAMAN_SRC_1Q,
+};
+ION_LAB.M10.atoms.YbRaman = {
+  ...ION_LAB.M10.atoms.Yb, label: RAMAN_LABEL,
+  intro: `Ramsey on the ¹⁷¹Yb⁺ hyperfine qubit with <b>355 nm Raman</b> π/2 pulses. Same T₂* measurement; hyperfine coherence is long,
+    so Raman Ramsey reaches ms-scale T₂* (and the field-insensitive clock states reach seconds).`,
+  energyCaption: `<b>¹⁷¹Yb⁺ Raman Ramsey.</b> Two 355 nm Raman π/2 pulses bracket a free-precession T; fringes at δ, envelope decaying at T₂*.`,
+  paramRows: [
+    ['δ / ω_z', 'Raman two-photon detuning → fringe frequency (period 2π/δ)', 'synth offset', 'fringe frequency'],
+    ['γ_φ → T₂*', 'B-noise dephasing; the field-insensitive hyperfine clock states reach seconds of coherence', 'B-noise', 'T₂* (fringe decay)'],
+    ['T (free precession)', 'the wait between the two Raman π/2 pulses', 'µs – ms', 'accumulated phase δT'],
+  ],
+  paramNote: `Hyperfine ¹⁷¹Yb⁺ has long coherence; Raman Ramsey is the workhorse coherence measurement in the commercial systems.`,
+  sources: RAMAN_SRC_1Q,
+};
+ION_LAB.M3.atoms.YbRaman = {
+  ...ION_LAB.M3.atoms.Yb, label: RAMAN_LABEL,
+  apparatusSvg: undefined, apparatusCaption: undefined,   // drop the microwave/MAGIC apparatus (Raman is laser-driven)
+  intro: `The commercial-mainstream ¹⁷¹Yb⁺ sees M3's carrier and red/blue sidebands the <b>same way an optical qubit does</b>: two-photon
+    <b>355 nm Raman</b> beams carry a real momentum kick Δk, giving a Lamb–Dicke <b>η≈0.1–0.2</b>. So the motional sidebands are strong and
+    cleanly resolved — unlike the tiny gradient-induced η_eff of the MAGIC variant. And because the Δk supplies the coupling, Raman uses the
+    <b>field-insensitive clock qubit</b> (mF=0), which is why these systems have such long coherence.`,
+  energyCaption: `<b>¹⁷¹Yb⁺ level scheme (hyperfine).</b> Raman gates use the field-<i>insensitive</i> clock qubit
+    <code>|F=0,mF=0⟩↔|F=1,mF=0⟩</code> (12.642 GHz) — no field-sensitivity needed, since the two-photon 355 nm Raman Δk provides the
+    spin–motion coupling. 369.5 nm cools/reads out; 935/638 nm repump. The Δk gives full-size sidebands.`,
+  paramRows: [
+    ['λ / η (computed)', 'for the Raman route η is a REAL Lamb–Dicke from the 355 nm Raman Δk (counter-propagating) — η≈0.1–0.2, comparable to optical', '355 nm Δk ⇒ η≈0.19', 'spin–motion coupling'],
+    ['ν_z (MHz)', 'axial secular frequency; η∝1/√ν_z as for any recoil coupling', '≈ 2π×1 MHz', 'ω_z (and η)'],
+    ['δ / ω_z', 'Raman two-photon detuning; carrier 0, RSB −ω_z, BSB +ω_z', 'synth offset 0 / ∓ω_z', 'carrier / red / blue sideband'],
+    ['Ω / ω_z', 'Raman sideband Rabi ∝ η·Ω_carrier; strong because η is a full recoil coupling', '2π×(1–100 kHz)', 'sideband strength'],
+    ['spontaneous emission Γ', 'the hyperfine clock qubit has no radiative decay; the Raman beams add a small off-resonant scattering (minimized at 355 nm)', 'qubit ~0; small Raman scattering', 'decoherence'],
+    ['coupling = exact D(iη)', 'a genuine Lamb–Dicke displacement, like the optical case — the Raman Δk plays the role of laser recoil', '—', 'coupling model'],
+  ],
+  paramNote: `Because the Raman Δk gives a full-size η (≈0.1–0.2), ¹⁷¹Yb⁺ Raman sidebands look like optical ⁴⁰Ca⁺ sidebands — strong and
+    resolved — which is why the commercial systems (IonQ, Quantinuum) use them for gates and ground-state cooling. Contrast the MAGIC variant,
+    where η_eff≈0.008 makes the sidebands very weak.`,
+  sources: RAMAN_SRC_1Q,
+};
+ION_LAB.M5.atoms.YbRaman = {
+  ...ION_LAB.M5.atoms.Yb, label: RAMAN_LABEL,
+  intro: `Ground-state cooling the commercial way: <b>Raman sideband cooling</b>. Drive the red sideband of a two-photon 355 nm Raman
+    transition (real Δk η≈0.1–0.2, so the sideband is strong) and recycle by 369 nm optical pumping. This reaches n̄≪1 fast — unlike the
+    slow gradient-driven RF sideband of the MAGIC variant.`,
+  energyCaption: `<b>¹⁷¹Yb⁺ Raman RSB cooling.</b> The 355 nm Raman Δk makes a strong red sideband; each cycle removes one phonon and 369 nm
+    optical pumping recycles <code>|e⟩→|g⟩</code>. Comparable rate to optical ⁴⁰Ca⁺ sideband cooling (both have full-size η).`,
+  paramRows: [
+    ['δ / ω_z (=−1)', 'park the Raman two-photon drive on the RED sideband: |g,n⟩→|e,n−1⟩ removes one phonon', 'δ=−ω_z', 'the cooling sideband'],
+    ['Ω / ω_z', 'Raman RSB Rabi ∝ η·Ω_carrier — strong (full-size Δk η), so cooling is fast', '2π×(1–50 kHz)', 'cooling rate'],
+    ['Γ_eff (recycle)', '369 nm optical pumping (+935 repump) recycles |e⟩→|g⟩ — the dissipation', '369 pumping → Γ_eff', 'recycle rate'],
+    ['heating', 'anomalous heating + a little Raman scattering set the floor', 'ṅ̄ small ⇒ n̄≪1', 'ground-state floor'],
+  ],
+  paramNote: `Raman sideband cooling reaches n̄≪1 quickly (full-size η), which is why the commercial systems use it — faster than the MAGIC
+    RF-sideband route (η_eff≈0.008), at the cost of needing the 355 nm Raman + 369 nm pumping lasers.`,
+  sources: RAMAN_SRC_1Q,
+};
+
+// =============================================================================
 // Full optical setup — a beam-path layout per atom (shared across that atom's
 // modules), with callouts mapping each key optic to the sim control it sets.
 // ⁴⁰Ca⁺ = laser table (Innsbruck-style); ¹⁷¹Yb⁺ = microwave + MAGIC gradient.

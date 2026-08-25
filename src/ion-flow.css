@@ -1,0 +1,96 @@
+/* ==========================================================================
+   ion-flow.css — the experiment pipeline UI: the "🧭 Experiment map" overlay,
+   phase labels on the center tab bar, and the per-module breadcrumb. Theme-aware.
+   Phase palette (shared across all three): prep / cool / char / comp / read.
+   ========================================================================== */
+:root {
+  --ph-prep: #4A90D9; --ph-cool: #35c4d6; --ph-char: #FF8C00; --ph-comp: #50C878; --ph-read: #b57edc;
+}
+
+/* ---- launch button (sidebar) ---- */
+.flow-launch {
+  display: block; width: 100%; margin-top: 8px; cursor: pointer; text-align: center;
+  font-size: 12px; font-weight: 700; color: #fff; border: none; border-radius: 8px; padding: 8px 10px;
+  background: linear-gradient(90deg, var(--ph-prep), var(--ph-cool) 30%, var(--ph-char) 55%, var(--ph-comp) 78%, var(--ph-read));
+}
+.flow-launch:hover { filter: brightness(1.08); }
+
+/* ---- (2) center-tab phase labels ---- */
+.ctab-phase {
+  align-self: center; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); padding: 0 2px 0 8px; border-left: 2px solid var(--border); margin-left: 4px;
+  user-select: none;
+}
+.ctab-phase[data-phase="prep"] { color: var(--ph-prep); border-color: var(--ph-prep); }
+.ctab-phase[data-phase="cool"] { color: var(--ph-cool); border-color: var(--ph-cool); }
+.ctab-phase[data-phase="char"] { color: var(--ph-char); border-color: var(--ph-char); }
+.ctab-phase[data-phase="comp"] { color: var(--ph-comp); border-color: var(--ph-comp); }
+.ctab-phase[data-phase="read"] { color: var(--ph-read); border-color: var(--ph-read); }
+.ctab-phase:first-child { border-left: none; margin-left: 0; padding-left: 2px; }
+
+/* ---- (3) per-module breadcrumb ---- */
+#pipeline-crumb { margin: 8px 0 2px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--plot, rgba(127,127,127,.08)); }
+#pipeline-crumb[hidden] { display: none; }
+.crumb-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.crumb-stage { font-size: 10.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; color: #fff; background: var(--muted); }
+.crumb-stage[data-phase="prep"] { background: var(--ph-prep); }
+.crumb-stage[data-phase="cool"] { background: var(--ph-cool); }
+.crumb-stage[data-phase="char"] { background: var(--ph-char); }
+.crumb-stage[data-phase="comp"] { background: var(--ph-comp); }
+.crumb-stage[data-phase="read"] { background: var(--ph-read); }
+.crumb-map-hint { font-size: 10.5px; color: var(--accent2, #FF8C00); cursor: pointer; font-weight: 700; white-space: nowrap; }
+.crumb-map-hint:hover { text-decoration: underline; }
+.crumb-why { font-size: 11.5px; line-height: 1.5; color: var(--text); margin: 6px 0; }
+.crumb-navs { display: flex; justify-content: space-between; gap: 6px; }
+.crumb-nav { font-size: 11px; font-weight: 650; color: var(--accent, #4A90D9); background: none; border: 1px solid var(--border); border-radius: 7px; padding: 4px 8px; cursor: pointer; }
+.crumb-nav:hover { background: var(--btn-hover); }
+.crumb-nav.ghost { color: var(--muted); opacity: .5; cursor: default; border-style: dashed; }
+
+/* ---- (1) the Experiment-map overlay ---- */
+.flow-backdrop {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 22px; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .15s;
+}
+.flow-backdrop.open { opacity: 1; pointer-events: auto; }
+.flow-dialog {
+  width: min(1040px, 100%); max-height: 90vh; overflow-y: auto;
+  background: var(--panel, var(--elev)); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 18px 60px rgba(0,0,0,.5); padding: 0 0 20px;
+}
+.flow-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+.flow-head h3 { flex: 1; margin: 0; font-size: 17px; font-weight: 700; }
+.flow-close { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--btn); color: var(--text); font-size: 17px; cursor: pointer; }
+.flow-close:hover { background: var(--btn-hover); }
+.flow-intro { font-size: 13px; line-height: 1.6; color: var(--muted); margin: 14px 20px 4px; }
+.flow-intro b { color: var(--text); }
+
+.flow-rail { display: flex; align-items: stretch; gap: 4px; flex-wrap: wrap; padding: 16px 20px 6px; }
+.flow-col { flex: 1 1 150px; min-width: 138px; border: 1px solid var(--border); border-top-width: 3px; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.flow-col[data-phase="prep"] { border-top-color: var(--ph-prep); }
+.flow-col[data-phase="cool"] { border-top-color: var(--ph-cool); }
+.flow-col[data-phase="char"] { border-top-color: var(--ph-char); }
+.flow-col[data-phase="comp"] { border-top-color: var(--ph-comp); }
+.flow-col[data-phase="read"] { border-top-color: var(--ph-read); }
+.flow-phase { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.flow-col[data-phase="prep"] .flow-phase { color: var(--ph-prep); }
+.flow-col[data-phase="cool"] .flow-phase { color: var(--ph-cool); }
+.flow-col[data-phase="char"] .flow-phase { color: var(--ph-char); }
+.flow-col[data-phase="comp"] .flow-phase { color: var(--ph-comp); }
+.flow-col[data-phase="read"] .flow-phase { color: var(--ph-read); }
+.flow-phase-hint { font-size: 10px; color: var(--muted); margin-top: -3px; margin-bottom: 3px; line-height: 1.3; }
+.flow-chip { text-align: left; cursor: pointer; border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; background: var(--btn); color: var(--text); display: flex; align-items: baseline; gap: 7px; }
+.flow-chip:hover { background: var(--btn-hover); border-color: var(--accent, #4A90D9); }
+.flow-chip-id { font-weight: 800; font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
+.flow-chip-name { font-size: 12px; }
+.flow-arrow { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 118px; padding: 4px; text-align: center; }
+.flow-arrowhead { font-size: 20px; color: var(--muted); line-height: 1; }
+.flow-why { font-size: 10px; color: var(--muted); line-height: 1.35; margin-top: 4px; }
+
+.flow-rules { margin: 10px 22px 0; padding-left: 20px; font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+.flow-rules b { color: var(--text); }
+
+@media (max-width: 760px) {
+  .flow-rail { flex-direction: column; }
+  .flow-arrow { width: 100%; flex-direction: row; gap: 8px; }
+  .flow-arrowhead { transform: rotate(90deg); }
+}
