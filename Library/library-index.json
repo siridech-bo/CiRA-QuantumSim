@@ -2,7 +2,7 @@
   "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
   "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
   "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
-  "count": 101,
+  "count": 102,
   "papers": [
     {
       "rank": 1,
@@ -1470,7 +1470,7 @@
       "arxiv": null,
       "doi": "10.1007/s00340-025-08490-3",
       "url": "https://link.springer.com/article/10.1007/s00340-025-08490-3",
-      "file": null,
+      "file": "pdh-2025-wang-feedback-control-linewidth-narrowing.pdf",
       "modules": [
         "PDH",
         "Ref"
@@ -1563,6 +1563,21 @@
       "approach": "general",
       "foundational": true,
       "rank": 101
+    },
+    {
+      "title": "The Fabry–Pérot interferometer (provisional — please confirm)",
+      "authors": "(to confirm — scanned PDF, metadata unreadable)",
+      "venue": "Am. J. Phys. (~1995)",
+      "year": "1995",
+      "arxiv": null,
+      "doi": null,
+      "url": null,
+      "file": "pdh-1995-fabry-perot-interferometer-ajp.pdf",
+      "modules": [
+        "PDH"
+      ],
+      "approach": "general",
+      "rank": 102
     }
   ]
 }
