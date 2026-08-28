@@ -298,5 +298,19 @@ dpBtn.addEventListener('click', () => {
   drawAOM();
 });
 
+// ---- apparatus diagram: numbered taps jump to their panel -------------------
+function jumpTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 1400);
+}
+document.querySelectorAll('.diag-node').forEach((n) => {
+  const go = () => jumpTo(n.getAttribute('data-target'));
+  n.addEventListener('click', go);
+  n.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+});
+
 // ---- boot -------------------------------------------------------------------
 drawFP(); drawErr(); drawBode(); drawAOM(); rebuildLock(false); running = true; requestAnimationFrame(frame);

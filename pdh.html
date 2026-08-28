@@ -69,8 +69,150 @@
       <span class="step">AOM / AOD</span>
     </div>
 
+    <!-- Optical layout (after Wang et al., Fig 5a) — clickable numbered taps -->
+    <section class="panel pdh-diagram" id="panel-map">
+      <div class="panel-head"><h2>The apparatus — after Wang et&nbsp;al., Fig&nbsp;5a</h2>
+        <div class="desc"><b>Click a number</b> to jump to the panel that simulates that stage. <span style="color:#ff5c6c">Red</span> = laser beam, grey = electronic signal. Loop filter (PID) → laser (PZT + diode current) → fiber EOM → reference cavity → PD1 → mixer/demod → back to the loop filter; the VNA characterizes the loop.</div></div>
+      <style>
+        .pdh-diagram svg { width: 100%; height: auto; display: block; margin-top: 4px; }
+        .diag-node { cursor: pointer; }
+        .diag-node:focus { outline: none; }
+        .diag-node circle { fill: #4A90D9; stroke: #fff; stroke-width: 1.6; }
+        .diag-node:hover circle, .diag-node:focus circle { fill: #FF8C00; }
+        .diag-node text { fill: #fff; font-size: 12px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+        .diag-map { font-size: 11.5px; color: var(--muted); margin: 8px 2px 0; line-height: 1.9; }
+        .diag-map b { display: inline-block; background: #4A90D9; color: #fff; border-radius: 999px; padding: 0 6px; font-size: 10.5px; }
+        @keyframes pdhflash { 0%,100% { box-shadow: none; } 20%,60% { box-shadow: 0 0 0 3px #FF8C00; } }
+        .panel.flash { animation: pdhflash 1.3s ease; }
+      </style>
+      <!-- self-contained dark figure (colors inline so it renders identically in both themes,
+           like the always-dark signal canvases) -->
+      <svg viewBox="0 0 960 470" role="img" aria-label="PDH optical layout after Wang et al. Figure 5a"
+           font-family="system-ui, sans-serif">
+        <defs>
+          <marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ff5c6c"/></marker>
+          <marker id="aw" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8b949e"/></marker>
+        </defs>
+
+        <rect x="0" y="0" width="960" height="470" rx="14" fill="#0d1117"/>
+
+        <!-- region tints -->
+        <rect x="30"  y="22"  width="252" height="152" rx="12" fill="rgba(255,107,129,.09)" stroke="#3a424c"/>
+        <rect x="610" y="22"  width="320" height="152" rx="12" fill="rgba(255,213,64,.09)"  stroke="#3a424c"/>
+        <rect x="452" y="200" width="478" height="252" rx="12" fill="rgba(80,200,120,.09)"  stroke="#3a424c"/>
+        <rect x="206" y="252" width="238" height="150" rx="12" fill="rgba(181,126,220,.12)" stroke="#3a424c"/>
+        <rect x="30"  y="286" width="140" height="116" rx="12" fill="rgba(255,140,0,.12)"    stroke="#3a424c"/>
+        <g font-size="12" font-weight="700">
+          <text x="44"  y="40"  fill="#ff6b81">loop filter</text>
+          <text x="624" y="40"  fill="#e0c04a">laser controller · ECDL</text>
+          <text x="466" y="218" fill="#5fd18a">optics</text>
+          <text x="220" y="270" fill="#c79cea">demodulation</text>
+          <text x="44"  y="304" fill="#FF8C00">VNA</text>
+        </g>
+
+        <!-- ml labels (grey) and cl labels (light, centered) share these groups -->
+        <g fill="#8b949e" font-size="9.5">
+          <text x="42" y="166">DC offset</text>
+          <text x="150" y="49">slow</text><text x="150" y="152">fast</text>
+          <text x="700" y="78">PZT voltage</text><text x="700" y="150">diode current</text>
+          <text x="812" y="93">λ/2</text><text x="852" y="94">PBS</text><text x="900" y="78">output</text>
+          <text x="678" y="251">PBS</text><text x="636" y="251">λ/4</text>
+          <text x="522" y="300">reference cavity</text>
+          <text x="452" y="252">PD2</text><text x="474" y="328">camera</text>
+          <text x="712" y="352">PD1</text><text x="296" y="336">Φ₀</text><text x="646" y="300">Ω → EOM</text>
+        </g>
+
+        <!-- component boxes (inline fills — bulletproof in any theme) -->
+        <g fill="#20262e" stroke="#3a424c" stroke-width="1">
+          <polygon points="58,74 58,150 108,112"/>
+          <rect x="150" y="54" width="56" height="30"/>
+          <rect x="150" y="112" width="56" height="30"/>
+          <rect x="650" y="82" width="150" height="52"/>
+          <rect x="822" y="97" width="12" height="22"/>
+          <rect x="856" y="99" width="18" height="18"/>
+          <rect x="742" y="250" width="90" height="30"/>
+          <rect x="688" y="256" width="18" height="18"/>
+          <rect x="650" y="256" width="12" height="18"/>
+          <rect x="476" y="257" width="16" height="16" transform="rotate(45 484 265)"/>
+          <path d="M456,255 a10,10 0 0 0 0,20 Z"/>
+          <rect x="470" y="292" width="30" height="20"/>
+          <path d="M687,340 a10,10 0 0 0 20,0 Z"/>
+          <rect x="396" y="300" width="44" height="24"/>
+          <rect x="396" y="338" width="40" height="24"/>
+          <rect x="338" y="300" width="34" height="24"/>
+          <circle cx="302" cy="312" r="15"/>
+          <rect x="226" y="340" width="76" height="30"/>
+          <rect x="46" y="316" width="108" height="56"/>
+        </g>
+        <rect x="668" y="100" width="114" height="16" rx="3" fill="#ff4d4d"/>
+        <rect x="54" y="324" width="44" height="40" rx="3" fill="#0d1117" stroke="#3a424c"/>
+        <!-- cl labels (centered, light) -->
+        <g fill="#d6dde5" font-size="10.5" text-anchor="middle">
+          <text x="75" y="116">Σ</text>
+          <text x="178" y="73">I</text>
+          <text x="178" y="131">P I D</text>
+          <text x="787" y="269">fiber EOM</text>
+          <text x="418" y="316">50:50</text>
+          <text x="416" y="354">SA</text>
+          <text x="355" y="316">LP</text>
+          <text x="302" y="316">MX</text>
+          <text x="264" y="359">RF source</text>
+        </g>
+
+        <!-- laser beams (red) -->
+        <g stroke="#ff5c6c" stroke-width="2.4" fill="none">
+          <path d="M800,108 L900,108"/>
+          <path d="M878,104 L916,84" marker-end="url(#ah)"/>
+          <path d="M865,117 L865,242"/>
+          <path d="M865,265 L832,265"/>
+          <path d="M742,265 L708,265"/>
+          <path d="M688,265 L662,265"/>
+          <path d="M650,265 L604,265"/>
+          <path d="M596,261 L524,261" marker-end="url(#ah)"/>
+          <path d="M524,269 L596,269" marker-end="url(#ah)"/>
+          <path d="M697,274 L697,338"/>
+        </g>
+        <g stroke="#ff5c6c" stroke-width="1.6" fill="none" stroke-dasharray="4 3">
+          <path d="M520,265 L486,265"/>
+          <path d="M484,275 L484,292"/>
+        </g>
+        <!-- cavity mirrors -->
+        <g stroke="#4A90D9" stroke-width="4" stroke-linecap="round">
+          <line x1="600" y1="249" x2="600" y2="281"/>
+          <line x1="520" y1="249" x2="520" y2="281"/>
+        </g>
+
+        <!-- electronic signal wires (grey) -->
+        <g stroke="#8b949e" stroke-width="1.4" fill="none">
+          <path d="M108,96 L150,69"/><path d="M108,128 L150,127"/>
+          <path d="M206,69 L770,69 L770,82" marker-end="url(#aw)"/>
+          <path d="M206,127 L770,127 L770,134" marker-end="url(#aw)"/>
+          <path d="M687,344 L418,344 L418,326" marker-end="url(#aw)"/>
+          <path d="M418,324 L418,338"/>
+          <path d="M396,312 L372,312"/><path d="M338,312 L317,312"/>
+          <path d="M264,340 L264,312 L287,312" marker-end="url(#aw)"/>
+          <path d="M287,312 L120,312 L120,120 L108,112" marker-end="url(#aw)"/>
+          <path d="M154,344 L185,344 L185,312" marker-end="url(#aw)"/>
+        </g>
+        <path d="M302,370 L302,392 L636,392 L636,282" stroke="#8b949e" stroke-width="1.2" fill="none" stroke-dasharray="5 4" opacity=".8" marker-end="url(#aw)"/>
+
+        <!-- ===== numbered taps (click -> panel) ===== -->
+        <g class="diag-node" data-target="panel-2" tabindex="0" role="link"><title>Laser output — the frequency being stabilized → Panel 2 (closed loop)</title><circle cx="878" cy="104" r="12"/><text x="878" y="108">1</text></g>
+        <g class="diag-node" data-target="panel-0" tabindex="0" role="link"><title>Reference cavity → Panel 0 (Fabry–Pérot)</title><circle cx="628" cy="265" r="12"/><text x="628" y="269">2</text></g>
+        <g class="diag-node" data-target="panel-1" tabindex="0" role="link"><title>Reflected power P_PD on PD1 → Panel 1 (error signal)</title><circle cx="697" cy="312" r="12"/><text x="697" y="316">3</text></g>
+        <g class="diag-node" data-target="panel-1" tabindex="0" role="link"><title>Demodulation (mixer) → Panel 1 (error signal)</title><circle cx="302" cy="288" r="12"/><text x="302" y="292">4</text></g>
+        <g class="diag-node" data-target="panel-3" tabindex="0" role="link"><title>VNA loop probe → Panel 3 (Bode / phase margin)</title><circle cx="100" cy="388" r="12"/><text x="100" y="392">5</text></g>
+        <g class="diag-node" data-target="panel-2" tabindex="0" role="link"><title>PID loop filter → Panel 2 (servo)</title><circle cx="238" cy="127" r="12"/><text x="238" y="131">6</text></g>
+        <g class="diag-node" data-target="panel-2" tabindex="0" role="link"><title>Slow output → PZT → Panel 2 (slow actuator)</title><circle cx="470" cy="69" r="12"/><text x="470" y="73">7</text></g>
+        <g class="diag-node" data-target="panel-4" tabindex="0" role="link"><title>Fast output → diode current → Panel 4 (the actuator)</title><circle cx="470" cy="127" r="12"/><text x="470" y="131">8</text></g>
+      </svg>
+      <div class="diag-map">
+        <b>1</b> laser output → Panel 2 &nbsp;·&nbsp; <b>2</b> cavity → Panel 0 &nbsp;·&nbsp; <b>3</b> PD1 reflection → Panel 1 &nbsp;·&nbsp; <b>4</b> mixer/demod → Panel 1 &nbsp;·&nbsp; <b>5</b> VNA → Panel 3 &nbsp;·&nbsp; <b>6</b> PID → Panel 2 &nbsp;·&nbsp; <b>7</b> slow/PZT → Panel 2 &nbsp;·&nbsp; <b>8</b> fast/diode → Panel 4
+      </div>
+    </section>
+
     <!-- Panel 0 -->
-    <section class="panel">
+    <section class="panel" id="panel-0">
       <div class="panel-head"><h2>0 · Fabry–Pérot cavity — the reference</h2>
         <div class="desc">The cavity the laser locks to. Transmission is the Airy comb: sharp resonances spaced by the FSR, width set by the finesse. The reflected-field <b>phase</b> swings through resonance — that dispersive phase is what PDH reads.</div></div>
       <div class="panel-body">
@@ -86,7 +228,7 @@
     </section>
 
     <!-- Panel 1 -->
-    <section class="panel">
+    <section class="panel" id="panel-1">
       <div class="panel-head"><h2>1 · EOM sidebands → PDH error signal</h2>
         <div class="desc">The EOM phase-modulates the laser at Ω, adding sidebands (Bessel J₀, J₁). The cavity reflection is demodulated (mix at Ω, low-pass) into the <b>error signal</b> ε(ν) — antisymmetric through resonance, so it tells the servo <i>which way</i> the laser has drifted.</div></div>
       <div class="panel-body">
@@ -103,7 +245,7 @@
     </section>
 
     <!-- Panel 2 -->
-    <section class="panel">
+    <section class="panel" id="panel-2">
       <div class="panel-head"><h2>2 · Closed-loop lock — fast current + slow PZT</h2>
         <div class="desc">The error drives a PI/PID servo split into a <b>fast</b> path (diode current, wide bandwidth) and a <b>slow</b> path (PZT, offloads DC). Watch the laser frequency vs time: free-running it wanders; engage the lock and it's pulled onto resonance and held. Residual = lock quality.</div></div>
       <div class="panel-body">
@@ -125,7 +267,7 @@
     </section>
 
     <!-- Panel 3 -->
-    <section class="panel">
+    <section class="panel" id="panel-3">
       <div class="panel-head"><h2>3 · VNA / loop dynamics — Bode &amp; phase margin</h2>
         <div class="desc">The same loop in the frequency domain (what a VNA measures). Open-loop response L(f) = controller × actuator × cavity × delay. Where the gain crosses <b>0 dB</b> is the unity-gain bandwidth; the phase there sets the <b>phase margin</b>. Push gain or delay and the margin vanishes — the oscillation of Panel 2.</div></div>
       <div class="panel-body">
@@ -143,7 +285,7 @@
     </section>
 
     <!-- Panel 4 -->
-    <section class="panel">
+    <section class="panel" id="panel-4">
       <div class="panel-head"><h2>4 · AOM / AOD — the actuator</h2>
         <div class="desc">How an RF signal becomes a frequency correction. An <b>AOM</b> diffracts the beam off an RF sound wave: the +1 order is frequency-shifted by the drive f and deflected by an angle ∝ f. In <b>double-pass</b> (cat-eye) the shift doubles and the output stays collinear — the fast, drift-free frequency actuator. As an <b>AOD</b>, the same angle-vs-f steers the beam.</div></div>
       <div class="panel-body">
