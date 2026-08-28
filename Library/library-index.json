@@ -2,7 +2,7 @@
   "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
   "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
   "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
-  "count": 95,
+  "count": 101,
   "papers": [
     {
       "rank": 1,
@@ -1461,6 +1461,108 @@
       "approach": "general",
       "foundational": true,
       "rank": 95
+    },
+    {
+      "title": "A practical guide to feedback control for Pound–Drever–Hall laser linewidth narrowing",
+      "authors": "Wang, Subhankar & Britton",
+      "venue": "Appl. Phys. B 131, 146 (2025)",
+      "year": "2025",
+      "arxiv": null,
+      "doi": "10.1007/s00340-025-08490-3",
+      "url": "https://link.springer.com/article/10.1007/s00340-025-08490-3",
+      "file": null,
+      "modules": [
+        "PDH",
+        "Ref"
+      ],
+      "approach": "general",
+      "foundational": true,
+      "rank": 96
+    },
+    {
+      "title": "An introduction to Pound–Drever–Hall laser frequency stabilization",
+      "authors": "E. D. Black",
+      "venue": "Am. J. Phys. 69, 79 (2001)",
+      "year": "2001",
+      "arxiv": null,
+      "doi": "10.1119/1.1286663",
+      "url": "https://doi.org/10.1119/1.1286663",
+      "file": "ref-2001-black-intro-pound-drever-hall-stabilization.pdf",
+      "modules": [
+        "PDH",
+        "Ref"
+      ],
+      "approach": "general",
+      "foundational": true,
+      "rank": 97
+    },
+    {
+      "title": "Stabilization of an 866 nm laser with the Pound–Drever–Hall technique for quantum manipulation of Ca⁺ ions in a Paul trap",
+      "authors": "Siddhant Singh",
+      "venue": "arXiv:2007.00768 (2020)",
+      "year": "2020",
+      "arxiv": "2007.00768",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2007.00768",
+      "file": "pdh-2020-ca866-stabilization-ion-trap.pdf",
+      "modules": [
+        "PDH",
+        "M6",
+        "Ref"
+      ],
+      "approach": "optical",
+      "rank": 98
+    },
+    {
+      "title": "Pound–Drever–Hall locking scheme free from Trojan operating points",
+      "authors": "Zeyen, Affolter, Abdou Ahmed et al.",
+      "venue": "arXiv:2210.05501 (2022)",
+      "year": "2022",
+      "arxiv": "2210.05501",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2210.05501",
+      "file": "pdh-2022-locking-free-from-trojan-operating-points.pdf",
+      "modules": [
+        "PDH",
+        "Ref"
+      ],
+      "approach": "general",
+      "foundational": true,
+      "rank": 99
+    },
+    {
+      "title": "Pound–Drever–Hall Feedforward: Laser Phase Noise Suppression beyond Feedback",
+      "authors": "Chao, Hua, Liang, Yue, You & Tey",
+      "venue": "arXiv:2309.09759 (2024)",
+      "year": "2024",
+      "arxiv": "2309.09759",
+      "doi": null,
+      "url": "https://arxiv.org/abs/2309.09759",
+      "file": "pdh-2023-feedforward-phase-noise-suppression.pdf",
+      "modules": [
+        "PDH",
+        "Ref"
+      ],
+      "approach": "general",
+      "foundational": true,
+      "rank": 100
+    },
+    {
+      "title": "Injection-locked diode laser current modulation for Pound–Drever–Hall frequency stabilization using transfer cavities",
+      "authors": "Liekhus-Schmaltz, Mantifel, Torabifard, Burgess & Martin",
+      "venue": "arXiv:1109.0338 (2011)",
+      "year": "2011",
+      "arxiv": "1109.0338",
+      "doi": null,
+      "url": "https://arxiv.org/abs/1109.0338",
+      "file": "pdh-2011-injection-locked-transfer-cavities.pdf",
+      "modules": [
+        "PDH",
+        "Ref"
+      ],
+      "approach": "general",
+      "foundational": true,
+      "rank": 101
     }
   ]
 }

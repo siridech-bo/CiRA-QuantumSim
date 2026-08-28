@@ -29,9 +29,10 @@ let activeApproach = 'all';
 const MODULE_LABELS = {
   M1: 'Paul trap', M2: 'Normal modes', M3: 'Sidebands', M4: 'Doppler cool',
   M5: 'Sideband cool', M6: '1-qubit gate', M7: 'MS gate', M8: 'Readout',
+  PDH: 'Laser stabilization (PDH)',
   Other: 'Applications & foundations', Ref: 'Foundational references', Thesis: 'PhD theses & long-form',
 };
-const MODULE_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'Other', 'Ref', 'Thesis'];
+const MODULE_ORDER = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'PDH', 'Other', 'Ref', 'Thesis'];
 
 // ---- concept dictionary: a physics parameter/term → module(s) it relates to.
 // `terms` are the strings a user might type (symbols + synonyms, lowercase).
@@ -58,6 +59,8 @@ const CONCEPTS = [
     terms: ['decoherence', 'dephasing', 't2', 'coherence', 'relaxation', 'noise'] },
   { label: 'Motional heating', modules: ['M1', 'M5'],
     terms: ['heating', 'anomalous heating', 'motional bath', 'electric field noise'] },
+  { label: 'Laser frequency stabilization (Pound–Drever–Hall)', modules: ['PDH'],
+    terms: ['pdh', 'pound-drever-hall', 'pound drever hall', 'pound–drever–hall', 'pound', 'drever', 'laser stabilization', 'frequency stabilization', 'laser lock', 'cavity lock', 'linewidth', 'linewidth narrowing', 'finesse', 'reference cavity', 'ule cavity', 'clock laser', 'phase noise', 'servo', 'feedback control'] },
 ];
 
 let activeModule = 'all';
@@ -73,16 +76,19 @@ function extLinks(p) {
 }
 function tagChips(mods) {
   return (mods || []).map((m) => {
-    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational' : m === 'Thesis' ? 'Thesis' : `${m} · ${MODULE_LABELS[m] || ''}`;
+    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational' : m === 'Thesis' ? 'Thesis' : m === 'PDH' ? 'PDH' : `${m} · ${MODULE_LABELS[m] || ''}`;
     return `<span class="lib-tag ${m === 'Other' ? 'other' : ''}" title="${esc(MODULE_LABELS[m] || m)}">${esc(label)}</span>`;
   }).join('');
 }
 function card(p) {
-  const href = `pdf.html?file=${encodeURIComponent(p.file)}`;
   const hay = (p.title + ' ' + p.authors + ' ' + (p.venue || '') + ' ' + (p.arxiv || '') + ' ' + (p.doi || '')).toLowerCase();
   const mods = (p.modules || ['Other']);
   const appr = APPROACHES[p.approach] ? p.approach : 'general';
   const apprBadge = `<span class="lib-appr appr-${appr}" title="${esc(APPROACHES[appr].label)}">${esc(APPROACHES[appr].short)}</span>`;
+  // Reference-only entries (paywalled, no freely-hostable copy) show links but no reader.
+  const readBtn = p.file
+    ? `<a class="read" href="pdf.html?file=${encodeURIComponent(p.file)}">📖 Read + AI copilot</a>`
+    : `<span class="lib-refonly" title="No freely-available copy to host — follow the DOI / publisher link">reference only ↗</span>`;
   return `<div class="lib-card" data-search="${esc(hay)}" data-mods="${esc(mods.join(' '))}" data-appr="${appr}">
     <div class="lib-rank">${p.rank}</div>
     <div class="lib-main">
@@ -91,7 +97,7 @@ function card(p) {
       <div class="lib-venue">${esc(p.venue || '')}</div>
       <div class="lib-tags">${apprBadge}${tagChips(mods)}</div>
       <div class="lib-actions">
-        <a class="read" href="${href}">📖 Read + AI copilot</a>
+        ${readBtn}
         ${extLinks(p)}
       </div>
     </div>
@@ -124,7 +130,7 @@ function matchConcepts(q) {
   const chips = [`<button class="lib-chip on" data-m="all">All<span class="n">${papers.length}</span></button>`];
   for (const m of MODULE_ORDER) {
     if (!counts[m]) continue;
-    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational refs' : m === 'Thesis' ? 'Theses' : `${m} · ${MODULE_LABELS[m]}`;
+    const label = m === 'Other' ? 'Other' : m === 'Ref' ? 'Foundational refs' : m === 'Thesis' ? 'Theses' : m === 'PDH' ? 'PDH · Laser stabilization' : `${m} · ${MODULE_LABELS[m]}`;
     chips.push(`<button class="lib-chip" data-m="${m}">${label}<span class="n">${counts[m]}</span></button>`);
   }
   filtersEl.innerHTML = chips.join('');
