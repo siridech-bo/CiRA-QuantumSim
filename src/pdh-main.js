@@ -169,6 +169,94 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
+// ---- Panel 3: VNA / Bode ----------------------------------------------------
+const bode = { gainDb: 6, fInt: 2e4, fAct: 1.5e6, delay: 100e-9 };
+function bodeCfg() { return { gain: Math.pow(10, bode.gainDb / 20), fInt: bode.fInt, fAct: bode.fAct, fCav: Math.max(1e4, linewidth() * 1e6 / 2), delay: bode.delay }; }
+const bdC = document.getElementById('bode-canvas'), bdX = bdC.getContext('2d');
+function drawBode() {
+  const col = C(), w = bdC.width, h = bdC.height, pad = { l: 46, r: 14, t: 14, b: 22 };
+  bdX.clearRect(0, 0, w, h);
+  const cfg = bodeCfg(), f0 = 1e2, f1 = 2e7, L0 = Math.log10(f0), L1 = Math.log10(f1);
+  const xOf = (f) => pad.l + (Math.log10(f) - L0) / (L1 - L0) * (w - pad.l - pad.r);
+  const areaH = h - pad.t - pad.b, gH = areaH * 0.56, pH = areaH * 0.36, gapH = areaH * 0.08;
+  const gTop = pad.t, gBot = pad.t + gH, pTop = gBot + gapH, pBot = h - pad.b;
+  const gY = (db) => gTop + (80 - db) / 120 * gH;                 // gain axis [+80,-40] dB
+  const pY = (d) => pTop + (0 - d) / 270 * pH;                    // phase axis [0,-270]°
+  bdX.font = '9px system-ui, sans-serif';
+  for (let e = 2; e <= 7; e++) {
+    const f = Math.pow(10, e), x = xOf(f);
+    bdX.strokeStyle = col.border; bdX.globalAlpha = 0.3; bdX.lineWidth = 1;
+    bdX.beginPath(); bdX.moveTo(x, gTop); bdX.lineTo(x, pBot); bdX.stroke(); bdX.globalAlpha = 1;
+    label(bdX, e >= 6 ? Math.pow(10, e - 6) + 'MHz' : Math.pow(10, e - 3) + 'kHz', x, pBot + 13, col.muted, 'center', '9px system-ui');
+  }
+  ctxLine(bdX, pad.l, gY(0), w - pad.r, gY(0), col.muted, 0.6);          // 0 dB
+  ctxLine(bdX, pad.l, pY(-180), w - pad.r, pY(-180), col.red, 0.5);       // −180°
+  const N = 400, gp = [], pp = [];
+  for (let i = 0; i <= N; i++) {
+    const f = f0 * Math.pow(f1 / f0, i / N), b = P.openLoopBode(f, cfg);
+    gp.push([xOf(f), gY(Math.max(-40, Math.min(80, 20 * Math.log10(b.mag))))]);
+    pp.push([xOf(f), pY(Math.max(-270, Math.min(0, b.phaseDeg)))]);
+  }
+  poly(bdX, gp, col.accent, 2);
+  poly(bdX, pp, col.violet, 1.8);
+  const m = P.loopMetrics(cfg);
+  if (m.ugf) { const x = xOf(m.ugf); vline(bdX, x, gTop, pBot, col.accent2, [4, 3]); label(bdX, 'UGF', x, gTop + 9, col.accent2, 'center', '9px system-ui'); }
+  label(bdX, 'gain (dB)', pad.l + 4, gTop + 11, col.accent);
+  label(bdX, 'phase (deg)', pad.l + 4, pTop + 11, col.violet);
+  label(bdX, '0dB', pad.l - 3, gY(0) + 3, col.muted, 'right', '9px system-ui');
+  label(bdX, '−180', pad.l - 3, pY(-180) + 3, col.red, 'right', '9px system-ui');
+  const st = m.pm == null ? '—' : (m.pm < 0 ? 'UNSTABLE' : m.pm < 30 ? 'marginal' : 'stable');
+  const stc = m.pm == null ? col.muted : (m.pm < 0 ? col.red : m.pm < 30 ? col.accent2 : col.green);
+  document.getElementById('bode-readout').innerHTML =
+    (m.ugf ? `Unity-gain bandwidth <b>${(m.ugf / 1e3).toFixed(0)} kHz</b> · phase margin <b style="color:${stc}">${m.pm.toFixed(0)}° (${st})</b>. ` : 'Gain never crosses 0 dB in range — lower it. ') +
+    `Cavity pole (from Panel 0): ${(cfg.fCav / 1e3).toFixed(0)} kHz. More gain/delay ⇒ higher bandwidth but less margin (→ Panel 2 oscillation).`;
+}
+
+// ---- Panel 4: AOM / AOD -----------------------------------------------------
+const aom = { freqMHz: 200, doublePass: false };
+const aoC = document.getElementById('aom-canvas'), aoX = aoC.getContext('2d');
+function drawAOM() {
+  const col = C(), w = aoC.width, h = aoC.height, cy = 150, cxL = 200, cxR = 272;
+  aoX.clearRect(0, 0, w, h);
+  // crystal + RF transducer
+  aoX.fillStyle = 'rgba(74,144,217,.14)'; aoX.strokeStyle = col.accent; aoX.lineWidth = 1.5;
+  aoX.beginPath(); aoX.rect(cxL, 118, cxR - cxL, 64); aoX.fill(); aoX.stroke();
+  label(aoX, 'AOM', (cxL + cxR) / 2, 112, col.text, 'center', '12px system-ui');
+  aoX.fillStyle = col.accent2; aoX.fillRect(cxL, 182, cxR - cxL, 8);
+  label(aoX, `RF ${aom.freqMHz} MHz`, (cxL + cxR) / 2, 205, col.accent2, 'center', '11px system-ui');
+  // input beam
+  poly(aoX, [[30, cy], [cxL, cy]], col.red, 2.4);
+  label(aoX, 'laser ω', 34, cy - 8, col.red, 'left', '11px system-ui');
+  const defl = 30 + (aom.freqMHz - 60) / 340 * 82;            // deflection (px) ∝ f
+  const shift = aom.doublePass ? 2 * aom.freqMHz : aom.freqMHz;
+  // 0th order
+  aoX.setLineDash([5, 4]); poly(aoX, [[cxR, cy], [694, cy]], col.muted, 1.4); aoX.setLineDash([]);
+  label(aoX, '0th (ω, undiffracted)', 690, cy + 15, col.muted, 'right', '10px system-ui');
+  // +1 order (frequency-shifted, deflected)
+  const y1 = cy - defl;
+  poly(aoX, [[cxR, cy], [694, y1]], col.accent2, 2.2);
+  label(aoX, `+1:  ω + 2π·${shift} MHz`, 694, y1 - 6, col.accent2, 'right', '10px system-ui');
+  if (aom.doublePass) {
+    // cat-eye (lens + retro mirror) on the +1 order → collinear return
+    const at = (x) => cy - defl * (x - cxR) / (694 - cxR);
+    const lx = 470, mx = 560;
+    aoX.strokeStyle = col.text; aoX.lineWidth = 1.4;
+    aoX.beginPath(); aoX.ellipse(lx, at(lx), 5, 15, 0, 0, 2 * Math.PI); aoX.stroke();     // lens
+    aoX.beginPath(); aoX.moveTo(mx - 3, at(mx) - 15); aoX.lineTo(mx + 3, at(mx) + 15); aoX.stroke(); // mirror
+    label(aoX, 'cat-eye', mx + 8, at(mx) - 8, col.muted, 'left', '9px system-ui');
+    aoX.setLineDash([4, 3]);
+    poly(aoX, [[mx, at(mx)], [cxR, cy + 5]], col.green, 1.6);        // return to crystal
+    poly(aoX, [[cxL, cy + 5], [30, cy + 5]], col.green, 2.2);        // out (collinear)
+    aoX.setLineDash([]);
+    label(aoX, `out: ω + 2π·${2 * aom.freqMHz} MHz (beam stays put)`, 34, cy + 22, col.green, 'left', '10px system-ui');
+  }
+  document.getElementById('aom-readout').innerHTML =
+    `RF drive <b>${aom.freqMHz} MHz</b> → the +1 order is frequency-shifted by <b>${shift} MHz</b>${aom.doublePass ? ' (×2, double-pass)' : ''} and deflected by an angle ∝ f (Bragg). ` +
+    (aom.doublePass
+      ? 'Double-pass output is <b>angle-independent</b> — tune f without walking the beam: the ideal fast frequency actuator.'
+      : 'Single-pass: the deflection moves with f (great as an <b>AOD</b> beam-steerer; double-pass it to use as a frequency actuator).');
+}
+
 // ---- controls ---------------------------------------------------------------
 function wire(id, onChange, fmt) {
   const el = document.getElementById(id), val = document.getElementById(id + '-val');
@@ -176,8 +264,8 @@ function wire(id, onChange, fmt) {
   el.addEventListener('input', h); h();
 }
 // Panel 0
-wire('fp-finesse', (v) => { params.finesse = v; drawFP(); drawErr(); rebuildLock(true); }, (v) => String(Math.round(v)));
-wire('fp-fsr', (v) => { params.fsr = v; drawFP(); drawErr(); rebuildLock(true); }, (v) => String(Math.round(v)));
+wire('fp-finesse', (v) => { params.finesse = v; drawFP(); drawErr(); drawBode(); rebuildLock(true); }, (v) => String(Math.round(v)));
+wire('fp-fsr', (v) => { params.fsr = v; drawFP(); drawErr(); drawBode(); rebuildLock(true); }, (v) => String(Math.round(v)));
 // Panel 1
 wire('err-omega', (v) => { params.Omega = v; drawErr(); rebuildLock(true); }, (v) => v.toFixed(0));
 wire('err-beta', (v) => { params.beta = v; drawErr(); rebuildLock(true); }, (v) => v.toFixed(2));
@@ -195,6 +283,20 @@ toggleBtn.addEventListener('click', () => {
   toggleBtn.classList.toggle('on', on);
 });
 document.getElementById('lock-kick').addEventListener('click', () => { lock.nuFree += 4 + 4 * Math.random(); });
+// Panel 3 (VNA / Bode)
+wire('bd-gain', (v) => { bode.gainDb = v; drawBode(); }, (v) => v.toFixed(0) + ' dB');
+wire('bd-fint', (v) => { bode.fInt = v * 1e3; drawBode(); }, (v) => v.toFixed(0) + ' kHz');
+wire('bd-fact', (v) => { bode.fAct = v * 1e6; drawBode(); }, (v) => v.toFixed(1) + ' MHz');
+wire('bd-delay', (v) => { bode.delay = v * 1e-9; drawBode(); }, (v) => v.toFixed(0) + ' ns');
+// Panel 4 (AOM / AOD)
+wire('ao-freq', (v) => { aom.freqMHz = v; drawAOM(); }, (v) => v.toFixed(0) + ' MHz');
+const dpBtn = document.getElementById('ao-dp');
+dpBtn.addEventListener('click', () => {
+  aom.doublePass = !aom.doublePass;
+  dpBtn.textContent = 'Double-pass: ' + (aom.doublePass ? 'on' : 'off');
+  dpBtn.classList.toggle('on', aom.doublePass);
+  drawAOM();
+});
 
 // ---- boot -------------------------------------------------------------------
-drawFP(); drawErr(); rebuildLock(false); running = true; requestAnimationFrame(frame);
+drawFP(); drawErr(); drawBode(); drawAOM(); rebuildLock(false); running = true; requestAnimationFrame(frame);

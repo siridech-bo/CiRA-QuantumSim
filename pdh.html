@@ -64,9 +64,9 @@
     <div class="pdh-flow">
       <span class="step">FP cavity</span><span class="arr">▸</span>
       <span class="step">EOM sidebands → error</span><span class="arr">▸</span>
-      <span class="step">closed-loop servo</span><span class="arr" style="opacity:.4">▸</span>
-      <span class="step" style="opacity:.4">VNA / Bode</span><span class="arr" style="opacity:.4">▸</span>
-      <span class="step" style="opacity:.4">AOM / AOD</span>
+      <span class="step">closed-loop servo</span><span class="arr">▸</span>
+      <span class="step">VNA / Bode</span><span class="arr">▸</span>
+      <span class="step">AOM / AOD</span>
     </div>
 
     <!-- Panel 0 -->
@@ -120,6 +120,40 @@
           <div class="row"><span>freq. noise</span><span class="val" id="lk-noise-val"></span><input id="lk-noise" type="range" min="0" max="0.1" step="0.005" value="0.03" /></div>
           <div class="row"><span>drift</span><span class="val" id="lk-drift-val"></span><input id="lk-drift" type="range" min="0" max="0.02" step="0.001" value="0.004" /></div>
           <div class="breakit">Crank <b>P gain</b> up (with the loop delay) and the servo <b>oscillates</b> — the stability limit. Too little gain → poor noise suppression. A big <b>Kick</b> past the capture range → unlock.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 3 -->
+    <section class="panel">
+      <div class="panel-head"><h2>3 · VNA / loop dynamics — Bode &amp; phase margin</h2>
+        <div class="desc">The same loop in the frequency domain (what a VNA measures). Open-loop response L(f) = controller × actuator × cavity × delay. Where the gain crosses <b>0 dB</b> is the unity-gain bandwidth; the phase there sets the <b>phase margin</b>. Push gain or delay and the margin vanishes — the oscillation of Panel 2.</div></div>
+      <div class="panel-body">
+        <div class="plot-wrap"><canvas id="bode-canvas" width="720" height="340"></canvas>
+          <div class="plot-readout" id="bode-readout"></div></div>
+        <div class="ctrls">
+          <div class="grp-label">Loop</div>
+          <div class="row"><span>Gain (dB)</span><span class="val" id="bd-gain-val"></span><input id="bd-gain" type="range" min="-20" max="50" step="1" value="6" /></div>
+          <div class="row"><span>Integrator (kHz)</span><span class="val" id="bd-fint-val"></span><input id="bd-fint" type="range" min="1" max="200" step="1" value="20" /></div>
+          <div class="row"><span>Actuator BW (MHz)</span><span class="val" id="bd-fact-val"></span><input id="bd-fact" type="range" min="0.1" max="5" step="0.1" value="1.5" /></div>
+          <div class="row"><span>Loop delay (ns)</span><span class="val" id="bd-delay-val"></span><input id="bd-delay" type="range" min="0" max="800" step="10" value="100" /></div>
+          <div class="breakit">Raise <b>gain</b> to push the bandwidth up — but the <b>phase margin</b> shrinks. Add <b>delay</b> and the phase rolls off fast: PM → 0 is the servo oscillation in Panel 2.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 4 -->
+    <section class="panel">
+      <div class="panel-head"><h2>4 · AOM / AOD — the actuator</h2>
+        <div class="desc">How an RF signal becomes a frequency correction. An <b>AOM</b> diffracts the beam off an RF sound wave: the +1 order is frequency-shifted by the drive f and deflected by an angle ∝ f. In <b>double-pass</b> (cat-eye) the shift doubles and the output stays collinear — the fast, drift-free frequency actuator. As an <b>AOD</b>, the same angle-vs-f steers the beam.</div></div>
+      <div class="panel-body">
+        <div class="plot-wrap"><canvas id="aom-canvas" width="720" height="300"></canvas>
+          <div class="plot-readout" id="aom-readout"></div></div>
+        <div class="ctrls">
+          <div class="grp-label">Acousto-optic</div>
+          <div class="row"><span>RF drive f (MHz)</span><span class="val" id="ao-freq-val"></span><input id="ao-freq" type="range" min="60" max="400" step="5" value="200" /></div>
+          <div class="btn-row"><button class="btn" id="ao-dp">Double-pass: off</button></div>
+          <div class="breakit">Change <b>f</b> and the +1 order's deflection <i>and</i> frequency shift both move. Single-pass shifts by +f; double-pass by +2f with an angle-independent output — why PDH uses a double-passed AOM for fast frequency control.</div>
         </div>
       </div>
     </section>

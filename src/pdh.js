@@ -83,6 +83,38 @@ export function discriminantSlope(cfg) {
   return (pdhError(h, cfg) - pdhError(-h, cfg)) / (2 * h);
 }
 
+// ---- open-loop transfer function L(f) (VNA / Bode panel) --------------------
+// L(f) = gain · K_PI(f) · G_actuator(f) · G_cavity(f) · e^{−i2πfτ}, with
+//   K_PI  = 1 + fInt/(i f)      (a PI controller: integrator below fInt),
+//   G_act = 1/(1 + i f/fAct)    (finite actuator bandwidth, e.g. diode current),
+//   G_cav = 1/(1 + i f/fCav)    (the cavity's low-pass on frequency noise),
+//   e^{−i2πfτ}                  (loop delay — the killer of phase margin).
+// Phase is summed (not atan2 of the product) so it stays UNWRAPPED past −180°.
+export function openLoopBode(f, { gain, fInt, fAct, fCav, delay }) {
+  const w = 2 * Math.PI * f;
+  const magK = Math.hypot(1, fInt / f), argK = Math.atan2(-fInt / f, 1);
+  const magA = 1 / Math.hypot(1, f / fAct), argA = -Math.atan(f / fAct);
+  const magC = 1 / Math.hypot(1, f / fCav), argC = -Math.atan(f / fCav);
+  const argD = -w * delay;
+  return { mag: gain * magK * magA * magC, phaseDeg: (argK + argA + argC + argD) * 180 / Math.PI };
+}
+// Unity-gain frequency (|L|=1) + phase margin (180°+∠L there), by log-scan + interp.
+export function loopMetrics(cfg, f0 = 1e2, f1 = 2e7, N = 900) {
+  let prev = null, ugf = null, pm = null;
+  for (let i = 0; i <= N; i++) {
+    const f = f0 * Math.pow(f1 / f0, i / N);
+    const b = openLoopBode(f, cfg);
+    const g = 20 * Math.log10(b.mag);
+    if (prev && prev.g >= 0 && g < 0) {          // 0-dB crossing (falling)
+      const t = prev.g / (prev.g - g);
+      ugf = prev.f * Math.pow(f / prev.f, t);
+      pm = 180 + (prev.p + t * (b.phaseDeg - prev.p));
+    }
+    prev = { f, g, p: b.phaseDeg };
+  }
+  return { ugf, pm };
+}
+
 // ---- time-domain closed loop ------------------------------------------------
 // A free-running laser (drift + white frequency noise) locked by a PI/PID servo
 // with a FAST (diode-current, high-bandwidth) and SLOW (PZT, integrating) path.
