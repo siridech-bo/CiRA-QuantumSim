@@ -1565,14 +1565,14 @@
       "rank": 101
     },
     {
-      "title": "The Fabry–Pérot interferometer (provisional — please confirm)",
-      "authors": "(to confirm — scanned PDF, metadata unreadable)",
-      "venue": "Am. J. Phys. (~1995)",
-      "year": "1995",
+      "title": "Teaching physics with 670-nm diode lasers — experiments with Fabry–Pérot cavities",
+      "authors": "R. A. Boyd, J. L. Bliss, K. G. Libbrecht",
+      "venue": "Am. J. Phys. 64, 1109–1116 (1996) · Caltech",
+      "year": "1996",
       "arxiv": null,
-      "doi": null,
-      "url": null,
-      "file": "pdh-1995-fabry-perot-interferometer-ajp.pdf",
+      "doi": "10.1119/1.18330",
+      "url": "https://pubs.aip.org/aapt/ajp/article-abstract/64/9/1109",
+      "file": "pdh-1996-boyd-teaching-physics-670nm-diode-lasers-fabry-perot.pdf",
       "modules": [
         "PDH"
       ],
