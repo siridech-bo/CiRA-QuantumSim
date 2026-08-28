@@ -189,6 +189,48 @@ export function twoIonAxial(eta, Omega, mu, { nbarCOM = 0, nbarStr = 0 } = {}) {
   ];
 }
 
+// -----------------------------------------------------------------------------
+// REAL N-ion chain: build the verifier's mode objects for an MS gate on ion pair
+// [i,j] from a chain's normal-mode spectrum. Framework-free — the caller supplies
+// the spectrum (from src/ion-modes.js: `new IonChain({N}).modes(N).modes`, an array
+// of { freq, vector }), so this core stays dependency-free and the mode solver and
+// the gate verifier compose cleanly.
+//
+//   chainSpectrum : [{ freq, vector }]  — freq in ω_z units (COM=1), vector the
+//                   unit-norm mode shape b_{p,·} over ALL N ions.
+//   pair          : [i, j]  0-indexed DRIVEN ions (only these enter the 2-qubit space;
+//                   the other ions still shape every mode via b_{p,·}).
+//   opts.eta0     : single-ion reference Lamb–Dicke η at ω_z. Per mode/ion:
+//                   η_{p,i} = eta0·b_{p,i}·√(ω_z/ω_p);  g_{p,i} = η_{p,i}·Ω/2.
+//   opts.Omega    : carrier Rabi Ω.   opts.muDrive : symmetric-tone offset (ω_z units)
+//                   ⇒ δ_p = muDrive − ω_p.   opts.nbar : scalar or per-mode array.
+// Returns one { delta, g:[g_i,g_j], nbar } per mode — feed straight to report()/bellFidelity().
+export function chainModes(chainSpectrum, pair, { eta0, Omega, muDrive, nbar = 0 }) {
+  const [i, j] = pair;
+  return chainSpectrum.map((m, p) => {
+    const etaScale = eta0 * Math.sqrt(1 / m.freq);          // b·√(ω_z/ω_p), ω_z=1
+    const nb = Array.isArray(nbar) ? nbar[p] : nbar;
+    return {
+      delta: muDrive - m.freq,
+      g: [etaScale * m.vector[i] * Omega / 2, etaScale * m.vector[j] * Omega / 2],
+      nbar: nb,
+    };
+  });
+}
+
+// Operating point that drives the COM mode (freq=1, b_{i}=1/√N equal on every ion ⇒
+// symmetric on ANY pair ⇒ clean S_x² gate) to loop closure with Θ=π/8:
+//   g_COM = δ_COM/(4√K),  g_COM = eta0·Ω/(2√N)  ⇒  Ω = δ_COM·√N/(2√K·eta0).
+//   muDrive = 1 + δ_COM,  τ_g = 2πK/δ_COM.  Spectator modes then show up as residual.
+export function chainClosureCOM(N, { eta0, deltaCOM = 0.1, K = 1 }) {
+  return {
+    Omega: deltaCOM * Math.sqrt(N) / (2 * Math.sqrt(K) * eta0),
+    muDrive: 1 + deltaCOM,
+    tau: 2 * Math.PI * K / deltaCOM,
+    deltaCOM, K,
+  };
+}
+
 // Convenience: 2D calibration sweep of Bell fidelity over (delta, etaOmega) for a
 // single symmetric mode evaluated at each point's OWN closure time τ=2πK/δ. Returns
 // { deltas, etaOmegas, F:[[…]] } — the raw grid a heatmap/contour would render.

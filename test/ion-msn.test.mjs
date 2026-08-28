@@ -18,9 +18,10 @@
 
 import assert from 'node:assert';
 import { MSGate } from '../src/ion-ms.js';
+import { IonChain } from '../src/ion-modes.js';
 import {
   THETA_MS, bellFidelity, accumulatedTheta, closureResiduals, report,
-  closurePoint, symMode, twoIonAxial,
+  closurePoint, symMode, twoIonAxial, chainModes, chainClosureCOM,
 } from '../src/ion-msn.js';
 
 let passes = 0, failures = 0;
@@ -136,6 +137,51 @@ const near = (a, b, tol) => Math.abs(a - b) <= tol;
     r.attribution.decoherence.perMode[1].infidelity > r.attribution.decoherence.perMode[0].infidelity + 1e-6 &&
     r.attribution.decoherence.perMode[0].infidelity < 1e-6,
     `str=${r.attribution.decoherence.perMode[1].infidelity.toFixed(4)}, COM=${r.attribution.decoherence.perMode[0].infidelity.toExponential(2)}`);
+}
+
+// ---------------------------------------------------------------------------
+// 7. Chain wiring: chainModes fed from the REAL IonChain(N=2) mode solver must
+//    reproduce the hand-built (independently validated) twoIonAxial case.
+// ---------------------------------------------------------------------------
+{
+  const eta0 = 0.1;
+  const op = chainClosureCOM(2, { eta0, deltaCOM: 0.3, K: 1 });
+  const spec = new IonChain({ N: 2 }).modes(2).modes;         // [COM(freq 1), stretch(freq √3)]
+  const mChain = chainModes(spec, [0, 1], { eta0, Omega: op.Omega, muDrive: op.muDrive, nbar: 0 });
+  const mHand = twoIonAxial(eta0, op.Omega, op.muDrive, {});
+  const Fc = report(mChain, op.tau).fidelity, Fh = report(mHand, op.tau).fidelity;
+  check('chain wiring: IonChain(2) reproduces twoIonAxial', near(Fc, Fh, 1e-6),
+    `F(chain)=${Fc.toFixed(6)}  F(hand)=${Fh.toFixed(6)}  |Δ|=${Math.abs(Fc - Fh).toExponential(2)}`);
+  check('chain wiring: modes = 2 (COM + stretch)', mChain.length === 2 && Math.abs(spec[0].freq - 1) < 1e-9,
+    `freqs=[${spec.map((m) => m.freq.toFixed(4)).join(', ')}]`);
+}
+
+// ---------------------------------------------------------------------------
+// 8. REAL 4-ion chain: MS gate on ions 1&3 via the COM mode. COM closes cleanly
+//    (Θ=π/8); the other 3 axial modes are spectators ⇒ residual-motion error the
+//    verifier attributes per mode. This is the "verify at 2–4 ions" capability.
+// ---------------------------------------------------------------------------
+{
+  const eta0 = 0.05;
+  const op = chainClosureCOM(4, { eta0, deltaCOM: 0.2, K: 1 });
+  const spec = new IonChain({ N: 4 }).modes(4).modes;         // 4 axial modes, COM first
+  const modes = chainModes(spec, [0, 2], { eta0, Omega: op.Omega, muDrive: op.muDrive, nbar: 0 });
+  const r = report(modes, op.tau);
+
+  check('4-ion: 4 axial modes, COM freq=1', modes.length === 4 && Math.abs(spec[0].freq - 1) < 1e-9,
+    `freqs=[${spec.map((m) => m.freq.toFixed(3)).join(', ')}]`);
+  // COM loop closes cleanly; total Θ is pulled OFF π/8 by the (unclosed) spectator
+  // modes' own phase — the verifier correctly surfaces spectator phase, not just decoherence.
+  check('4-ion: COM loop closes cleanly', r.closure[0].closed,
+    `|α_COM|=${r.closure[0].residual.toExponential(2)}`);
+  check('4-ion: spectators shift total Θ off π/8', Math.abs(r.phaseError) > 1e-3,
+    `Θ_total=${r.theta.toFixed(5)} vs π/8=${THETA_MS.toFixed(5)} (Δ=${r.phaseError.toFixed(4)})`);
+  check('4-ion: spectator modes open ⇒ F<1', r.closure.slice(1).some((c) => !c.closed) && r.fidelity < 0.999,
+    `F=${r.fidelity.toFixed(4)}, open spectators=${r.closure.slice(1).filter((c) => !c.closed).length}`);
+  check('4-ion: infidelity attributed to a spectator, not COM',
+    r.attribution.decoherence.perMode[0].infidelity < 1e-6 &&
+    Math.max(...r.attribution.decoherence.perMode.slice(1).map((m) => m.infidelity)) > r.attribution.decoherence.perMode[0].infidelity,
+    `COM=${r.attribution.decoherence.perMode[0].infidelity.toExponential(2)}, max spectator=${Math.max(...r.attribution.decoherence.perMode.slice(1).map((m) => m.infidelity)).toFixed(4)}`);
 }
 
 console.log(`\n${passes} passed, ${failures} failed`);
