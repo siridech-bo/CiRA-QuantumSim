@@ -103,6 +103,18 @@
         <b>residual-motion</b> decoherence. The tall bar is the mode to fix (cool it, or move the drive / shape the pulse).</div>
       <canvas id="cv-attr" width="960" height="260"></canvas>
     </div>
+
+    <div class="iv-panel">
+      <h2>4 · Designed shaped pulse — close <i>every</i> mode</h2>
+      <div class="desc">Turn <b>verify</b> into <b>design</b>. A piecewise-constant Ω(t) (2M+1 segments) is solved so <b>all</b> motional
+        loops close simultaneously and the entangling phase lands on ±π/8 — recovering fidelity a constant drive can't. Left: the
+        amplitude schedule to run. Right: the resulting loops, now all returning to the origin.</div>
+      <div id="iv-shaped-note" style="font-size:12.5px; padding:2px 2px 8px;"></div>
+      <div style="display:flex; gap:14px; flex-wrap:wrap;">
+        <canvas id="cv-pulse" width="560" height="240" style="flex:1 1 340px; min-width:300px;"></canvas>
+        <canvas id="cv-sloops" width="380" height="240" style="flex:1 1 260px; min-width:240px;"></canvas>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="src/ion-verifier-main.js"></script>

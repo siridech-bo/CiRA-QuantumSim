@@ -7,6 +7,7 @@
 // =============================================================================
 import { IonChain } from './ion-modes.js';
 import { chainModes, chainClosureCOM, report, bellFidelity, displacement, THETA_MS } from './ion-msn.js';
+import { solveShape, envelopeAt } from './ion-msn-shape.js';
 
 const S = { N: 4, i: 1, j: 3, eta0: 0.06, deltaCOM: 0.2, K: 1, omScale: 1.0, nbar: 0 };
 const MC = ['#4A90D9', '#FF8C00', '#50C878', '#b57edc', '#ff5c6c', '#4aa3ff', '#e0c04a'];
@@ -150,10 +151,63 @@ function drawSummary(st) {
     `<span>gate on ions <span class="k">${st.pair[0] + 1} &amp; ${st.pair[1] + 1}</span> of ${S.N}</span>`;
 }
 
+// ---- Panel 4: designed shaped pulse -----------------------------------------
+const cvP = document.getElementById('cv-pulse'), ctxP = cvP.getContext('2d');
+const cvSL = document.getElementById('cv-sloops'), ctxSL = cvSL.getContext('2d');
+function drawShaped(st) {
+  const col = C();
+  const sol = solveShape(st.modes, st.tau);
+  const note = document.getElementById('iv-shaped-note');
+  ctxP.clearRect(0, 0, cvP.width, cvP.height); ctxSL.clearRect(0, 0, cvSL.width, cvSL.height);
+  if (!sol.ok) { note.innerHTML = `<span style="color:${col.red}">Design unavailable: ${sol.reason}</span>`; return; }
+  const maxRes = Math.max(...sol.residuals.map((r) => r.residual));
+  note.innerHTML = `Bell fidelity <b style="color:${col.muted}">${st.rep.fidelity.toFixed(4)}</b> (constant) → ` +
+    `<b style="color:${fidColor(sol.fidelity)}">${sol.fidelity.toFixed(4)}</b> (shaped) · all ${st.modes.length} loops closed ` +
+    `(max residual ${maxRes.toExponential(1)}) · gate = ${sol.sign > 0 ? 'exp[+i(π/8)S²]' : 'exp[−i(π/8)S²] (conjugate)'}, ${sol.nSeg} segments`;
+
+  // --- Ω(t) step envelope (left) ---
+  const w = cvP.width, h = cvP.height, pad = { l: 40, r: 12, t: 14, b: 26 };
+  const amps = sol.pulse.amp, ns = amps.length, aMax = Math.max(...amps.map(Math.abs)) * 1.15 || 1;
+  const x0 = pad.l, x1 = w - pad.r, y0 = pad.t, y1 = h - pad.b, mid = (y0 + y1) / 2;
+  ctxP.strokeStyle = col.border; ctxP.globalAlpha = 0.6; ctxP.beginPath(); ctxP.moveTo(x0, mid); ctxP.lineTo(x1, mid); ctxP.stroke(); ctxP.globalAlpha = 1;
+  const yOf = (a) => mid - a / aMax * (y1 - y0) / 2;
+  const bw = (x1 - x0) / ns;
+  amps.forEach((a, k) => {
+    const bx = x0 + k * bw, by = yOf(a);
+    ctxP.fillStyle = a >= 0 ? col.accent : col.red; ctxP.globalAlpha = 0.85;
+    ctxP.fillRect(bx + 1, Math.min(mid, by), bw - 2, Math.abs(by - mid)); ctxP.globalAlpha = 1;
+  });
+  label(ctxP, 'Ω(t) / Ω₀  (segment amplitudes)', x0, 10, col.muted, 'left', '10px system-ui');
+  label(ctxP, '0', x0 - 4, mid + 3, col.muted, 'right', '9px system-ui');
+  label(ctxP, 'gate time τ →', x1, y1 + 16, col.muted, 'right', '9px system-ui');
+
+  // --- shaped loops all closing (right) ---
+  const W = cvSL.width, H = cvSL.height, cx = W / 2, cy = H / 2, NP = 200;
+  const trajs = st.modes.map((m) => {
+    const q = Math.abs(m.g[0]) + Math.abs(m.g[1]), pts = [];
+    for (let k = 0; k <= NP; k++) { const e = envelopeAt(m, sol.pulse, st.tau * k / NP); pts.push({ re: -q * e.re, im: -q * e.im }); }
+    return pts;
+  });
+  let mR = 1e-9; for (const p of trajs) for (const q of p) mR = Math.max(mR, Math.hypot(q.re, q.im));
+  const sc = Math.min(W, H) * 0.42 / mR;
+  ctxSL.strokeStyle = col.border; ctxSL.globalAlpha = 0.5; ctxSL.beginPath();
+  ctxSL.moveTo(14, cy); ctxSL.lineTo(W - 14, cy); ctxSL.moveTo(cx, 10); ctxSL.lineTo(cx, H - 10); ctxSL.stroke(); ctxSL.globalAlpha = 1;
+  ctxSL.fillStyle = col.muted; ctxSL.beginPath(); ctxSL.arc(cx, cy, 3, 0, 7); ctxSL.fill();
+  st.modes.forEach((m, p) => {
+    const color = MC[p % MC.length], pts = trajs[p];
+    ctxSL.strokeStyle = color; ctxSL.lineWidth = 1.6; ctxSL.globalAlpha = 0.85; ctxSL.beginPath();
+    pts.forEach((a, k) => { const x = cx + a.re * sc, y = cy - a.im * sc; k ? ctxSL.lineTo(x, y) : ctxSL.moveTo(x, y); });
+    ctxSL.stroke(); ctxSL.globalAlpha = 1;
+    const end = pts[pts.length - 1];
+    ctxSL.fillStyle = color; ctxSL.beginPath(); ctxSL.arc(cx + end.re * sc, cy - end.im * sc, 3.5, 0, 7); ctxSL.fill();
+  });
+  label(ctxSL, 'all loops → origin', 14, 12, col.muted, 'left', '10px system-ui');
+}
+
 // ---- redraw all -------------------------------------------------------------
 function redraw() {
   const st = compute();
-  drawSummary(st); drawLoops(st); drawHeat(st); drawAttr(st);
+  drawSummary(st); drawLoops(st); drawHeat(st); drawAttr(st); drawShaped(st);
 }
 
 // ---- wire controls ----------------------------------------------------------
