@@ -159,21 +159,48 @@ function matchConcepts(q) {
     applyFilter();
   }));
 
+  // Does a card pass the free-text / concept query? (module & approach handled separately.)
+  function cardOkQuery(c, q, matched, relMods) {
+    if (!q) return true;
+    const textHit = c.dataset.search.includes(q);
+    const conceptHit = matched.length > 0 && c.dataset.mods.split(' ').some((m) => relMods.has(m));
+    return textHit || conceptHit;
+  }
+
   function applyFilter() {
     const q = search.value.trim().toLowerCase();
     const matched = matchConcepts(q);
     const relMods = new Set(matched.flatMap((c) => c.modules));
+    // precompute per-card facets once
+    const meta = [...listEl.querySelectorAll('.lib-card')].map((c) => ({
+      c, mods: c.dataset.mods.split(' '), appr: c.dataset.appr, okQuery: cardOkQuery(c, q, matched, relMods),
+    }));
+
     let n = 0;
-    listEl.querySelectorAll('.lib-card').forEach((c) => {
-      const okChip = activeModule === 'all' || c.dataset.mods.split(' ').includes(activeModule);
-      const okAppr = activeApproach === 'all' || c.dataset.appr === activeApproach;
-      let okQuery = true;
-      if (q) {
-        const textHit = c.dataset.search.includes(q);
-        const conceptHit = matched.length > 0 && c.dataset.mods.split(' ').some((m) => relMods.has(m));
-        okQuery = textHit || conceptHit;
-      }
-      const show = okChip && okAppr && okQuery; c.classList.toggle('hidden', !show); if (show) n++;
+    for (const m of meta) {
+      const show = m.okQuery
+        && (activeModule === 'all' || m.mods.includes(activeModule))
+        && (activeApproach === 'all' || m.appr === activeApproach);
+      m.c.classList.toggle('hidden', !show); if (show) n++;
+    }
+
+    // CONTEXT-AWARE facet counts: each chip shows how many papers you'd get if you
+    // picked it, given the OTHER active facets (+ query) — so counts never mislead.
+    filtersEl.querySelectorAll('.lib-chip').forEach((b) => {
+      const mod = b.dataset.m;
+      const cnt = meta.filter((m) => m.okQuery
+        && (activeApproach === 'all' || m.appr === activeApproach)
+        && (mod === 'all' || m.mods.includes(mod))).length;
+      const s = b.querySelector('.n'); if (s) s.textContent = cnt;
+      b.style.opacity = (cnt === 0 && mod !== activeModule) ? '0.4' : '';
+    });
+    apprEl.querySelectorAll('.lib-appr-chip').forEach((b) => {
+      const a = b.dataset.a;
+      const cnt = meta.filter((m) => m.okQuery
+        && (activeModule === 'all' || m.mods.includes(activeModule))
+        && (a === 'all' || m.appr === a)).length;
+      const s = b.querySelector('.n'); if (s) s.textContent = cnt;
+      b.style.opacity = (cnt === 0 && a !== activeApproach) ? '0.4' : '';
     });
 
     // parameter-match hint
@@ -187,7 +214,12 @@ function matchConcepts(q) {
 
     const scope = activeModule === 'all' ? '' : ` in ${activeModule === 'Other' ? 'Other' : activeModule + ' · ' + MODULE_LABELS[activeModule]}`;
     const ascope = activeApproach === 'all' ? '' : ` · ${APPROACHES[activeApproach].short}`;
-    countEl.textContent = `${n} of ${papers.length} papers${scope}${ascope}`;
+    let msg = `${n} of ${papers.length} papers${scope}${ascope}`;
+    if (n === 0) {
+      const why = q ? `the search “${esc(search.value.trim())}”` : 'this filter';
+      msg += ` — nothing matches ${why} combined with the current chips. Clear the search or pick “All”.`;
+    }
+    countEl.innerHTML = msg;
   }
 
   search.addEventListener('input', applyFilter);
