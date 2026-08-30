@@ -1,0 +1,403 @@
+# Analytic design and open-system verification of robust Mølmer–Sørensen gates: quantifying the coherent–incoherent trade-off
+
+> **Status: DRAFT (v0.1).** Theory and methods are complete; all quantitative
+> results are marked **[TBD]** and will be filled from the numerical experiments
+> in Sec. VI once the toolchain upgrades (Sec. V) are implemented. This document
+> is written to be portable to REVTeX 4.2 (PRA/PRApplied style).
+
+**Author list (to be finalized):** Siridech B.¹˒\* and collaborators
+¹ King Mongkut's Institute of Technology Ladkrabang (KMITL), Bangkok, Thailand
+\* Corresponding author: `siridech.bo@kmitl.ac.th`
+
+*(Placeholder author block — edit before submission. The software described here is
+CiRA QuantumSim; the analytic engine `ion-msn`, the shaped-pulse designer
+`ion-msn-shape`, the Lindblad verifier `ion-ms`, and the chain-mode solver
+`ion-modes` are cross-validated open modules.)*
+
+---
+
+## Abstract
+
+Robust Mølmer–Sørensen (MS) gates are designed almost exclusively against
+**coherent** error — trap-frequency drift (symmetric error) and center-line /
+qubit-frequency drift (asymmetric error) — while the **incoherent** environment
+(motional heating, qubit dephasing, spontaneous emission during the gate) is
+treated separately or assumed negligible. Because the leading robust-control
+techniques necessarily **extend the gate time** (amplitude-modulated multi-mode
+closure, and generator-based compensation that doubles the gate for its error-
+amplified segment), coherent-error suppression is bought at the price of increased
+incoherent-error accumulation. This trade-off is acknowledged qualitatively in the
+literature but, to our knowledge, has not been mapped quantitatively.
+
+We present a lightweight, cross-validated toolchain that couples (i) a fast
+**analytic** MS designer/verifier — the second-order Magnus operator in the
+commuting $\sigma_x$ basis, evaluated in $O(M)$ per gate for $M$ motional modes,
+with no Fock-space integration — to (ii) a **full open-system** Lindblad
+integrator of the $2^N\!\otimes\!\prod_m\mathcal{F}_m$ density matrix that carries
+the same physical parameters. The analytic designer reproduces the amplitude-
+modulated robust-waveform construction and the generator-based compensation (GBC)
+of Zhang *et al.* [arXiv:2501.02847]; the Lindblad verifier then stress-tests those
+coherent-optimized pulse sequences under realistic dissipation. Using this pipeline
+we (1) confirm the analytic and numerical engines agree to $\sim$**[TBD, target
+$10^{-9}$]** in Bell-state infidelity in the closed-system limit, (2) reproduce the
+coherent robustness of the symmetric-robust and GBC schemes, and (3) map the
+**coherent–incoherent trade-off**: we locate an optimal robustness depth / gate
+time beyond which incoherent accumulation overtakes coherent suppression, as a
+function of the asymmetric detuning $\Delta\omega$, the heating rate $\dot{\bar n}$,
+and the dephasing rate $\gamma_\phi$. We report **[TBD]** the boundary in the
+$(\Delta\omega,\dot{\bar n})$ plane where GBC improves rather than degrades net
+fidelity for a two- and four-ion $^{40}\mathrm{Ca}^+$ chain.
+
+---
+
+## I. Introduction
+
+Trapped ions are among the leading platforms for quantum computation, with two-
+qubit MS-gate fidelities above 99.9% demonstrated [Ballance16, Gaebler16, Clark21].
+The remaining infidelity is a mixture of **coherent** control error and
+**incoherent** environmental noise. Coherent errors split naturally, following the
+red/blue-tone geometry of the bichromatic MS drive, into:
+
+- **Symmetric error** — both sidebands shift the *same* way, i.e. a motional
+  detuning drift $\delta_m\!\to\!\delta_m-\Delta\omega_s$ (typically from trap-
+  frequency drift), which appears as an unclosed phase-space trajectory;
+- **Asymmetric error** — the red and blue tones shift *oppositely*, equivalent to a
+  drift of the qubit center line $\omega_{eg}$ (from magnetic-field noise or laser
+  miscalibration), which appears as a $\sigma_z$ rotation on **both** qubits
+  ($E=\tfrac12\sum_j\sigma_z^{j}$).
+
+Symmetric error is suppressed by amplitude- or phase-modulated robust waveforms
+[Leung18, Milne20, Roos08, Zhu06]. Asymmetric error is more troublesome: it does
+**not** commute with the entangling generator $G=\sigma_x^{j_1}\sigma_x^{j_2}$, so it
+cannot be undone by a trailing single-qubit $Z$. Zhang *et al.* [Zhang25] recently
+closed this gap with a **generator-based compensation (GBC)** sequence that cancels
+the residual $\sigma_z$ term to first order, at the cost of a doubled-gate-time
+segment. For $^{40}\mathrm{Ca}^+$, asymmetric error is reported as the *second*
+largest error source [Pogorelov21, Postler22].
+
+All of the above is derived and validated in the **closed-system (unitary)** limit.
+Yet every robustness technique here **lengthens the gate**: multi-mode amplitude
+modulation to close all $\alpha_m$; the symmetric-pulse constraint; and GBC's
+doubled-time segment. Longer gates accumulate more incoherent error — motional
+heating $\dot{\bar n}$, qubit dephasing $\gamma_\phi$, and off-resonant scattering
+$\Gamma$ *during* the gate. The natural question, which this work addresses, is:
+
+> **How much of the coherent robustness survives realistic dissipation, and where
+> is the net-fidelity optimum in the (robustness-depth, gate-time, noise-rate)
+> space?**
+
+Answering it requires a single framework that both *designs* the robust coherent
+pulse **and** *verifies* it under the full open-system master equation with the
+same physical parameters. We build exactly that, and use it to map the trade-off.
+
+**Relation to prior work.** The analytic core we use — second-order Magnus in the
+$\sigma_x$ basis, phase-space closure $\alpha_m(\tau)=0$, geometric phase
+$\Theta(\tau)$, and the amplitude-modulation waveform solver — is *established*
+[Sorensen00, Leung18, Zhang25], and we claim no novelty for it; our implementation
+independently reproduces it and is cross-checked against it (Sec. IV). Our novel
+contributions are: **(N1)** a unified, cross-validated *design→open-system-verify*
+pipeline that carries a robust coherent pulse sequence into a full Lindblad
+integrator; **(N2)** the quantitative **coherent–incoherent trade-off map** for
+symmetric-robust and GBC gates; and **(N3)** the extension of the analysis to
+$N$-ion chains ($N\le 4$) with mode spectra generated from the Coulomb equilibrium,
+rather than a single or two-mode model.
+
+---
+
+## II. Theoretical framework
+
+### A. Ideal multi-mode MS Hamiltonian
+
+For $N$ ions in a linear trap, a bichromatic drive symmetric about $\omega_{eg}$
+with time-dependent Rabi envelope $\Omega(t)$ gives, in the interaction picture,
+Lamb–Dicke and rotating-wave approximations [Zhang25, Eq. (4)],
+
+$$
+\hat H_{\rm int}(t)=\tfrac12\,\Omega(t)\sum_{j,m}\eta_m b^{m}_{j}\,\sigma_x^{j}
+\Big(a_m^\dagger e^{i\delta_m t}+a_m e^{-i\delta_m t}\Big),
+$$
+
+with $\eta_m=k_z\sqrt{\hbar/2M\omega_m}$ the Lamb–Dicke parameter of mode $m$,
+$b^m_j$ the eigenvector amplitude of mode $m$ on ion $j$, and
+$\delta_m=\omega_m-\omega_d$ the detuning of the drive from mode $m$.
+
+Because every coupling operator is a sum of $\sigma_x$, they mutually commute, and
+the two-time commutator $[\hat H(t_1),\hat H(t_2)]$ is a c-number. The second-order
+Magnus expansion therefore *terminates* for the ideal gate, giving
+
+$$
+\hat U(\tau)=\exp\!\Big[i\,\Theta(\tau)\,\sigma_x^{j_1}\sigma_x^{j_2}
+-\tfrac{i}{2}\sum_{j,m}\big(\alpha_m a_m^\dagger+\alpha_m^*a_m\big)\eta_m b^m_j\sigma_x^j\Big],
+$$
+
+$$
+\alpha_m(\tau)=\int_0^\tau\!\Omega(t)\,e^{i\delta_m t}\,dt,\qquad
+\Theta(\tau)=\tfrac12\sum_m\eta_m^2 b^m_{j_1}b^m_{j_2}\!\int_0^\tau\!\!dt_1\!\!\int_0^{t_1}\!\!dt_2\,
+\Omega(t_1)\Omega(t_2)\sin[\delta_m(t_1-t_2)].
+$$
+
+The gate is *clean* when every trajectory closes, $\alpha_m(\tau)=0\ \forall m$, and
+$\Theta(\tau)=\pi/4$ (maximally entangling). These are precisely the quantities our
+analytic engine computes (Sec. III A): $\Theta$ is `shapedThetaEnt`/`formP`,
+$\alpha_m$ is `envelope`, and closure is the residual `shapedResiduals`.
+
+### B. Coherent error terms
+
+A common-mode asymmetric error $\Delta\omega=\Delta\omega_{\rm level}-\Delta\omega_{\rm laser}$
+adds $\tfrac{\Delta\omega}{2}\sum_j\sigma_z^j$ to $\hat H_{\rm int}$. Truncating the
+Magnus series at second order [Zhang25, Eq. (8)]:
+
+$$
+\hat U(\tau)=\exp\!\Big[i\Theta\,\sigma_x^{j_1}\sigma_x^{j_2}
+-\tfrac{i}{2}\tau\Delta\omega\sum_j\sigma_z^j
+-\tfrac{i}{2}\sum_{j,m}(\alpha_m a_m^\dagger+\text{h.c.})\eta_m b^m_j\sigma_x^j
+-\tfrac{i}{4}\Delta\omega\sum_{m,j}(\beta_m a_m^\dagger+\text{h.c.})\eta_m b^m_j\sigma_y^j\Big],
+$$
+
+with $\beta_m(\tau)=\int_0^\tau\!\alpha_m(t)\,dt+i\,\partial_{\delta_m}\alpha_m(\tau)$.
+The four terms are: the entangler; the displacement-**independent** asymmetric
+$\sigma_z$ error; the displacement-**dependent** symmetric error ($\alpha_m$); and a
+displacement-dependent asymmetric cross term ($\beta_m$).
+
+### C. Robust waveform design
+
+Imposing a **symmetric** pulse and **zero time-averaged displacement**,
+
+$$
+\Omega(t)=\Omega(\tau-t),\qquad \int_0^\tau\!\alpha_m(t)\,dt=0\ \ \forall m,
+$$
+
+simultaneously guarantees $\alpha_m(\tau)=0$ (closure), $\partial_{\delta_m}\alpha_m(\tau)=0$
+(first-order insensitivity to symmetric $\delta_m$ drift), and $\beta_m(\tau)=0$
+[Leung18, Zhang25 App. C]. The operator collapses to a **purely two-qubit unitary
+with no residual motion**:
+
+$$
+\hat U(\tau)=\exp\!\Big[i\Theta\,\sigma_x^{j_1}\sigma_x^{j_2}-\tfrac{i}{2}\Delta\omega\tau\sum_j\sigma_z^j\Big].
+\tag{$\star$}
+$$
+
+**Piecewise-constant solver.** Writing $\Omega(t)=\sum_i x_i f_i(t)$ over $N_{\rm seg}$
+equal segments, closure and angle become
+$A\mathbf{x}=\mathbf 0$ and $\mathbf{x}^{\mathsf T}M\mathbf{x}=\Xi$, with
+
+$$
+A_{ml}=\!\int_0^\tau\!\!dt_1\!\!\int_0^{t_1}\!\!f_l(t_2)e^{i\delta_m t_2}dt_2,\quad
+M_{ij}=-\tfrac14\!\sum_m\eta_{m,j_1}\eta_{m,j_2}\!\!\int_0^\tau\!\!dt_1\!\!\int_0^{t_1}\!\!dt_2\,
+\big(f_i(t_1)f_j(t_2)+f_i(t_2)f_j(t_1)\big)\sin[\delta_m(t_2\!-\!t_1)].
+$$
+
+The minimum-intensity robust waveform is $\mathbf{x}=\sqrt{\Xi/\lambda}\,\ker(A)\mathbf{v}_\lambda$,
+where $\mathbf{v}_\lambda$ is the eigenvector of $\ker(A)^{\mathsf T}M\ker(A)$ with the
+largest $|\lambda|$ whose sign matches $\Xi$ [Zhang25, Eq. (C11)]. *This is the
+correct generalization of our current `solveShape` (Sec. V, upgrade U1) and resolves
+its sign ambiguity.*
+
+### D. Generator-based compensation (GBC)
+
+The residual $\epsilon\equiv\Delta\omega\tau$ term in ($\star$) does **not** commute
+with $G=\sigma_x\sigma_x$. GBC constructs the first-order-exact compensation from the
+tangent-space generator
+
+$$
+\hat K_{\mathcal G}=\frac{\hat G^{-1}}{2i\Theta}\big(e^{2i\Theta\hat G}-\mathbb I\big)\hat E
+=\frac{2}{\pi}\big(\mathbb I+i\sigma_x^{j_1}\sigma_x^{j_2}\big)\big(\sigma_z^{j_1}+\sigma_z^{j_2}\big),\quad \{\hat G,\hat E\}=0,
+$$
+
+realized by the three-gate sequence (with $\hat\Pi=\sigma_x^{j_1}\!\otimes\sigma_x^{j_2}$)
+
+$$
+\hat U^{(\rm gbc)}_\epsilon=\hat U_\epsilon\,\hat U^\dagger_{2\epsilon}\,\hat U_\epsilon
+=\hat U_{\rm ideal}+o(\epsilon^2),\qquad
+\hat U^\dagger_{2\epsilon}=\hat\Pi\,\hat U_{2\epsilon}(-\Theta)\,\hat\Pi ,
+$$
+
+where $\hat U_{2\epsilon}$ uses a doubled gate time $2\tau$. **Crucially for our
+implementation:** because ($\star$) is motion-free, GBC and its residual infidelity
+are computable in the **$4\times4$ two-qubit space** — no Fock-space integration is
+needed for the coherent-robustness analysis (Sec. V, module U2).
+
+### E. Open-system model (this work)
+
+We evolve the full density matrix $\rho$ on $\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$
+under the Lindblad master equation
+
+$$
+\dot\rho=-i[\hat H(t),\rho]+\sum_c\Big(L_c\rho L_c^\dagger-\tfrac12\{L_c^\dagger L_c,\rho\}\Big),
+$$
+
+with $\hat H(t)$ the *shaped* MS Hamiltonian of Sec. II B (including the $\Delta\omega\,\sigma_z$
+term), and collapse operators
+
+$$
+L_{\rm heat}^{-}=\sqrt{\kappa(\bar n_{\rm th}+1)}\,a_m,\quad
+L_{\rm heat}^{+}=\sqrt{\kappa\,\bar n_{\rm th}}\,a_m^\dagger,\quad
+L_\phi^{j}=\sqrt{\gamma_\phi/2}\,\sigma_z^{j},\quad
+L_{\rm se}^{j}=\sqrt{\Gamma}\,\sigma_-^{j}.
+$$
+
+The heating rate is $\dot{\bar n}=\kappa\bar n_{\rm th}$. This is the layer that the
+coherent robust-control literature omits and that our verifier supplies.
+
+---
+
+## III. Methods: the toolchain
+
+All modules are framework-free JavaScript (node-importable, browser-runnable),
+validated by `node:assert` suites; the flat interleaved-complex RK4 core is shared
+across engines.
+
+**(A) Analytic designer — `ion-msn` / `ion-msn-shape`.** Evaluates $\Theta$, $\alpha_m$,
+per-mode closure residuals, the Bell-state fidelity via the σ_x-basis phase +
+motional-overlap decoherence factor $C_{ij}=\exp[-\sum_m(2\bar n_m+1)|\Delta\alpha_m|^2/2]$,
+and — with the shaped extension — the piecewise-constant robust-waveform solver.
+Cost $O(M)$ per gate; no Fock tensor.
+
+**(B) Open-system verifier — `ion-ms`.** Integrates the $4\!\cdot\!\prod_m N_{\rm Fock}$
+density matrix under the full master equation (Sec. II E), returning the Bell-state
+fidelity, populations, and phase-space trajectories. Cost $O(\dim^2)$ per RK4 stage.
+
+**(C) Chain-mode solver — `ion-modes`.** Coulomb equilibrium by Newton iteration;
+axial normal modes from the James Hessian ($\omega_{\rm COM}=\omega_z$, stretch
+$=\sqrt3\,\omega_z$, …); eigenvectors $b^m_j$ feed the per-ion Lamb–Dicke couplings
+$\eta_m b^m_j$ used by (A) and (B).
+
+**(D) Cross-validation.** In the closed-system limit the analytic (A) and numerical
+(B) Bell-state fidelities agree to $|\Delta F|\approx$ **[TBD, current suites: $3\times10^{-9}$]**
+on the closure, phase-error, and non-closure paths, establishing a common ground
+truth before dissipation is switched on.
+
+---
+
+## IV. Cross-validation and reproduction of prior results (planned)
+
+Before the new trade-off study we establish two baselines:
+
+- **B1 — engine agreement (closed system).** Reproduce $|\Delta F|<10^{-8}$ between
+  (A) and (B) for constant and shaped drives on a two-ion chain. *Result:* **[TBD]**.
+- **B2 — coherent robustness (reproduce Zhang25).** For a two-ion $^{40}\mathrm{Ca}^+$
+  chain (radial $\omega/2\pi=1.59$ MHz, $d=8\,\mu$m, transverse modes), reproduce the
+  infidelity-vs-$\Delta\omega$ curves for non-robust, symmetric-robust, and GBC
+  waveforms (their Fig. 5), and the quadratic residual scaling $\Delta F\propto\Delta\omega^2$.
+  *Result:* **[TBD]** — target slope $k=2.0$.
+
+---
+
+## V. Toolchain upgrades required (implementation plan)
+
+| # | Upgrade | Module | Purpose | Cost |
+|---|---------|--------|---------|------|
+| **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small |
+| **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-msn` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small |
+| **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate |
+| **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | new script | Generate the trade-off maps | small |
+
+These are the build steps to execute **after** this draft is approved; the
+experiments in Sec. VI depend on U1–U4.
+
+---
+
+## VI. Numerical experiments (planned; results [TBD])
+
+Fixed platform unless noted: two- and four-ion $^{40}\mathrm{Ca}^+$ chains, transverse
+modes, $\Theta=\pi/4$, gate time $\tau$ scaled per scheme, $N_{\rm Fock}$ chosen so
+truncation occupancy $<10^{-6}$.
+
+- **E1 — Robust-pulse open-system baseline.** For non-robust, symmetric-robust, and
+  GBC waveforms at $\Delta\omega=0$, evaluate open-system Bell infidelity vs heating
+  rate $\dot{\bar n}\in[0,10^3]$ quanta/s and dephasing $\gamma_\phi\in[0,10^3]$ Hz.
+  *Measures the pure incoherent cost of each scheme's gate time.* **[TBD]**
+
+- **E2 — The trade-off curve.** At fixed $\dot{\bar n},\gamma_\phi$, sweep
+  $\Delta\omega\in[-1,1]$ kHz; plot net infidelity for symmetric-robust vs GBC.
+  *Identify the crossover $\Delta\omega^\times$ below which GBC's incoherent penalty
+  outweighs its coherent gain.* **[TBD]**
+
+- **E3 — Trade-off map.** Contour of $\Delta F_{\rm GBC}-\Delta F_{\rm robust}$ over the
+  $(\Delta\omega,\dot{\bar n})$ plane; delineate the region where GBC is net-beneficial.
+  **[TBD]**
+
+- **E4 — Optimal robustness depth.** Using the recursive GBC $U^{(k)}$ (order $o(\epsilon^{2^k})$)
+  vs the $2^k$-fold gate-time growth, locate the depth $k^\*(\dot{\bar n},\Delta\omega)$
+  maximizing net fidelity. *Quantifies the trade-off Zhang25 notes qualitatively.* **[TBD]**
+
+- **E5 — Chain scaling.** Repeat E2/E3 for a four-ion chain (gate on ions 1&3 via a
+  chosen mode), testing whether the crossover shifts with spectator-mode load. **[TBD]**
+
+*Deliverables:* Fig. 1 (schematic + toolchain), Fig. 2 (B1/B2 validation), Fig. 3
+(E1), Fig. 4 (E2), Fig. 5 (E3 map), Fig. 6 (E4), Fig. 7 (E5). Data and pulse files
+released with the code.
+
+---
+
+## VII. Discussion (to be expanded with results)
+
+Anticipated points, to be confirmed by Sec. VI: (i) the closed-system agreement
+between an $O(M)$ analytic engine and a full Lindblad integrator makes the *design*
+step essentially free and the *verification* step trustworthy; (ii) robust waveforms
+and GBC trade coherent-error suppression for gate time, so their net benefit is
+**conditional on the incoherent-noise budget** — a map, not a verdict; (iii) for a
+given trap ($\dot{\bar n},\gamma_\phi,T_2$) there is an optimal robustness depth, and
+over-compensating is counterproductive. The framework is agnostic to the pulse-
+design method and could host phase-modulated or optimal-control waveforms.
+
+**Limitations.** The analytic operator is second-order Magnus (third-order bounds in
+[Zhang25 App. A]); the Lindblad integrator is exact but scales as $O(\dim^2)$,
+limiting the open-system study to $N\!\le\!4$ ions with a few modes; single-qubit
+gates in GBC are taken ideal (or SUPCODE-protected) as in [Zhang25].
+
+---
+
+## VIII. Conclusion
+
+We describe a design→open-system-verify toolchain for robust MS gates and outline a
+program to quantify — for the first time to our knowledge — the coherent–incoherent
+trade-off that governs whether robust-control gains survive realistic dissipation.
+The theory and software are in place; the remaining work is the four toolchain
+upgrades (Sec. V) and the five numerical experiments (Sec. VI), whose results will
+populate the abstract and figures.
+
+---
+
+## Acknowledgements
+
+CiRA QuantumSim (KMITL teaching/research project). Software cross-validated against
+the analytic framework of Zhang *et al.* [Zhang25].
+
+## References (to be completed in REVTeX)
+
+- [Zhang25] W. Zhang, G. Tang, K. Liu, X. Yuan, Y. Shen, Y. Wu, X.-M. Zhang,
+  *Robust Mølmer–Sørensen Gate Against Symmetric and Asymmetric Errors*,
+  arXiv:2501.02847 (2025).
+- [Sorensen00] A. Sørensen, K. Mølmer, *Entanglement and quantum computation with
+  ions in thermal motion*, Phys. Rev. A **62**, 022311 (2000).
+- [Molmer99] K. Mølmer, A. Sørensen, PRL **82**, 1835 (1999).
+- [Leung18] P. H. Leung *et al.*, *Robust 2-qubit gates … frequency-modulated
+  driving force*, PRL **120**, 020501 (2018).
+- [Roos08] C. F. Roos, *Ion-trap quantum gates with amplitude-modulated laser beams*,
+  NJP **10**, 013002 (2008).
+- [Zhu06] S.-L. Zhu, C. Monroe, L.-M. Duan, EPL **73**, 485 (2006).
+- [Milne20] A. R. Milne *et al.*, PRApplied **13**, 024022 (2020).
+- [Ballance16] C. J. Ballance *et al.*, PRL **117**, 060504 (2016).
+- [Gaebler16] J. P. Gaebler *et al.*, PRL **117**, 060505 (2016).
+- [Clark21] C. R. Clark *et al.*, PRL **127**, 130505 (2021).
+- [Pogorelov21] I. Pogorelov *et al.*, PRX Quantum **2**, 020343 (2021).
+- [Postler22] L. Postler *et al.*, Nature **605**, 675 (2022).
+- [MartinezGarcia22] F. Martínez-García *et al.*, PRA **105**, 032437 (2022).
+- [Wineland98] D. J. Wineland *et al.*, J. Res. NIST **103**, 259 (1998).
+- [James98] D. F. V. James, Appl. Phys. B **66**, 181 (1998).
+
+---
+
+### Appendix A — Notation map (paper ↔ code)
+
+| Quantity | Symbol | Module / function |
+|---|---|---|
+| Geometric (entangling) phase | $\Theta(\tau)$ | `shapedThetaEnt`, `formP` |
+| Mode displacement | $\alpha_m(\tau)$ | `envelope` |
+| Closure residual | $|\alpha_m(\tau)|$ | `shapedResiduals` |
+| Thermal decoherence factor | $C_{ij}$ | `bellFidelity`/`shapedBellFidelity` |
+| Robust waveform solve | $A\mathbf x=0,\ \mathbf x^{\mathsf T}M\mathbf x=\Xi$ | `solveShape` (→ upgrade U1) |
+| Asymmetric error + GBC | $\Delta\omega,\ \hat K_{\mathcal G}$ | module U2 (planned) |
+| Mode spectrum $\{\omega_m,b^m_j\}$ | James Hessian | `ion-modes` `IonChain.modes` |
+| Open-system evolution | Lindblad $\dot\rho$ | `ion-ms` `MSGate` (→ upgrade U3) |
