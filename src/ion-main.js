@@ -105,6 +105,7 @@ const state = {
   playing: false, speed: 1, classical: false, module: 'M3',
   stepBudget: 6, dwell: 0.4, sampleAccum: 0,
   scanQueue: null,      // { grid, i, cfg, delta[], pe[] } while scanning δ (M3)
+  scanNbar: null,       // n̄ the displayed M3 spectrum was taken at (staleness check)
   m4scan: null,         // { grid, i, cfg, delta[], nbar[] } while scanning the Doppler floor (M4)
   m4prevSys: null,      // stashed pre-M4 engine (M4 swaps in its own dedicated engine)
   m6gate: null,         // { kind, tTotal, tElapsed, theta } while an M6 gate runs
@@ -173,9 +174,26 @@ function drawDiagram() {
   });
 }
 
+// The M3 spectrum is a snapshot from the LAST scan; if the ion's n̄ has since drifted
+// (e.g. you cooled it) the plot no longer describes the current state. Flag that so the
+// user knows to re-scan instead of trusting a stale curve.
+function updateScanStatus() {
+  const el = document.getElementById('scan-status');
+  if (!el || state.scanQueue || state.scanNbar == null) return;
+  const now = sys.nBar();
+  if (Math.abs(now - state.scanNbar) > 0.15) {
+    el.innerHTML = `⚠ spectrum stale — scanned at n̄=${state.scanNbar.toFixed(2)}, now n̄=${now.toFixed(2)}. Press <b>Scan</b>.`;
+    el.style.color = 'var(--accent2)';
+  } else {
+    el.textContent = `spectrum ✓ · n̄=${state.scanNbar.toFixed(2)}`;
+    el.style.color = '';
+  }
+}
+
 function refresh(full = false) {
   drawDiagram();
   peTrace.draw(); fluorTrace.draw(); nbarTrace.draw(); excSpectrum.draw();
+  if (state.module === 'M3') updateScanStatus();
   if (state.module === 'M4') m4Scan.draw();   // recolors the floor map on theme toggle
   drawObservables(); drawTrunc();
   const now = performance.now();
@@ -1104,6 +1122,7 @@ document.getElementById('btn-scan').addEventListener('click', () => {
     motional: sys.motionalPopulations(),
     tProbe: Math.min(60, Math.PI / params.rabi),   // carrier π-pulse (sidebands stay weak/resolved)
   };
+  state.scanNbar = cfg.motional.reduce((s, p, n) => s + n * p, 0);   // n̄ this scan reflects
   state.scanQueue = { grid, i: 0, cfg, delta: [], pe: [] };
 });
 
@@ -1331,7 +1350,7 @@ function frame() {
     }
     excSpectrum.set({ delta: q.delta, pe: q.pe, omegaZ: 1 });
     document.getElementById('scan-status').textContent = `scanning δ… ${q.i}/${q.grid.length}`;
-    if (q.i >= q.grid.length) { document.getElementById('scan-status').textContent = `spectrum: ${q.grid.length} points ✓`; state.scanQueue = null; }
+    if (q.i >= q.grid.length) { state.scanQueue = null; updateScanStatus(); }
     refresh();
     requestAnimationFrame(frame);
     return;
