@@ -186,6 +186,9 @@ export class MSGate {
     this.deltaOmega = opts.deltaOmega || 0;
     this.carrierOn = !!opts.carrier;
     this.omegaZ = opts.omegaZ !== undefined ? opts.omegaZ : 1;
+    // thetaSign flips the entangling-phase sign Θ→−Θ via the drive quadrature (HS→−HS)
+    // WITHOUT changing the gate time or closure (unlike δ→−δ). Used for GBC's −Θ leg.
+    this.thetaSign = opts.thetaSign !== undefined ? opts.thetaSign : 1;
 
     this._Sx4 = buildSx4();
     this._build();
@@ -407,8 +410,8 @@ export class MSGate {
   _assembleH(tAbs, out) {
     const HC = this._HC, HS = this._HS, Hz = this._Hz, MLEN = this.mlen;
     const c = Math.cos(this.delta * tAbs), s = Math.sin(this.delta * tAbs);
-    const sc = this._pulse ? this._omegaAt(tAbs) / this.Omega : 1;
-    for (let m = 0; m < MLEN; m++) out[m] = sc * (c * HC[m] + s * HS[m]) + Hz[m];
+    const sc = this._pulse ? this._omegaAt(tAbs) / this.Omega : 1, ts = this.thetaSign;
+    for (let m = 0; m < MLEN; m++) out[m] = sc * (c * HC[m] + ts * s * HS[m]) + Hz[m];
     if (this.carrierOn) {
       // Leading beyond-RWA off-resonant carrier: in the sideband interaction picture it
       // rotates at ω_d = ω_z − δ (the tone's detuning from the qubit), amplitude (Ω/2)·e^{−η²/2}.
@@ -509,6 +512,19 @@ export class MSGate {
 
   // Tr(ρ) — should stay 1 (CPTP invariant, asserted in the U3 tests).
   traceRho() { return this._F.trace(this.rhoM).re; }
+
+  // Apply the ideal global Π = σx¹⊗σx² to ρ (qubit-only; identity on motion). Since
+  // Π|q⟩=|3−q⟩ (both spins flipped) and Π is Hermitian, (ΠρΠ)_{ab}=ρ_{π(a)π(b)}, π(q)=3−q.
+  // Used by the GBC sequence (U4) to flip the error sign around the middle gate.
+  applyPiX() {
+    const N = this.N_FOCK, F = this._F, IDX = F.IDX, r = this.rhoM, out = F.zerosF(), p = (q) => 3 - q;
+    for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++)
+      for (let n = 0; n < N; n++) for (let m = 0; m < N; m++) {
+        const d = IDX(a * N + n, b * N + m), s = IDX(p(a) * N + n, p(b) * N + m);
+        out[d] = r[s]; out[d + 1] = r[s + 1];
+      }
+    this.rhoM = out;
+  }
 
   // =========================================================================
   // Observables.

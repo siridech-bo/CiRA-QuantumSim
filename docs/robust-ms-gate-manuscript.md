@@ -38,15 +38,18 @@ the same physical parameters. The analytic designer reproduces the amplitude-
 modulated robust-waveform construction and the generator-based compensation (GBC)
 of Zhang *et al.* [arXiv:2501.02847]; the Lindblad verifier then stress-tests those
 coherent-optimized pulse sequences under realistic dissipation. Using this pipeline
-we (1) confirm the analytic and numerical engines agree to $\sim$**[TBD, target
-$10^{-9}$]** in Bell-state infidelity in the closed-system limit, (2) reproduce the
-coherent robustness of the symmetric-robust and GBC schemes, and (3) map the
-**coherent–incoherent trade-off**: we locate an optimal robustness depth / gate
-time beyond which incoherent accumulation overtakes coherent suppression, as a
-function of the asymmetric detuning $\Delta\omega$, the heating rate $\dot{\bar n}$,
-and the dephasing rate $\gamma_\phi$. We report **[TBD]** the boundary in the
-$(\Delta\omega,\dot{\bar n})$ plane where GBC improves rather than degrades net
-fidelity for a two- and four-ion $^{40}\mathrm{Ca}^+$ chain.
+we (1) confirm the analytic and numerical engines agree to $\sim\mathbf{3\times10^{-9}}$
+in Bell-state infidelity in the closed-system limit, (2) reproduce the coherent
+robustness of the symmetric-robust ($2.5\times10^{3}\times$ suppression of the
+symmetric-drift residual) and GBC ($\varepsilon^2\!\to\!\varepsilon^4$) schemes, and
+(3) map the **coherent–incoherent trade-off**: GBC's $\varepsilon^4$ coherent advantage
+is bought with a $\approx4\times$ gate-time (hence $\approx4\times$ incoherent) cost, so
+there is a crossover asymmetric detuning $\Delta\omega^\times$ below which the single
+robust gate wins and above which GBC wins. $\Delta\omega^\times$ **grows monotonically
+with the incoherent floor** ($\Delta\omega^\times\!\approx\!0.015\to0.085$ as the heating
+infidelity rises $1.4\times10^{-3}\to2.7\times10^{-2}$, scaling as
+$\Delta\omega^\times\!\propto\!\sqrt{I_{\rm incoh}}$), giving experimentalists a direct
+rule for when pulse-shaping complexity pays off under real trap noise.
 
 ---
 
@@ -290,7 +293,7 @@ Before the new trade-off study we establish two baselines:
 | **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small | **✓ done** (`solveShapeRobust`) |
 | **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-gbc` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small | **✓ done** (`ion-gbc.js`) |
 | **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate | **✓ done** (`MSGate` pulse/Δω/carrier) |
-| **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | new script | Generate the trade-off maps | small | planned |
+| **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | `ion-pipeline` | Generate the trade-off maps | small | **✓ done** (`ion-pipeline.js`; E1–E3 run) |
 
 *U1 validation (preliminary):* on a two-ion axial chain, the robust waveform reduces
 the closure residual under a symmetric detuning drift $\Delta\delta$ by **[2.5×10³]×**
@@ -347,36 +350,64 @@ itself reported as a systematic-error bar.
 
 ---
 
-## VI. Numerical experiments (planned; results [TBD])
+## VI. Numerical experiments
 
-Fixed platform unless noted: two- and four-ion $^{40}\mathrm{Ca}^+$ chains, transverse
-modes, $\Theta=\pi/4$, gate time $\tau$ scaled per scheme, $N_{\rm Fock}$ chosen so
-truncation occupancy $<10^{-6}$.
+Platform: single-mode MS gate (2 qubits ⊗ 1 shared mode, the canonical case), $\eta=0.1$,
+$\delta=\omega_z$, $K=1$ ($\tau=2\pi/\omega_z$, GBC total $\approx4\tau$), $N_{\rm Fock}=18$
+(truncation $<10^{-6}$). Rates are in natural units ($\omega_z\equiv1$).
 
-- **E1 — Robust-pulse open-system baseline.** For non-robust, symmetric-robust, and
-  GBC waveforms at $\Delta\omega=0$, evaluate open-system Bell infidelity vs heating
-  rate $\dot{\bar n}\in[0,10^3]$ quanta/s and dephasing $\gamma_\phi\in[0,10^3]$ Hz.
-  *Measures the pure incoherent cost of each scheme's gate time.* **[TBD]**
+**Method note (validated-component decomposition).** GBC reaches its $\varepsilon^4$
+cancellation only when $\beta_m(\tau)=0$, which the robust waveform guarantees; a *constant*
+single-mode drive has $\int_0^\tau\!\alpha_m\,dt\neq0\Rightarrow\beta_m\neq0$, so a
+constant-leg GBC sequence cancels only to $\varepsilon^2$ (we verified this — it is a
+finding: *one cannot GBC a constant-drive gate*). We therefore take GBC's **coherent**
+infidelity from the validated U2 analytic gate ($\propto\varepsilon^4$) and its **incoherent**
+cost from the *numerically integrated* $4\tau$ sequence at $\Delta\omega=0$ (where the
+coherent cancellation is exact regardless of $\beta$), combining them additively to leading
+order. The single gate is fully numerical in one run. A fully-coupled shaped-leg numerical
+GBC (calibrated robust pulses in the integrator) is the next refinement (Sec. VII).
 
-- **E2 — The trade-off curve.** At fixed $\dot{\bar n},\gamma_\phi$, sweep
-  $\Delta\omega\in[-1,1]$ kHz; plot net infidelity for symmetric-robust vs GBC.
-  *Identify the crossover $\Delta\omega^\times$ below which GBC's incoherent penalty
-  outweighs its coherent gain.* **[TBD]**
+- **E1 — Incoherent baseline ($\Delta\omega=0$).** GBC's incoherent infidelity is a clean
+  $\mathbf{\approx4\times}$ the single gate across heating rates (its $4\tau$ vs $\tau$):
+  $\kappa=0$: $3\!\times\!10^{-9}/7\!\times\!10^{-9}$; $\kappa=2\!\times\!10^{-3}$:
+  $9.3\!\times\!10^{-3}/3.6\!\times\!10^{-2}$ ($3.9\times$); $\kappa=2\!\times\!10^{-2}$:
+  $8.2\!\times\!10^{-2}/2.5\!\times\!10^{-1}$ ($3.1\times$). The $4\times$ gate-time penalty
+  is real and dominant.
 
-- **E3 — Trade-off map.** Contour of $\Delta F_{\rm GBC}-\Delta F_{\rm robust}$ over the
-  $(\Delta\omega,\dot{\bar n})$ plane; delineate the region where GBC is net-beneficial.
-  **[TBD]**
+- **E2 — Trade-off curve.** At fixed noise, the single-gate infidelity rises $\propto\Delta\omega^2$
+  while GBC sits at its (much larger) incoherent floor plus a negligible $\varepsilon^4$ term;
+  they cross at $\Delta\omega^\times$. Example ($\kappa=3\!\times\!10^{-3}$, $\bar n_{\rm th}=1$,
+  $\gamma_\phi=2\!\times\!10^{-3}$): single $2.2\!\times\!10^{-2}\to6.4\!\times\!10^{-2}$ over
+  $\Delta\omega\in[0,0.06]$; GBC $\approx8.2\!\times\!10^{-2}$ (flat); $\Delta\omega^\times\approx0.07$.
 
-- **E4 — Optimal robustness depth.** Using the recursive GBC $U^{(k)}$ (order $o(\epsilon^{2^k})$)
-  vs the $2^k$-fold gate-time growth, locate the depth $k^\*(\dot{\bar n},\Delta\omega)$
-  maximizing net fidelity. *Quantifies the trade-off Zhang25 notes qualitatively.* **[TBD]**
+- **E3 — Trade-off map (the headline).** The crossover **grows monotonically with the
+  incoherent floor** — below $\Delta\omega^\times$ use the single robust gate, above it use GBC:
 
-- **E5 — Chain scaling.** Repeat E2/E3 for a four-ion chain (gate on ions 1&3 via a
-  chosen mode), testing whether the crossover shifts with spectator-mode load. **[TBD]**
+  | heating $\kappa$ | single incoh. | GBC incoh. | $\Delta\omega^\times$ |
+  |---|---|---|---|
+  | $3\times10^{-4}$ | $1.4\times10^{-3}$ | $5.6\times10^{-3}$ | **0.015** |
+  | $7\times10^{-4}$ | $3.3\times10^{-3}$ | $1.3\times10^{-2}$ | **0.025** |
+  | $1.5\times10^{-3}$ | $7.0\times10^{-3}$ | $2.7\times10^{-2}$ | **0.045** |
+  | $3\times10^{-3}$ | $1.4\times10^{-2}$ | $5.3\times10^{-2}$ | **0.055** |
+  | $6\times10^{-3}$ | $2.7\times10^{-2}$ | $9.9\times10^{-2}$ | **0.085** |
 
-*Deliverables:* Fig. 1 (schematic + toolchain), Fig. 2 (B1/B2 validation), Fig. 3
-(E1), Fig. 4 (E2), Fig. 5 (E3 map), Fig. 6 (E4), Fig. 7 (E5). Data and pulse files
-released with the code.
+  The GBC/single incoherent ratio is $\approx4$ throughout (confirming the $4\tau$ cost), and
+  $\Delta\omega^\times$ scales roughly as $\sqrt{I_{\rm incoh}}$ — expected, since the crossover
+  is set by $\varepsilon^2(\Delta\omega^\times)\!\sim\!3\,I_{\rm incoh}$ (single's coherent
+  error $=$ GBC's extra $3\tau$ incoherent cost) with $\varepsilon=\Delta\omega\,\tau$.
+
+- **E4 — Optimal robustness depth** *(planned).* Recursive GBC $U^{(k)}$ ($o(\varepsilon^{2^k})$
+  coherent) vs $2^k$-fold gate-time growth ⇒ optimal $k^\*(\Delta\omega,I_{\rm incoh})$; the
+  E3 result already implies $k^\*\!=\!0$ (no GBC) below $\Delta\omega^\times$ and $k^\*\!=\!1$
+  above, with higher $k$ paying off only for still-larger $\Delta\omega$ at low noise. **[TBD]**
+
+- **E5 — Chain scaling** *(deferred).* The open-system integrator is single-mode; a multi-mode
+  ($N\le4$) Lindblad verifier is required and is out of the current scope. The *coherent*
+  multi-mode design/verify (U1) already handles $N\le4$. **[deferred]**
+
+*Deliverables:* Fig. 1 (schematic + toolchain), Fig. 2 (B1/B2 validation), Fig. 3 (E1),
+Fig. 4 (E2), Fig. 5 (E3 crossover map + $\sqrt{I}$ scaling). Data and pulse files released
+with the code (`src/ion-pipeline.js`).
 
 ---
 
