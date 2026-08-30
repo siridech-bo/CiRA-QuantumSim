@@ -55,11 +55,11 @@
         <div class="side-label" data-info="modules-overview">Module</div>
         <!-- Tabs in EXPERIMENTAL order (Prepare → Cool → Characterize → Compute → Read). -->
         <div class="module-tabs" id="module-tabs">
-          <button class="mod-btn" data-module="M1">M1</button>
+          <button class="mod-btn primary" data-module="M1">M1</button>
           <button class="mod-btn" data-module="M2">M2</button>
           <button class="mod-btn" data-module="M4">M4</button>
           <button class="mod-btn" data-module="M5">M5</button>
-          <button class="mod-btn primary" data-module="M3">M3</button>
+          <button class="mod-btn" data-module="M3">M3</button>
           <button class="mod-btn" data-module="M9">M9</button>
           <button class="mod-btn" data-module="M10">M10</button>
           <button class="mod-btn" data-module="M6">M6</button>
@@ -342,13 +342,13 @@
       <!-- Center tabs in EXPERIMENTAL order, grouped by phase (see the 🧭 Experiment map). -->
       <nav id="center-tabs" class="center-tabs" aria-label="Module">
         <span class="ctab-phase" data-phase="prep">Prepare</span>
-        <button class="ctab" data-module="M1">M1 · Paul trap</button>
+        <button class="ctab active" data-module="M1">M1 · Paul trap</button>
         <button class="ctab" data-module="M2">M2 · Normal modes</button>
         <span class="ctab-phase" data-phase="cool">Cool</span>
         <button class="ctab" data-module="M4">M4 · Doppler cool</button>
         <button class="ctab" data-module="M5">M5 · Sideband cool</button>
         <span class="ctab-phase" data-phase="char">Characterize</span>
-        <button class="ctab active" data-module="M3">M3 · Sidebands</button>
+        <button class="ctab" data-module="M3">M3 · Sidebands</button>
         <button class="ctab" data-module="M9">M9 · Rabi</button>
         <button class="ctab" data-module="M10">M10 · Ramsey</button>
         <span class="ctab-phase" data-phase="comp">Compute</span>
@@ -357,6 +357,7 @@
         <span class="ctab-phase" data-phase="read">Read</span>
         <button class="ctab" data-module="M8">M8 · Readout</button>
       </nav>
+      <div id="center-module-desc" style="font-size:12.5px; color:var(--muted); line-height:1.55; margin:0 2px 12px; padding:9px 13px; background:var(--panel); border:1px solid var(--border); border-radius:9px;"></div>
       <section id="levels-panel">
         <div class="panel-head">
           <h2 data-info="levels-diagram">Double-ladder level diagram</h2>

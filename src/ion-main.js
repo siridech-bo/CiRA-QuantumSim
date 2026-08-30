@@ -102,7 +102,7 @@ const truncEl = document.getElementById('trunc-warn');
 
 // ---- app state --------------------------------------------------------------
 const state = {
-  playing: false, speed: 1, classical: false, module: 'M3',
+  playing: false, speed: 1, classical: false, module: 'M1',
   stepBudget: 6, dwell: 0.4, sampleAccum: 0,
   scanQueue: null,      // { grid, i, cfg, delta[], pe[] } while scanning δ (M3)
   scanNbar: null,       // n̄ the displayed M3 spectrum was taken at (staleness check)
@@ -825,6 +825,21 @@ function m10FinishScan() {
   state.m10scan = null;
 }
 
+// One-line ROLE per module: the experiment phase + what it does, so closely-related
+// modules read as distinct at a glance (shown in the center under the tabs).
+const MODULE_ROLES = {
+  M1: '<b>PREPARE</b> · the trap itself — why a harmonic oscillator exists at all (classical Mathieu stability). Start here.',
+  M2: '<b>PREPARE</b> · the Coulomb normal modes — the motional "bus" a two-qubit gate (M7) will use.',
+  M4: '<b>COOL</b> · broad-line <b>Doppler cooling</b> — <i>changes</i> n̄ down to the Doppler limit ~Γ/2ω_z (sidebands unresolved).',
+  M5: '<b>COOL</b> · resolved-sideband cooling — drives the <b>red sideband</b> + spontaneous emission to <i>change</i> n̄ toward the motional ground state.',
+  M3: '<b>CHARACTERIZE</b> · <i>measure</i> the motional state — scan δ → excitation spectrum; the red/blue sideband asymmetry reads out n̄. Probes, does <b>not</b> cool (contrast M5).',
+  M9: '<b>CHARACTERIZE</b> · Rabi oscillations — flop the qubit to calibrate the π-pulse (period 2π/Ω).',
+  M10: '<b>CHARACTERIZE</b> · Ramsey interferometry — measure the coherence time T₂*.',
+  M6: '<b>COMPUTE</b> · single-qubit gate — a carrier pulse rotates the qubit (Rx) on the Bloch sphere.',
+  M7: '<b>COMPUTE</b> · two-qubit <b>Mølmer–Sørensen</b> entangling gate (shared motional mode).',
+  M8: '<b>READ</b> · state-selective fluorescence — bright |g⟩ scatters, dark |e⟩ is shelved; a threshold discriminates them.',
+};
+
 const m4Panel = document.getElementById('m4-panel');
 const m6Panel = document.getElementById('m6-panel');
 const m7Panel = document.getElementById('m7-panel');
@@ -847,6 +862,10 @@ const tabs = new ModuleTabs(document.getElementById('module-tabs'), (id) => {
 
   document.getElementById('module-desc').innerHTML = `<b>${m.name}</b> — ${m.desc}`;
   document.getElementById('break-it').innerHTML = m.breakIt;
+  // Role line in the CENTER (where you switch tabs): the experiment PHASE + what the
+  // module does, so siblings read as distinct (e.g. M3 CHARACTERIZE=measure vs M5 COOL=change n̄).
+  const roleEl = document.getElementById('center-module-desc');
+  if (roleEl) roleEl.innerHTML = MODULE_ROLES[id] || `<b>${m.name}</b>`;
   renderCrumb(document.getElementById('pipeline-crumb'), id, (mid) => tabs.select(mid));
   moduleActions.querySelectorAll('[data-for]').forEach((el) =>
     el.style.display = el.dataset.for === id ? '' : 'none');
@@ -1377,7 +1396,7 @@ function frame() {
 // Init
 // =============================================================================
 applyTheme(localStorage.getItem('ion-theme') || 'dark');
-tabs.select('M3');
+tabs.select('M1');   // start at the first experiment step (Prepare · Paul trap)
 syncStateRows();
 updateEta();
 resizeLevels();
