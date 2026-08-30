@@ -587,6 +587,27 @@ export class IonSystem {
   // Seed an arbitrary flat density matrix (dim×dim). Copies.
   setRho(flat) { this.rhoM = Float64Array.from(flat); this.t = 0; }
 
+  // Current motional populations p_n = Σ_s ρ_{(s,n),(s,n)} (internal traced out).
+  // Snapshot of the LIVE motional distribution — cooled, thermal, coherent, whatever.
+  motionalPopulations() {
+    const N = this.N_FOCK, F = this._F, r = this.rhoM, p = new Float64Array(N);
+    for (let n = 0; n < N; n++) for (let s = 0; s < 2; s++) { const idx = s * N + n; p[n] += r[F.IDX(idx, idx)]; }
+    return p;
+  }
+
+  // Seed ρ = Σ_n p_n |internal,n⟩⟨internal,n| from an arbitrary diagonal distribution
+  // (renormalized over the truncated space; extra/short entries clamped). The mixed-
+  // state analogue of setFock/setThermal — used to re-prepare the ion's CURRENT motional
+  // state for a fresh spectroscopy probe (so the M3 scan reflects cooling).
+  setMotionalPopulations(pArr, internal = 'g') {
+    const N = this.N_FOCK, s = internal === 'e' ? 1 : 0, F = this._F, m = F.zerosF();
+    const K = Math.min(N, pArr.length); let norm = 0;
+    for (let n = 0; n < K; n++) norm += Math.max(0, pArr[n]);
+    if (!(norm > 0)) { this.setFock(0, internal); return; }
+    for (let n = 0; n < K; n++) { const idx = s * N + n; m[F.IDX(idx, idx)] = Math.max(0, pArr[n]) / norm; }
+    this.rhoM = m; this.t = 0;
+  }
+
   // -------------------------------------------------------------------------
   // Lindblad RHS: dρ/dt = −i[H,ρ] + Σ_c( L_c ρ L_c† − ½{L_c†L_c, ρ} ).
   // -------------------------------------------------------------------------

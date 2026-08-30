@@ -1098,6 +1098,10 @@ document.getElementById('btn-scan').addEventListener('click', () => {
   const cfg = {
     N: Math.min(params.N, 16), lambdaNm: params.lambdaNm, nuTrapHz: params.nuTrapHz, massU: params.massU,
     rabi: params.rabi, mode: params.mode, prep: params.prep,
+    // Snapshot the ion's CURRENT motional distribution so the spectrum reflects the
+    // live (possibly cooled) state, not the initial prep. (Fix: after cooling to n̄≈0
+    // the scan showed the warm thermal spectrum because it re-seeded params.prep.)
+    motional: sys.motionalPopulations(),
     tProbe: Math.min(60, Math.PI / params.rabi),   // carrier π-pulse (sidebands stay weak/resolved)
   };
   state.scanQueue = { grid, i: 0, cfg, delta: [], pe: [] };

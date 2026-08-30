@@ -109,13 +109,17 @@ export function prepareState(sys, prep) {
 }
 
 // ---- one excitation-spectrum point: fresh engine, probe at δ, return P_e ----
-// cfg: { N, lambdaNm, nuTrapHz, massU, rabi, mode, prep, tProbe }
+// cfg: { N, lambdaNm, nuTrapHz, massU, rabi, mode, prep, tProbe, motional? }
+// Each δ needs the SAME starting motional state (you can't probe 61 δ on one evolving
+// ion). If cfg.motional (a snapshot of the LIVE distribution) is given, re-prepare THAT
+// in |g⟩ — so the spectrum tracks cooling; otherwise fall back to the initial prep.
 export function excitationPoint(cfg, delta) {
   const sys = new IonSystem({
     N_FOCK: cfg.N, lambdaNm: cfg.lambdaNm, nuTrapHz: cfg.nuTrapHz, massU: cfg.massU,
     omegaZ: 1, delta, rabi: cfg.rabi, mode: cfg.mode,
   });
-  prepareState(sys, cfg.prep);
+  if (cfg.motional) sys.setMotionalPopulations(cfg.motional, 'g');
+  else prepareState(sys, cfg.prep);
   sys.step(cfg.tProbe);
   return sys.pExcited();
 }
