@@ -16,6 +16,7 @@
 import assert from 'node:assert';
 import { create, all } from 'mathjs';
 import { MSGate } from '../src/ion-ms.js';
+import { msUnitary } from '../src/ion-gbc.js';
 
 const math = create(all);
 let failures = 0, passes = 0;
@@ -196,6 +197,68 @@ let closeF1 = null, closeR1 = null;
   const ok = maxR > 0.3 && endR < 1e-2 && badR > 0.1 && badR > 10 * endR;
   report('I3 phase-space loop: |++⟩ ⟨X⟩,⟨P⟩ departs origin (r_max) & returns at τ_g; mis-set stays open', ok,
     `r_max=${maxR.toFixed(3)}, r(τ_g)=${endR.toExponential(2)} (closed); mis-set r(τ_g)=${badR.toFixed(3)} (open)`);
+}
+
+// =============================================================================
+// U3 — open-system verification extensions: time-dependent Ω(t), the Δω asymmetric
+// error, CPTP preservation, and the leading beyond-RWA carrier.
+// =============================================================================
+
+// min eigenvalue of the reduced 4×4 qubit ρ (Hermitian) — a PSD / CPTP check.
+function reducedMinEig(sys) {
+  const rq = sys.reducedQubit(), OI = (i, j) => 2 * (i * 4 + j), data = [];
+  for (let i = 0; i < 4; i++) { data[i] = []; for (let j = 0; j < 4; j++) data[i][j] = math.complex(rq[OI(i, j)], rq[OI(i, j) + 1]); }
+  const ev = math.eigs(math.matrix(data)).values.toArray().map((v) => (typeof v === 'object' ? v.re : v));
+  return Math.min(...ev);
+}
+// analytic Bell fidelity of U(π/4,ε)|gg⟩ to (|gg⟩+i|ee⟩)/√2, from the U2 4×4 gate.
+function bellAnalytic(eps) {
+  const U = msUnitary(Math.PI / 4, eps), Ph = [[Math.SQRT1_2, 0], [0, 0], [0, 0], [0, Math.SQRT1_2]];
+  let re = 0, im = 0;
+  for (let i = 0; i < 4; i++) { const pr = U.re[i][0], pi = U.im[i][0]; re += Ph[i][0] * pr + Ph[i][1] * pi; im += Ph[i][0] * pi - Ph[i][1] * pr; }
+  return re * re + im * im;
+}
+
+{
+  // U3a — Δω asymmetric error: the numerical Lindblad gate matches the U2 analytic
+  // 4×4 gate, and the infidelity is quadratic in Δω. Cross-validates U3 ↔ U2.
+  const F = (dw) => { const g = new MSGate({ N_FOCK: 24, eta: 0.1, delta: 1, K: 1, deltaOmega: dw }); g.runGate(); return { Fn: g.bellFidelity(), Tr: g.traceRho() }; };
+  const a = F(0.01), tau = 2 * Math.PI, Fa = bellAnalytic(0.01 * tau);
+  report('U3a Δω: numeric F matches U2 analytic', Math.abs(a.Fn - Fa) < 3e-3 && Math.abs(a.Tr - 1) < 1e-9,
+    `numeric=${a.Fn.toFixed(6)}, analytic=${Fa.toFixed(6)}, |Δ|=${Math.abs(a.Fn - Fa).toExponential(2)}, Tr=${a.Tr.toFixed(9)}`);
+  const i1 = 1 - F(0.01).Fn, i2 = 1 - F(0.02).Fn;
+  report('U3a Δω: infidelity ∝ Δω² (ratio→4)', Math.abs(i2 / i1 - 4) < 0.4, `1−F(0.01)=${i1.toExponential(2)}, ratio=${(i2 / i1).toFixed(2)}`);
+}
+
+{
+  // U3b — time-dependent Ω(t): a constant-amplitude pulse reproduces the constant
+  // drive exactly, and the density matrix stays CPTP (Tr=1, ρ ⪰ 0).
+  const g0 = new MSGate({ N_FOCK: 24, eta: 0.1, delta: 1, K: 1 }); g0.runGate();
+  const gp = new MSGate({ N_FOCK: 24, eta: 0.1, delta: 1, K: 1, pulse: { tau: 2 * Math.PI, amp: new Array(8).fill(g0.Omega) } }); gp.runGate();
+  report('U3b pulse(const amp) ≡ constant drive; CPTP', Math.abs(gp.bellFidelity() - g0.bellFidelity()) < 1e-6
+    && Math.abs(gp.traceRho() - 1) < 1e-9 && reducedMinEig(gp) > -1e-8,
+    `F=${gp.bellFidelity().toFixed(8)} (=${g0.bellFidelity().toFixed(8)}), |ΔF|=${Math.abs(gp.bellFidelity() - g0.bellFidelity()).toExponential(2)}, Tr=${gp.traceRho().toFixed(9)}, minEig=${reducedMinEig(gp).toExponential(2)}`);
+}
+
+{
+  // U3c — CPTP under the full open system: heating + dephasing + Δω together.
+  const g = new MSGate({ N_FOCK: 24, eta: 0.1, delta: 1, K: 1, deltaOmega: 0.02, heatOn: true, kappa: 0.01, nBath: 0.5, dephaseOn: true, gammaPhi: 0.02 });
+  g.runGate();
+  report('U3c CPTP under heating+dephasing+Δω (Tr=1, ρ⪰0)', Math.abs(g.traceRho() - 1) < 1e-8 && reducedMinEig(g) > -1e-6,
+    `Tr=${g.traceRho().toFixed(9)}, minEig=${reducedMinEig(g).toExponential(2)}, F=${g.bellFidelity().toFixed(4)}`);
+}
+
+{
+  // U3d — beyond-RWA carrier: negligible at Ω≪ω_z, growing monotonically with Ω/ω_z.
+  const eta = 0.1, delta = 0.2, K = 1, clO = new MSGate({ N_FOCK: 28, eta, delta, K }).Omega;
+  const gap = (c) => {
+    const r = new MSGate({ N_FOCK: 28, eta, delta, K, matchClosure: false, Omega: c * clO }); r.runGate();
+    const w = new MSGate({ N_FOCK: 28, eta, delta, K, matchClosure: false, Omega: c * clO, carrier: true }); w.runGate();
+    return { g: Math.abs(r.bellFidelity() - w.bellFidelity()), Tr: w.traceRho() };
+  };
+  const lo = gap(0.5), hi = gap(4);
+  report('U3d carrier: negligible at Ω≪ω_z, grows with Ω/ω_z', lo.g < 1e-6 && hi.g > 100 * lo.g && Math.abs(hi.Tr - 1) < 1e-8,
+    `gap(Ω/ωz=0.5)=${lo.g.toExponential(2)} → gap(4)=${hi.g.toExponential(2)} (${(hi.g / lo.g).toExponential(1)}×), Tr=${hi.Tr.toFixed(8)}`);
 }
 
 // =============================================================================

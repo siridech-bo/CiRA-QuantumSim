@@ -289,7 +289,7 @@ Before the new trade-off study we establish two baselines:
 |---|---------|--------|---------|------|--------|
 | **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small | **✓ done** (`solveShapeRobust`) |
 | **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-gbc` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small | **✓ done** (`ion-gbc.js`) |
-| **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate | planned |
+| **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate | **✓ done** (`MSGate` pulse/Δω/carrier) |
 | **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | new script | Generate the trade-off maps | small | planned |
 
 *U1 validation (preliminary):* on a two-ion axial chain, the robust waveform reduces
@@ -308,6 +308,20 @@ lowers the infidelity by $\sim\!1.5\times10^{3}$; composed gate unitary to $10^{
 These are the *closed-system* baselines; the trade-off study (Sec. VI) asks how much of
 this $\varepsilon^4$ advantage survives once the doubled GBC gate time accrues
 incoherent error.
+
+*U3 validation (preliminary):* the Lindblad integrator now accepts a piecewise $\Omega(t)$,
+the common-mode $\Delta\omega\,\sigma_z$ error, and a leading beyond-RWA carrier, all
+CPTP-preserving ($\mathrm{Tr}\,\rho=1$ and $\rho\succeq0$ asserted throughout, even with
+heating + dephasing + $\Delta\omega$ on). Cross-checks: (i) a constant-amplitude pulse
+reproduces the constant drive to $|\Delta F|\!=\!3\times10^{-9}$; (ii) the numerical
+$\Delta\omega$-error fidelity matches the **U2 analytic 4×4 gate** to $\sim\!10^{-3}$ and
+scales $\propto\Delta\omega^2$ (ratio $3.98$) — an independent numeric↔analytic check of
+the asymmetric-error term; (iii) the carrier gap is $\sim\!10^{-10}$ at $\Omega\!\ll\!\omega_z$
+and grows monotonically ($\sim\!10^{-5}$ by $\Omega/\omega_z=4$). *Scope note:* the carrier
+is the **leading-order** off-resonant term (rotating at $\omega_z-\delta$, amplitude
+$\tfrac{\Omega}{2}e^{-\eta^2/2}$); a full non-RWA / beyond-Lamb-Dicke treatment (two-tone
+exact $D(i\eta)$, cf. the single-ion path) remains the rigorous target and is reported as a
+systematic bar rather than a validated model.
 
 These are the build steps to execute **after** this draft is approved; the
 experiments in Sec. VI depend on U1–U4.

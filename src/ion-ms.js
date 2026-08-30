@@ -175,6 +175,18 @@ export class MSGate {
     this.heatOn   = !!opts.heatOn;
     this.dephaseOn = !!opts.dephaseOn;
 
+    // ---- U3: open-system verification of shaped / imperfect gates -------------
+    // pulse: { tau, amp:[Ω₀,Ω₁,…] } piecewise-constant physical Rabi Ω(t) (overrides
+    //   the constant drive & gate time — e.g. a robust waveform from solveShapeRobust,
+    //   with amp already scaled to physical Ω); the amplitudes multiply this.Omega.
+    // deltaOmega: common-mode asymmetric (center-line) error Δω → (Δω/2)(σz¹+σz²).
+    // carrier: include the leading beyond-RWA off-resonant carrier (≈ω_z) — matters
+    //   only at high peak Ω/ω_z; reports the RWA gap. omegaZ sets that scale (natural 1).
+    this._pulse = opts.pulse || null;
+    this.deltaOmega = opts.deltaOmega || 0;
+    this.carrierOn = !!opts.carrier;
+    this.omegaZ = opts.omegaZ !== undefined ? opts.omegaZ : 1;
+
     this._Sx4 = buildSx4();
     this._build();
     this.reset();
@@ -182,7 +194,7 @@ export class MSGate {
 
   // ---- loop-closure helpers (docs §8) --------------------------------------
   closureCoupling() { return this.delta / (2 * Math.sqrt(this.K)); }   // target ηΩ
-  gateTime()        { return 2 * Math.PI * this.K / this.delta; }       // τ_g = 2πK/δ
+  gateTime()        { return this._pulse ? this._pulse.tau : 2 * Math.PI * this.K / this.delta; }   // τ_g = 2πK/δ (or pulse duration)
   etaOmega()        { return this.eta * this.Omega; }                   // current ηΩ
   // Fractional deviation of the current drive from exact loop closure.
   closureMismatch() { return this.etaOmega() / this.closureCoupling() - 1; }
@@ -240,6 +252,22 @@ export class MSGate {
         }
       }
     this._HC = HC; this._HS = HS;
+
+    // U3: asymmetric-error term H_z = (Δω/2)(σz¹+σz²)⊗I — constant, diagonal over the
+    // qubit blocks (q=0 |gg⟩→+2, q=3 |ee⟩→−2). Does NOT commute with the σx entangler,
+    // so GBC (src/ion-gbc.js) is needed to cancel it — here we integrate it exactly.
+    const Hz = zerosF();
+    if (this.deltaOmega) {
+      const dz = [this.deltaOmega, 0, 0, -this.deltaOmega];    // (Δω/2)·[+2,0,0,−2]
+      for (let q = 0; q < 4; q++) if (dz[q]) for (let n = 0; n < N; n++) { const idx = q * N + n; Hz[IDX(idx, idx)] = dz[q]; }
+    }
+    this._Hz = Hz;
+    // U3: collective σx (⊗I on motion) for the leading beyond-RWA carrier term.
+    const Sx0 = zerosF();
+    if (this.carrierOn)
+      for (let q1 = 0; q1 < 4; q1++) for (let q2 = 0; q2 < 4; q2++) { const v = Sx[q1][q2]; if (v) for (let n = 0; n < N; n++) Sx0[IDX(q1 * N + n, q2 * N + n)] = v; }
+    this._Sx0 = Sx0;
+    this._dw = Math.exp(-this.eta * this.eta / 2);              // Debye–Waller carrier reduction
 
     // Scratch buffers for the RK4 hot path.
     this._k1 = zerosF(); this._k2 = zerosF(); this._k3 = zerosF(); this._k4 = zerosF();
@@ -304,23 +332,27 @@ export class MSGate {
   _setSubStep() {
     const F = this._F, DIM = this.dim, IDX = F.IDX;
     const HC = this._HC, HS = this._HS, A = this._halfA;
-    let rowMax = 0;
+    let rowH = 0, rowA = 0;
     for (let i = 0; i < DIM; i++) {
-      let s = 0;
+      let sH = 0, sA = 0;
       for (let j = 0; j < DIM; j++) {
         const idx = IDX(i, j);
-        // |H(t)| ≤ |HC| + |HS| entrywise (cos²+sin²=1 bound).
-        s += Math.hypot(HC[idx], HC[idx + 1]) + Math.hypot(HS[idx], HS[idx + 1]);
-        s += Math.hypot(A[idx], A[idx + 1]);
+        sH += Math.hypot(HC[idx], HC[idx + 1]) + Math.hypot(HS[idx], HS[idx + 1]);   // drive (at Ω₀)
+        sA += Math.hypot(A[idx], A[idx + 1]);                                        // dissipator
       }
-      if (s > rowMax) rowMax = s;
+      if (sH > rowH) rowH = sH; if (sA > rowA) rowA = sA;
     }
-    // Cap at 0.03 (not 0.05): the gate is a dim-4·N time-dependent integration, so
-    // a tighter cap holds RK4 positivity/purity drift to O(1e-9) (purity dev) over a
-    // full gate while keeping ~0.9 s/gate at dim 80 (see test/ion-ms.test.mjs I1).
-    const byH = rowMax > 0 ? 2.5 / rowMax : 0.03;
-    const byDrive = this.delta > 0 ? 0.08 / this.delta : 0.03;   // resolve cos(δt)
-    this.subStep = Math.min(0.03, byH, byDrive);
+    // U3: scale the drive part by the PEAK Ω/Ω₀ of the pulse, and add the constant
+    // H_z (Δω) and the carrier (≈Ω·e^{−η²/2}) so the CPTP-safe sub-step shrinks with
+    // any of them; also resolve the fastest oscillation (δ and, if on, the carrier ω_z).
+    const peak = this._pulse ? Math.max(...this._pulse.amp.map(Math.abs)) / Math.max(this.Omega, 1e-12) : 1;
+    const extra = 2 * Math.abs(this.deltaOmega) + (this.carrierOn ? 2 * Math.abs(this.Omega * this._dw) : 0);
+    const bound = peak * rowH + rowA + extra;
+    const byH = bound > 0 ? 2.5 / bound : 0.03;
+    const fastOsc = Math.max(this.delta, this.carrierOn ? Math.abs(this.omegaZ - this.delta) : 0);
+    const byDrive = fastOsc > 0 ? 0.08 / fastOsc : 0.03;                             // resolve cos(δt)/cos(ω_z t)
+    const cap = (this._pulse || this.carrierOn || this.deltaOmega) ? 0.02 : 0.03;    // tighter for time-dep / stiff H
+    this.subStep = Math.min(cap, byH, byDrive);
   }
 
   // -------------------------------------------------------------------------
@@ -361,13 +393,28 @@ export class MSGate {
   }
   setRho(flat) { this.rhoM = Float64Array.from(flat); this.t = 0; }
 
+  // Physical Rabi Ω(t): a piecewise-constant pulse envelope, else the constant drive.
+  _omegaAt(tAbs) {
+    const p = this._pulse; if (!p) return this.Omega;
+    const ns = p.amp.length; let k = Math.floor(tAbs / p.tau * ns);
+    return p.amp[k < 0 ? 0 : k >= ns ? ns - 1 : k];
+  }
+
   // -------------------------------------------------------------------------
-  // H(t) assembled into `out`: out = HC·cos(δt) + HS·sin(δt).
+  // H(t) = [Ω(t)/Ω₀]·(HC·cos δt + HS·sin δt) + H_z (+ leading carrier). For a
+  // constant drive Ω(t)=Ω₀ the scale is 1 and H_z=0 ⇒ identical to before.
   // -------------------------------------------------------------------------
   _assembleH(tAbs, out) {
-    const HC = this._HC, HS = this._HS, MLEN = this.mlen;
+    const HC = this._HC, HS = this._HS, Hz = this._Hz, MLEN = this.mlen;
     const c = Math.cos(this.delta * tAbs), s = Math.sin(this.delta * tAbs);
-    for (let m = 0; m < MLEN; m++) out[m] = c * HC[m] + s * HS[m];
+    const sc = this._pulse ? this._omegaAt(tAbs) / this.Omega : 1;
+    for (let m = 0; m < MLEN; m++) out[m] = sc * (c * HC[m] + s * HS[m]) + Hz[m];
+    if (this.carrierOn) {
+      // Leading beyond-RWA off-resonant carrier: in the sideband interaction picture it
+      // rotates at ω_d = ω_z − δ (the tone's detuning from the qubit), amplitude (Ω/2)·e^{−η²/2}.
+      const cc = this._omegaAt(tAbs) * 0.5 * this._dw * Math.cos((this.omegaZ - this.delta) * tAbs), Sx0 = this._Sx0;
+      for (let m = 0; m < MLEN; m++) out[m] += cc * Sx0[m];
+    }
     return out;
   }
 
@@ -442,8 +489,15 @@ export class MSGate {
 
   // Run a full gate from |gg,0⟩: reset, then evolve for `time` (default τ_g),
   // integrating in `nChunks` chunks so a caller can sample the loop as it goes.
+  // With a piecewise pulse, step segment-by-segment so no RK4 sub-step ever straddles
+  // an amplitude discontinuity (Ω is constant within each step ⇒ CPTP-clean).
   runGate(time, onChunk, nChunks = 120) {
     this.reset();
+    if (this._pulse && time === undefined) {
+      const p = this._pulse, ns = p.amp.length, dt = p.tau / ns;
+      for (let i = 0; i < ns; i++) { this.step(dt); if (onChunk) onChunk(this); }
+      return this;
+    }
     const T = time !== undefined ? time : this.gateTime();
     const dt = T / nChunks;
     for (let i = 0; i < nChunks; i++) {
@@ -452,6 +506,9 @@ export class MSGate {
     }
     return this;
   }
+
+  // Tr(ρ) — should stay 1 (CPTP invariant, asserted in the U3 tests).
+  traceRho() { return this._F.trace(this.rhoM).re; }
 
   // =========================================================================
   // Observables.
