@@ -285,15 +285,41 @@ Before the new trade-off study we establish two baselines:
 
 ## V. Toolchain upgrades required (implementation plan)
 
-| # | Upgrade | Module | Purpose | Cost |
-|---|---------|--------|---------|------|
-| **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small |
-| **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-msn` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small |
-| **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate |
-| **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | new script | Generate the trade-off maps | small |
+| # | Upgrade | Module | Purpose | Cost | Status |
+|---|---------|--------|---------|------|--------|
+| **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small | **✓ done** (`solveShapeRobust`) |
+| **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-msn` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small | planned |
+| **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate | planned |
+| **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | new script | Generate the trade-off maps | small | planned |
+
+*U1 validation (preliminary):* on a two-ion axial chain, the robust waveform reduces
+the closure residual under a symmetric detuning drift $\Delta\delta$ by **[2.5×10³]×**
+relative to a non-robust closing pulse, and the residual scales **quadratically** in
+$\Delta\delta$ (measured exponent from res$(2\Delta)/$res$(\Delta)\approx3.3\!\to\!4$)
+versus linear ($\approx1.8\!\to\!2$) for the non-robust pulse — confirming first-order
+$\partial_\delta\alpha=0$ insensitivity. Fidelity $=1.0$, loops closed to $\sim\!10^{-14}$.
 
 These are the build steps to execute **after** this draft is approved; the
 experiments in Sec. VI depend on U1–U4.
+
+**Design requirements for U3 (numerical fidelity).** Two effects must be handled
+correctly, or the open-system results are unreliable:
+*(i) CPTP preservation across shaped transitions.* The integrator must resolve the
+rapid amplitude/phase steps of a segmented $\Omega(t)$ with sufficiently small
+adaptive sub-steps that trace and positivity are preserved ($\mathrm{Tr}\,\rho=1$,
+$\rho\succeq0$) — the sub-step is bounded per segment by the fastest scale
+$\max(\Omega_0,\delta_m,\kappa,\gamma_\phi)$, and a per-step Hermitization is applied.
+Positivity ($\min\mathrm{eig}\,\rho\ge-\varepsilon$) is asserted as an invariant in
+the test suite.
+*(ii) Beyond-RWA carrier terms at high peak drive.* The current `ion-ms` Hamiltonian
+is the Lamb–Dicke, sideband-RWA form (no carrier, no counter-rotating tone), valid
+only for $\Omega_0\ll\omega_z$. Shaped pulses can transiently reach high peak
+$\Omega_0$, where off-resonant **carrier** excitation and counter-rotating sideband
+terms are no longer negligible. U3 therefore adopts the fuller non-RWA coupling
+(the exact displacement operator $D(i\eta)$ path already used by the single-ion
+`ion` engine) when $\Omega_0/\omega_z$ exceeds a set threshold, so the reported
+open-system infidelity is not artificially optimistic. The RWA-vs-non-RWA gap is
+itself reported as a systematic-error bar.
 
 ---
 

@@ -13,7 +13,7 @@
 
 import { IonChain } from '../src/ion-modes.js';
 import { bellFidelity, chainModes, chainClosureCOM, symMode, twoIonAxial, closurePoint } from '../src/ion-msn.js';
-import { shapedBellFidelity, shapedResiduals, shapedThetaEnt, solveShape, envelope } from '../src/ion-msn-shape.js';
+import { shapedBellFidelity, shapedResiduals, shapedThetaEnt, solveShape, solveShapeRobust, envelope } from '../src/ion-msn-shape.js';
 
 let passes = 0, failures = 0;
 function check(name, ok, detail) {
@@ -88,6 +88,46 @@ const THETA_MS = Math.PI / 8;
   const modesWarm = chainModes(spec, [0, 2], { eta0, Omega: op.Omega, muDrive: op.muDrive, nbar: 6 });
   const Fwarm = shapedBellFidelity(modesWarm, sol.pulse, { thetaTarget: sol.thetaTarget });
   check('4-ion: shaped gate is temperature-insensitive (n̄=6 ⇒ F≈1)', Fwarm > 0.9999, `F(n̄=6)=${Fwarm.toFixed(6)}`);
+}
+
+// ---------------------------------------------------------------------------
+// 5. U1 — Appendix-C ROBUST designer (solveShapeRobust): palindromic + zero
+//    time-averaged displacement ⇒ closure AND first-order δ-drift insensitivity.
+// ---------------------------------------------------------------------------
+{
+  const modes = twoIonAxial(0.1, 3.0, 1.3, {});
+  const tau = 2 * Math.PI / (1.3 - 1);
+  const sR = solveShapeRobust(modes, tau);
+  const sP = solveShape(modes, tau);
+
+  check('robust: solves, closes all modes, |Θ|=π/8, F≈1', sR.ok
+    && sR.residuals.every((r) => r.closed) && near(Math.abs(sR.thetaEnt), THETA_MS, 1e-9) && sR.fidelity > 0.9999,
+    sR.ok ? `Θ=${sR.thetaEnt.toFixed(6)}, F=${sR.fidelity.toFixed(6)}, maxRes=${Math.max(...sR.residuals.map((r) => r.residual)).toExponential(1)}` : sR.reason);
+
+  const amp = sR.pulse.amp;
+  check('robust: pulse is palindromic (Ω(t)=Ω(τ−t))',
+    amp.every((a, k) => Math.abs(a - amp[amp.length - 1 - k]) < 1e-9), `nSeg=${sR.nSeg}`);
+
+  // symmetric-error robustness: evaluate the SAME pulse on modes with δ_m → δ_m+Δδ.
+  const resAt = (pulse, dd) => Math.max(...shapedResiduals(modes.map((m) => ({ ...m, delta: m.delta + dd })), pulse).map((r) => r.residual));
+  const rR = resAt(sR.pulse, 0.01), rP = resAt(sP.pulse, 0.01);
+  check('robust: symmetric-drift residual ≪ non-robust', rR < 0.05 * rP, `robust=${rR.toExponential(2)} ≪ plain=${rP.toExponential(2)} (${(rP / rR).toFixed(0)}×)`);
+  const qRobust = resAt(sR.pulse, 0.02) / rR, qPlain = resAt(sP.pulse, 0.02) / rP;
+  check('robust: residual scales QUADRATICALLY in Δδ (first-order insensitive)', qRobust > 3.0 && qPlain < 2.5,
+    `robust res(2Δ)/res(Δ)=${qRobust.toFixed(2)} (→4), plain=${qPlain.toFixed(2)} (→2)`);
+}
+
+// ---------------------------------------------------------------------------
+// 6. U1 on a real 4-ion chain: closes all axial modes, F≈1.
+// ---------------------------------------------------------------------------
+{
+  const eta0 = 0.05;
+  const op = chainClosureCOM(4, { eta0, deltaCOM: 0.2, K: 1 });
+  const spec = new IonChain({ N: 4 }).modes(4).modes;
+  const modes = chainModes(spec, [0, 2], { eta0, Omega: op.Omega, muDrive: op.muDrive, nbar: 0 });
+  const s = solveShapeRobust(modes, op.tau);
+  check('robust 4-ion: closes all 4 modes, F≈1', s.ok && s.residuals.every((r) => r.closed) && s.fidelity > 0.9999,
+    s.ok ? `F=${s.fidelity.toFixed(6)}, maxRes=${Math.max(...s.residuals.map((r) => r.residual)).toExponential(1)}` : s.reason);
 }
 
 console.log(`\n${passes} passed, ${failures} failed`);

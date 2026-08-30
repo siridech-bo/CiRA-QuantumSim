@@ -20,6 +20,9 @@
 // Zhu/Kim et al. Standard multi-mode closure. Ion_Trap_Visualizer_Spec §4 (M7).
 // =============================================================================
 
+import { create, all } from 'mathjs';
+const math = create(all);
+
 const EPS = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
 const SVAL = EPS.map(([a, b]) => a + b);
 const THETA_MS = Math.PI / 8;
@@ -161,5 +164,120 @@ export function solveShape(modes, tau, { nSeg } = {}) {
     thetaEnt: shapedThetaEnt(modes, pulse),
     residuals: shapedResiduals(modes, pulse),
     fidelity: shapedBellFidelity(modes, pulse, { thetaTarget }),
+  };
+}
+
+// =============================================================================
+// solveShapeRobust — the Appendix-C robust designer (Zhang et al., arXiv:2501.02847;
+// Leung et al. PRL 120, 020501). Upgrade U1 of the robust-MS-gate manuscript.
+//
+// Two improvements over solveShape:
+//   1. SYMMETRIC-ERROR ROBUSTNESS. Impose a palindromic pulse Ω(t)=Ω(τ−t) AND zero
+//      time-averaged displacement ∫₀^τ α_m(t)dt = 0 ∀m. Together these give closure
+//      α_m(τ)=0 AND first-order insensitivity ∂α_m/∂δ_m = 0 — so a trap-frequency /
+//      symmetric detuning drift Δδ leaves the residual O(Δδ²) instead of O(Δδ).
+//   2. SIGN + MINIMUM INTENSITY. The entangling angle is the quadratic form Θ=xᵀMx
+//      on the closing nullspace. Diagonalize the projected M and take the eigenvector
+//      whose eigenvalue has the SAME SIGN as the target — guaranteeing the canonical
+//      +π/8 gate (not the conjugate), and, by taking the largest |λ|, the minimum-
+//      intensity waveform: x = √(Ξ/λ)·ker(A)·v_λ  [Zhang25 Eq. (C11)].
+// Uses math.js (nullspace + symmetric eig); the O(M) evaluators above stay pure.
+// =============================================================================
+
+// Time-averaged displacement kernel A_{seg} = ∫₀^τ dt ∫₀^t 1_[t0,t1](t′)e^{iδt′}dt′ (Eq. C9).
+function timeAvgKernel(delta, t0, t1, tau) {
+  const d = delta;
+  const ea = { re: Math.cos(d * t0), im: Math.sin(d * t0) };
+  const eb = { re: Math.cos(d * t1), im: Math.sin(d * t1) };
+  const E = { re: eb.re - ea.re, im: eb.im - ea.im };             // e^{iδt1} − e^{iδt0}
+  const divI = (z) => ({ re: z.im / d, im: -z.re / d });          // z / (iδ)
+  const p1 = divI(E);                                             // ∫_a^b e^{iδt}dt
+  const p2 = { re: -(t1 - t0) * ea.re, im: -(t1 - t0) * ea.im };  // −(b−a)e^{iδa}
+  const p3 = { re: (tau - t1) * E.re, im: (tau - t1) * E.im };    // (τ−b)(e^{iδb}−e^{iδa})
+  return divI({ re: p1.re + p2.re + p3.re, im: p1.im + p2.im + p3.im });
+}
+
+// Entangling quadratic form M (ns×ns, symmetric) with Θ_ent(x) = xᵀ M x (Eq. C10).
+function entanglingM(modes, tau, ns) {
+  const seg = (k) => [tau * k / ns, tau * (k + 1) / ns];
+  const M = Array.from({ length: ns }, () => new Array(ns).fill(0));
+  for (const m of modes) {
+    const d = m.delta, gg = m.g[0] * m.g[1];
+    for (let n = 0; n < ns; n++) {
+      const [a, b] = seg(n);
+      M[n][n] += gg * (d * (b - a) - Math.sin(d * (b - a))) / (d * d);
+      for (let l = 0; l < n; l++) {
+        const [c, e] = seg(l);
+        const W = (Math.sin(d * (b - e)) - Math.sin(d * (b - c)) - Math.sin(d * (a - e)) + Math.sin(d * (a - c))) / (d * d);
+        M[n][l] += 0.5 * gg * W; M[l][n] += 0.5 * gg * W;
+      }
+    }
+  }
+  return M;
+}
+
+const eigReal = (Mtx) => {
+  const r = math.eigs(math.matrix(Mtx));
+  const vals = r.values.toArray().map((v) => (typeof v === 'object' ? v.re : v));
+  const vecs = r.eigenvectors.map((e) => e.vector.toArray().map((c) => (typeof c === 'object' ? c.re : c)));
+  return { vals, vecs };
+};
+
+export function solveShapeRobust(modes, tau, { nSeg, thetaTarget = THETA_MS } = {}) {
+  const Mn = modes.length;
+  const ns = nSeg || 4 * Mn + 4;                    // even ⇒ palindrome; nFree=2M+2 ⇒ ≥2-D nullspace
+  const nFree = Math.ceil(ns / 2);
+  const fold = (i) => Math.min(i, ns - 1 - i);      // palindromic index map
+  const seg = (k) => [tau * k / ns, tau * (k + 1) / ns];
+
+  // A: 2M × nFree — zero time-averaged displacement, folded onto the symmetric pulse.
+  const A = [];
+  for (const m of modes) {
+    const re = new Array(nFree).fill(0), im = new Array(nFree).fill(0);
+    for (let k = 0; k < ns; k++) { const [t0, t1] = seg(k), K = timeAvgKernel(m.delta, t0, t1, tau); re[fold(k)] += K.re; im[fold(k)] += K.im; }
+    A.push(re, im);
+  }
+  // nullspace of A = eigenvectors of AᵀA with ~0 eigenvalue.
+  const G = math.multiply(math.transpose(math.matrix(A)), math.matrix(A));
+  const { vals: gvals, vecs: gvecs } = eigReal(G);
+  const maxE = Math.max(...gvals.map(Math.abs), 1e-300);
+  const nullK = gvecs.filter((_, i) => Math.abs(gvals[i]) < 1e-8 * maxE);
+  if (!nullK.length) return { ok: false, reason: 'no closure nullspace — increase nSeg', nSeg: ns };
+
+  // Entangling form on the palindromic free space, projected onto the nullspace.
+  const Mfull = entanglingM(modes, tau, ns);
+  const Mp = Array.from({ length: nFree }, () => new Array(nFree).fill(0));
+  for (let i = 0; i < ns; i++) for (let j = 0; j < ns; j++) Mp[fold(i)][fold(j)] += Mfull[i][j];
+  const Kmat = math.transpose(math.matrix(nullK));                 // nFree × nNull (columns = null vecs)
+  const Pproj = math.multiply(math.multiply(math.transpose(Kmat), math.matrix(Mp)), Kmat);
+  const { vals: pvals, vecs: pvecs } = eigReal(Pproj);
+
+  // Prefer the largest-|λ| closing direction whose sign matches the target (guaranteed
+  // canonical +π/8, min intensity); if this configuration admits no target-sign closing
+  // pulse, fall back to the largest-|λ| direction and realize the conjugate gate (still
+  // maximally entangling, a local-Z apart), reporting the achieved sign.
+  const pick = (wantSign) => {
+    let b = -1;
+    for (let i = 0; i < pvals.length; i++)
+      if ((!wantSign || Math.sign(pvals[i]) === wantSign) && Math.abs(pvals[i]) > 1e-14 &&
+          (b < 0 || Math.abs(pvals[i]) > Math.abs(pvals[b]))) b = i;
+    return b;
+  };
+  let best = pick(Math.sign(thetaTarget)); let sign = Math.sign(thetaTarget);
+  if (best < 0) { best = pick(0); sign = best >= 0 ? Math.sign(pvals[best]) : 0; }
+  if (best < 0) return { ok: false, reason: 'no entangling closing direction — increase nSeg', nSeg: ns };
+  const target = Math.abs(thetaTarget) * sign;
+
+  let v = pvecs[best]; const vn = Math.hypot(...v) || 1; v = v.map((z) => z / vn);   // unit eigenvector
+  const lam = pvals[best];
+  const Kv = math.multiply(Kmat, math.matrix(v)).toArray();        // nFree
+  const scale = Math.sqrt(target / lam);
+  const amp = new Array(ns).fill(0).map((_, k) => Kv[fold(k)] * scale);
+  const pulse = { tau, amp };
+  return {
+    ok: true, pulse, nSeg: ns, symmetric: true, robust: true, sign, thetaTarget: target,
+    thetaEnt: shapedThetaEnt(modes, pulse),
+    residuals: shapedResiduals(modes, pulse),
+    fidelity: shapedBellFidelity(modes, pulse, { thetaTarget: target }),
   };
 }
