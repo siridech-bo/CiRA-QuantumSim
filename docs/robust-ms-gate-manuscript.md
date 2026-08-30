@@ -288,7 +288,7 @@ Before the new trade-off study we establish two baselines:
 | # | Upgrade | Module | Purpose | Cost | Status |
 |---|---------|--------|---------|------|--------|
 | **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small | **✓ done** (`solveShapeRobust`) |
-| **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-msn` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small | planned |
+| **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-gbc` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small | **✓ done** (`ion-gbc.js`) |
 | **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate | planned |
 | **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | new script | Generate the trade-off maps | small | planned |
 
@@ -298,6 +298,16 @@ relative to a non-robust closing pulse, and the residual scales **quadratically*
 $\Delta\delta$ (measured exponent from res$(2\Delta)/$res$(\Delta)\approx3.3\!\to\!4$)
 versus linear ($\approx1.8\!\to\!2$) for the non-robust pulse — confirming first-order
 $\partial_\delta\alpha=0$ insensitivity. Fidelity $=1.0$, loops closed to $\sim\!10^{-14}$.
+
+*U2 validation (preliminary; reproduces Zhang25 Fig. 5):* in the motion-free 4×4 space,
+the uncompensated asymmetric-error infidelity scales as $\varepsilon^2$ (measured ratio
+$4.00$ per doubling of $\varepsilon=\Delta\omega\tau$), while the GBC-compensated gate
+scales as $\varepsilon^4$ (measured ratio $\mathbf{15.97\to16}$) — the first-order
+cancellation $U^{\rm gbc}=U_{\rm ideal}+o(\varepsilon^2)$. At $\varepsilon=0.05$ GBC
+lowers the infidelity by $\sim\!1.5\times10^{3}$; composed gate unitary to $10^{-16}$.
+These are the *closed-system* baselines; the trade-off study (Sec. VI) asks how much of
+this $\varepsilon^4$ advantage survives once the doubled GBC gate time accrues
+incoherent error.
 
 These are the build steps to execute **after** this draft is approved; the
 experiments in Sec. VI depend on U1–U4.
