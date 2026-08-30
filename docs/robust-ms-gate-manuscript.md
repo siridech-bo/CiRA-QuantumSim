@@ -352,9 +352,22 @@ itself reported as a systematic-error bar.
 
 ## VI. Numerical experiments
 
-Platform: single-mode MS gate (2 qubits ⊗ 1 shared mode, the canonical case), $\eta=0.1$,
-$\delta=\omega_z$, $K=1$ ($\tau=2\pi/\omega_z$, GBC total $\approx4\tau$), $N_{\rm Fock}=18$
-(truncation $<10^{-6}$). Rates are in natural units ($\omega_z\equiv1$).
+Platform: single-mode MS gate (2 qubits ⊗ 1 shared mode, the canonical case). The one
+species-dependent parameter is the Lamb–Dicke $\eta=0.1$, corresponding to **⁴⁰Ca⁺**
+(729 nm optical qubit, $\nu_z=1$ MHz $\Rightarrow\eta\approx0.097$) and matching the choice
+in Zhang25; ¹⁷¹Yb⁺-Raman would be $\eta\approx0.19$ (355 nm $\Delta k$). All other quantities
+are **dimensionless**: the sideband detuning sets the frequency unit ($\delta\equiv1$; gate
+time $\tau=2\pi K/\delta$, $K=1$, GBC total $\approx4\tau$), and the noise rates
+$\kappa,\gamma_\phi$ and error $\Delta\omega$ are in units of $\delta$; $N_{\rm Fock}=18$
+(truncation $<10^{-6}$). ($\omega_z$ enters only the optional beyond-RWA carrier of Sec. V.)
+
+*Species (near-)independence.* At loop closure the product $\eta\Omega=\delta/(2\sqrt K)$ is
+fixed, so the motional excursion ($|\alpha|_{\max}\propto\eta\Omega/\delta$), the gate time
+$\tau$, and hence both the coherent $\varepsilon=\Delta\omega\,\tau$ and the incoherent
+exposure are $\eta$-independent — the trade-off below is therefore essentially the same for
+Ca⁺ and Yb⁺ in these dimensionless units (verified in Sec. VI E3). The species instead sets
+the physical *scale* (what $\delta,\kappa,\gamma_\phi,\Delta\omega$ mean in Hz, via $\nu_z$)
+and the required laser power ($\Omega\propto1/\eta$, so Yb⁺-Raman needs $\sim$half the drive).
 
 **Method note (validated-component decomposition).** GBC reaches its $\varepsilon^4$
 cancellation only when $\beta_m(\tau)=0$, which the robust waveform guarantees; a *constant*
@@ -395,6 +408,13 @@ GBC (calibrated robust pulses in the integrator) is the next refinement (Sec. VI
   $\Delta\omega^\times$ scales roughly as $\sqrt{I_{\rm incoh}}$ — expected, since the crossover
   is set by $\varepsilon^2(\Delta\omega^\times)\!\sim\!3\,I_{\rm incoh}$ (single's coherent
   error $=$ GBC's extra $3\tau$ incoherent cost) with $\varepsilon=\Delta\omega\,\tau$.
+
+  *Species independence (confirmed).* Repeating the map for ⁴⁰Ca⁺ ($\eta=0.10$) and
+  ¹⁷¹Yb⁺-Raman ($\eta=0.19$) gives **identical** infidelities and crossovers to the displayed
+  precision (e.g. $\Delta\omega^\times=0.025/0.045/0.055$ at $\kappa=7\!\times\!10^{-4}/1.5\!\times\!10^{-3}/3\!\times\!10^{-3}$
+  for *both*), as predicted by the fixed-$\eta\Omega$ argument above. The only difference is the
+  required drive, $\Omega_{\rm closure}=5.0$ (Ca⁺) vs $2.6$ (Yb⁺), i.e. $\propto1/\eta$. The
+  trade-off rule is thus universal across these species in dimensionless units.
 
 - **E4 — Optimal robustness depth** *(planned).* Recursive GBC $U^{(k)}$ ($o(\varepsilon^{2^k})$
   coherent) vs $2^k$-fold gate-time growth ⇒ optimal $k^\*(\Delta\omega,I_{\rm incoh})$; the
