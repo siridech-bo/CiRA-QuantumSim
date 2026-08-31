@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>MS-Gate Experiment ↔ Theory Validation — CiRA QuantumSim</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/style.css" />
+  <script type="importmap">
+  { "imports": { "mathjs": "https://cdn.jsdelivr.net/npm/mathjs@12.4.3/+esm" } }
+  </script>
+  <style>
+    html, body { height: auto; overflow: auto; }
+    .iv-top { display: flex; align-items: center; gap: 14px; padding: 13px 22px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(6px); }
+    .iv-top .logo { font-size: 22px; } .iv-top h1 { font-size: 16px; margin: 0; } .iv-top .sub { font-size: 11.5px; color: var(--muted); }
+    .iv-top .spacer { flex: 1; }
+    .iv-top a { font-size: 12.5px; color: var(--accent); text-decoration: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; background: var(--btn); }
+    .iv-wrap { max-width: 1040px; margin: 0 auto; padding: 18px 22px 110px; }
+    .iv-intro { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 2px 2px 12px; } .iv-intro b { color: var(--text); }
+    .iv-integrity { font-size: 12px; line-height: 1.55; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 10px 13px; margin: 4px 2px 16px; background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+    .iv-integrity b { color: var(--text); }
+    .iv-ctrls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 16px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; position: sticky; top: 56px; z-index: 9; }
+    .iv-row { display: flex; flex-direction: column; gap: 3px; }
+    .iv-row label { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+    .iv-row label .v { color: var(--accent); font-weight: 650; }
+    .iv-row input[type=range] { width: 100%; }
+    .iv-row select, .iv-row input[type=number] { background: var(--btn); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 4px 7px; font-size: 12px; }
+    .iv-presets { display: flex; gap: 6px; } .iv-presets button { flex: 1; font-size: 11px; border: 1px solid var(--border); background: var(--btn); color: var(--text); border-radius: 7px; padding: 5px 6px; cursor: pointer; }
+    .iv-presets button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    /* recommendation card */
+    .iv-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; margin: 14px 2px 4px; padding: 16px 20px;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+    .iv-rec .verdict { font-size: 26px; font-weight: 800; } .iv-rec .k { color: var(--text); font-weight: 700; } .iv-rec span { font-size: 13px; color: var(--muted); }
+    /* panels */
+    .iv-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px 18px; margin-top: 16px; }
+    .iv-panel h2 { font-size: 14.5px; margin: 0 0 3px; } .iv-panel .phase { font-size: 10.5px; color: var(--accent); font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+    .iv-panel .desc { font-size: 12px; color: var(--muted); line-height: 1.55; margin: 4px 0 10px; }
+    .iv-panel canvas { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 8px; }
+    .iv-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 760px) { .iv-grid { grid-template-columns: 1fr; } }
+    .iv-data label { font-size: 11.5px; color: var(--muted); display: block; margin-bottom: 4px; }
+    .iv-data textarea { width: 100%; box-sizing: border-box; min-height: 92px; resize: vertical; background: var(--btn); color: var(--text);
+      border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; font: 11.5px/1.5 ui-monospace, monospace; }
+    .iv-metric { font-size: 12px; line-height: 1.6; margin-top: 8px; padding: 9px 11px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border); }
+    .iv-metric .cap { color: var(--text); } .iv-metric.ok { border-color: #50C878; } .iv-metric.bad { border-color: #ff5c6c; }
+    .iv-btns { display: flex; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
+    .iv-btns button { font-size: 11.5px; border: 1px solid var(--border); background: var(--btn); color: var(--text); border-radius: 7px; padding: 5px 10px; cursor: pointer; }
+    .iv-io { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 9px 14px; margin: 4px 0 8px; }
+    .iv-io .iv-row input { width: 100%; box-sizing: border-box; }
+    table.iv-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+    table.iv-tbl th, table.iv-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+    table.iv-tbl th { color: var(--muted); font-weight: 600; }
+    .passfail { font-weight: 700; } .passfail.pass { color: #50C878; } .passfail.fail { color: #ff5c6c; }
+    .iv-note { font-size: 11.5px; color: var(--muted); font-style: italic; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header class="iv-top">
+    <span class="logo">📊</span>
+    <div><h1>MS-Gate: Experiment ↔ Theory Validation</h1><div class="sub">overlay your measured data on the trade-off theory — turn a lab run into a publication figure</div></div>
+    <span class="spacer"></span>
+    <a href="ion-verifier.html">← Verifier</a>
+    <a href="ion.html">Visualizer</a>
+  </header>
+
+  <div class="iv-wrap">
+    <p class="iv-intro">Set your trap and noise parameters below; every panel shows the <b>theory prediction</b> from the paper's validated
+      trade-off (E1–E6). Paste your <b>measured</b> data into a panel and it overlays on the theory with an honest agreement metric and an
+      export-ready figure + caption. Use it to plan an experiment (feasibility calculators) and to validate the results (overlays).</p>
+
+    <div class="iv-integrity"><b>Data integrity.</b> This tool <b>never alters your measured data.</b> It plots exactly what you enter,
+      overlays the independent theory prediction, and reports the agreement as-is — a disagreement is shown as a disagreement. Nothing here
+      fits, shifts, or rescales experimental points to match theory. The outputs are meant to be defensible publication figures, not tuned ones.</div>
+
+    <div class="iv-ctrls">
+      <div class="iv-row"><label>Species / η</label><div class="iv-presets"><button id="p-ca" data-eta="0.10">⁴⁰Ca⁺</button><button id="p-yb" data-eta="0.19">¹⁷¹Yb⁺</button></div></div>
+      <div class="iv-row"><label>η (Lamb–Dicke) <span class="v" id="v-eta">0.10</span></label><input id="c-eta" type="range" min="0.03" max="0.25" step="0.005" value="0.10" /></div>
+      <div class="iv-row"><label>δ gate detuning (kHz) <span class="v" id="v-delta">50</span></label><input id="c-delta" type="range" min="10" max="200" step="5" value="50" /></div>
+      <div class="iv-row"><label>K (loops) <span class="v" id="v-K">1</span></label><input id="c-K" type="range" min="1" max="3" step="1" value="1" /></div>
+      <div class="iv-row"><label>ions N <span class="v" id="v-N">3</span></label><input id="c-N" type="range" min="2" max="5" step="1" value="3" /></div>
+      <div class="iv-row"><label>drive pair <span class="v" id="v-pair">1,3</span></label><input id="c-pair" type="range" min="0" max="0" step="1" value="0" /></div>
+      <div class="iv-row"><label>heating ṅ (phonons/ms) <span class="v" id="v-ndot">1.0</span></label><input id="c-ndot" type="range" min="0" max="20" step="0.25" value="1.0" /></div>
+      <div class="iv-row"><label>T₂ dephasing (ms) <span class="v" id="v-T2">∞</span></label><input id="c-T2" type="range" min="0" max="100" step="1" value="0" /></div>
+      <div class="iv-row"><label>n̄ per mode <span class="v" id="v-nbar">1.0</span></label><input id="c-nbar" type="range" min="0" max="10" step="0.5" value="1" /></div>
+      <div class="iv-row"><label>Δω operating (units δ) <span class="v" id="v-dw">0.05</span></label><input id="c-dw" type="range" min="0" max="0.3" step="0.005" value="0.05" /></div>
+    </div>
+
+    <div class="iv-rec" id="iv-rec"></div>
+
+    <!-- ============ PHASE 2 — CORE VALIDATION ============ -->
+    <div class="iv-panel">
+      <div class="phase">Phase 2 · core · #1</div>
+      <h2>Crossover verification — F(Δω) for single robust gate vs GBC</h2>
+      <div class="desc">The headline. Theory: single-gate infidelity rises ∝Δω²; GBC sits ∝Δω⁴ above a 4× incoherent floor; they cross at
+        <b>Δω<sup>×</sup></b>. Measure gate fidelity vs an intentionally applied center-line error Δω (magnetic offset / laser miscalibration)
+        for both schemes and paste it below — the tool extracts your experimental crossover and compares it to the prediction for <i>your</i> noise.</div>
+      <div class="iv-grid">
+        <div><canvas id="cv-cross" width="620" height="360"></canvas></div>
+        <div class="iv-data">
+          <label>Single-gate data — <code>Δω, 1−F [, ±err]</code> per line (Δω in units of δ)</label>
+          <textarea id="ta-cross-s" placeholder="0.00, 0.002&#10;0.03, 0.006, 0.001&#10;0.06, 0.019, 0.002"></textarea>
+          <label style="margin-top:8px">GBC data — <code>Δω, 1−F [, ±err]</code></label>
+          <textarea id="ta-cross-g" placeholder="0.00, 0.008&#10;0.06, 0.012, 0.002&#10;0.12, 0.028, 0.003"></textarea>
+          <div class="iv-metric" id="m-cross">Paste data to compare.</div>
+          <div class="iv-btns"><button data-plot="cross" data-act="png">Download PNG</button><button data-plot="cross" data-act="csv">Export CSV (data+theory)</button><button data-plot="cross" data-act="cap">Copy caption</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 2 · core · #9</div>
+      <h2>Full GBC sequence — ε⁴ scaling</h2>
+      <div class="desc">Log–log 1−F vs Δω for the complete three-leg GBC. Theory shows the <b>ε⁴</b> slope (vs ε² uncompensated), the core
+        technical claim. Paste your GBC Bell-fidelity vs Δω; the ε² and ε⁴ reference slopes are drawn for comparison.</div>
+      <div class="iv-grid">
+        <div><canvas id="cv-eps4" width="620" height="360"></canvas></div>
+        <div class="iv-data">
+          <label>GBC data — <code>Δω, 1−F [, ±err]</code> (log–log)</label>
+          <textarea id="ta-eps4" placeholder="0.03, 2e-7&#10;0.06, 3.2e-6&#10;0.12, 5e-5"></textarea>
+          <div class="iv-metric" id="m-eps4">Paste data to fit the scaling exponent.</div>
+          <div class="iv-btns"><button data-plot="eps4" data-act="png">Download PNG</button><button data-plot="eps4" data-act="csv">Export CSV</button><button data-plot="eps4" data-act="cap">Copy caption</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 2 · core · #2</div>
+      <h2>Gate-time penalty — GBC incoherent floor ≈ 4× single</h2>
+      <div class="desc">At Δω=0, GBC (4τ) should accumulate ≈4× the incoherent error of the single gate (τ). Enter both measured infidelities
+        at Δω=0; the tool compares the ratio to the predicted 4× (and to the rate-model floor for your ṅ, T₂).</div>
+      <div class="iv-io">
+        <div class="iv-row"><label>measured single-gate 1−F @ Δω=0</label><input id="in-floor-s" type="number" step="any" placeholder="e.g. 0.014" /></div>
+        <div class="iv-row"><label>measured GBC 1−F @ Δω=0</label><input id="in-floor-g" type="number" step="any" placeholder="e.g. 0.055" /></div>
+      </div>
+      <div class="iv-metric" id="m-penalty">Predicted floors update with ṅ / T₂ above; enter measurements to compare.</div>
+    </div>
+
+    <!-- ============ PHASE 1 — FEASIBILITY CALCULATORS ============ -->
+    <div class="iv-panel">
+      <div class="phase">Phase 1 · feasibility · #3</div>
+      <h2>Bandwidth &amp; AWG requirement</h2>
+      <div class="desc">The robust waveform needs n<sub>seg</sub>=4M+4 segments over τ. The tool computes the required amplitude-update rate;
+        enter your AWG's capability to check feasibility before taking data.</div>
+      <div class="iv-io">
+        <div class="iv-row"><label>modes M kept in design</label><input id="in-M" type="number" min="1" max="6" step="1" value="3" /></div>
+        <div class="iv-row"><label>your AWG update rate (kHz)</label><input id="in-awg" type="number" step="any" placeholder="e.g. 500" /></div>
+        <div class="iv-row"><label>your DAC resolution (bits)</label><input id="in-dac" type="number" step="1" placeholder="e.g. 14" /></div>
+      </div>
+      <div class="iv-metric" id="m-bw"></div>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 1 · feasibility · #4</div>
+      <h2>Peak Rabi-frequency headroom</h2>
+      <div class="desc">Robust amplitude-modulated pulses need higher peak Ω than a constant closure pulse; the phase-modulated (PM) variant
+        keeps it constant. The tool computes peak Ω for each scheme (in kHz, at your δ); enter your laser's max Ω to check headroom.</div>
+      <div class="iv-io">
+        <div class="iv-row"><label>your laser max Ω (kHz)</label><input id="in-om-max" type="number" step="any" placeholder="e.g. 400" /></div>
+      </div>
+      <table class="iv-tbl" id="tb-peak"></table>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 1 · feasibility · #5</div>
+      <h2>Calibration overhead</h2>
+      <div class="desc">The robust design needs only the same inputs as a standard MS gate ({ω_m}, {η_m}, {b<sub>j</sub><sup>m</sup>}) plus one
+        global Rabi scale — then the waveform solves in <b>milliseconds</b> on a laptop (measured live below). Log your characterization times to
+        document the "complexity vs. fidelity gain" trade for the paper.</div>
+      <div class="iv-metric" id="m-cal"></div>
+      <table class="iv-tbl" id="tb-cal">
+        <tr><th>Step</th><th>standard MS (your value)</th><th>robust (your value)</th></tr>
+        <tr><td>mode frequencies {ω_m}</td><td><input type="text" placeholder="min" style="width:80px"></td><td><input type="text" placeholder="same" style="width:80px"></td></tr>
+        <tr><td>Lamb–Dicke {η_m}, vectors {b}</td><td><input type="text" placeholder="min" style="width:80px"></td><td><input type="text" placeholder="same" style="width:80px"></td></tr>
+        <tr><td>waveform computation</td><td>—</td><td id="cal-solve">—</td></tr>
+      </table>
+    </div>
+
+    <!-- ============ PHASE 3 — COMPREHENSIVE ============ -->
+    <div class="iv-panel">
+      <div class="phase">Phase 3 · #6</div>
+      <h2>Timing-jitter sensitivity</h2>
+      <div class="desc">A distinct error axis. Theory (Monte-Carlo, <code>ion-jitter</code>): 1−F grows <b>∝σ<sub>t</sub>²</b> for the shaped
+        robust pulse and scales with the segment count, while a constant-amplitude gate (no interior boundaries) is jitter-immune, and a common
+        global timing skew is strongly suppressed (~30×). Paste measured F vs added boundary jitter (±ns).</div>
+      <div class="iv-grid">
+        <div><canvas id="cv-jit" width="620" height="360"></canvas></div>
+        <div class="iv-data">
+          <label>jitter data — <code>σ_t (ns), 1−F [, ±err]</code></label>
+          <textarea id="ta-jit" placeholder="20, 0.002&#10;50, 0.011&#10;100, 0.041"></textarea>
+          <div class="iv-metric" id="m-jit">σ_t is converted to units of τ using your δ. Paste to compare.</div>
+          <div class="iv-btns"><button data-plot="jit" data-act="png">Download PNG</button><button data-plot="jit" data-act="csv">Export CSV</button><button data-plot="jit" data-act="cap">Copy caption</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 3 · #7</div>
+      <h2>Species independence</h2>
+      <div class="desc">Prediction: identical dimensionless crossover for ⁴⁰Ca⁺ and ¹⁷¹Yb⁺; only the drive scales, Ω∝1/η. Enter each species'
+        measured crossover Δω<sup>×</sup> (units of δ) and closure Ω to test universality.</div>
+      <div class="iv-io">
+        <div class="iv-row"><label>Ca⁺: Δω<sup>×</sup> (units δ)</label><input id="in-ca-dwx" type="number" step="any" placeholder="e.g. 0.056" /></div>
+        <div class="iv-row"><label>Ca⁺: Ω_closure</label><input id="in-ca-om" type="number" step="any" placeholder="e.g. 5.0" /></div>
+        <div class="iv-row"><label>Yb⁺: Δω<sup>×</sup> (units δ)</label><input id="in-yb-dwx" type="number" step="any" placeholder="e.g. 0.058" /></div>
+        <div class="iv-row"><label>Yb⁺: Ω_closure</label><input id="in-yb-om" type="number" step="any" placeholder="e.g. 2.6" /></div>
+      </div>
+      <div class="iv-metric" id="m-spec"></div>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 3 · #8</div>
+      <h2>Multi-mode spectator load</h2>
+      <div class="desc">Per-mode incoherent sensitivity d(1−F)/dκ<sub>m</sub>. Theory (from the real chain modes): target-mode dominated,
+        spectators fall off with detuning (≤10–20% total). Bars show the prediction for your N-ion chain; paste your measured per-mode slopes to overlay.</div>
+      <div class="iv-grid">
+        <div><canvas id="cv-load" width="620" height="320"></canvas></div>
+        <div class="iv-data">
+          <label>measured slopes — <code>mode_index, d(1−F)/dκ</code> (0 = COM/target)</label>
+          <textarea id="ta-load" placeholder="0, 9.8&#10;1, 2.1&#10;2, 0.1"></textarea>
+          <div class="iv-metric" id="m-load">Bars = theory; paste to overlay your measurements.</div>
+          <div class="iv-btns"><button data-plot="load" data-act="png">Download PNG</button><button data-plot="load" data-act="csv">Export CSV</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="iv-panel">
+      <div class="phase">Phase 3 · #10</div>
+      <h2>Alternative-method benchmark</h2>
+      <div class="desc">Compare schemes at equal robustness. The tool tabulates gate time and peak drive for the methods it can design
+        (standard / robust-AM / robust-PM); enter your measured F vs Δω and F vs symmetric drift Δδ for any method to compare. <span class="iv-note">
+        Min-Rabi (Huo et al.) is not yet built into the designer — its row is input-only until added.</span></div>
+      <table class="iv-tbl" id="tb-alt"></table>
+    </div>
+  </div>
+
+  <script type="module" src="src/ion-validation-main.js"></script>
+</body>
+</html>
