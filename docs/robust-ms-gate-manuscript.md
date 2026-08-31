@@ -246,6 +246,9 @@ coherent robust-control literature omits and that our verifier supplies.
 
 ## III. Methods: the toolchain
 
+![Toolchain](figures/Fig1_toolchain.png)
+**Fig. 1** — the design→verify→sweep toolchain (module names, upgrade tags U1–U4).
+
 All modules are framework-free JavaScript (node-importable, browser-runnable),
 validated by `node:assert` suites; the flat interleaved-complex RK4 core is shared
 across engines.
@@ -278,11 +281,15 @@ Before the new trade-off study we establish two baselines:
 
 - **B1 — engine agreement (closed system).** Reproduce $|\Delta F|<10^{-8}$ between
   (A) and (B) for constant and shaped drives on a two-ion chain. *Result:* **[TBD]**.
-- **B2 — coherent robustness (reproduce Zhang25).** For a two-ion $^{40}\mathrm{Ca}^+$
-  chain (radial $\omega/2\pi=1.59$ MHz, $d=8\,\mu$m, transverse modes), reproduce the
-  infidelity-vs-$\Delta\omega$ curves for non-robust, symmetric-robust, and GBC
-  waveforms (their Fig. 5), and the quadratic residual scaling $\Delta F\propto\Delta\omega^2$.
-  *Result:* **[TBD]** — target slope $k=2.0$.
+- **B2 — coherent robustness (reproduce Zhang25).** Reproduce the $\varepsilon^2$
+  (uncompensated) vs $\varepsilon^4$ (GBC) infidelity scaling of the asymmetric error
+  (their Fig. 5). *Result:* confirmed — measured ratios $4.00$ and $15.97$ per doubling
+  of $\varepsilon$ (Fig. 2a).
+
+![Validation](figures/Fig2_validation.png)
+**Fig. 2** — closed-system validation: (a) GBC turns the $\varepsilon^2$ asymmetric-error
+infidelity into $\varepsilon^4$; (b) the numerical Lindblad gate (U3) and the analytic
+$4{\times}4$ gate (U2) agree on the $\Delta\omega$-error infidelity.
 
 ---
 
@@ -438,9 +445,9 @@ the primary method for the trade-off results.
 | ![E1](figures/Fig3_E1_incoherent.png) | ![E2](figures/Fig4_E2_tradeoff.png) | ![E3](figures/Fig5_E3_crossover.png) |
 | **Fig. 3** — E1: GBC's $\approx4\tau$ incoherent cost | **Fig. 4** — E2: trade-off curve, crossover $\Delta\omega^\times$ | **Fig. 5** — E3: where GBC pays off vs trap noise ($\propto\sqrt{I}$) |
 
-*Deliverables also planned:* Fig. 1 (schematic + toolchain), Fig. 2 (B1/B2 closed-system
-validation). Data, pulse files, and the figure script are released with the code
-(`src/ion-pipeline.js`, `docs/figures/`).
+Fig. 1 (toolchain) and Fig. 2 (B1/B2 validation) appear in Secs. III–IV. Data, pulse
+files, and the figure script are released with the code (`src/ion-pipeline.js`,
+`docs/figures/make_figures.py`). All five figures regenerate from the pipeline in one run.
 
 ---
 

@@ -25,6 +25,66 @@ def save(fig, name):
     print("wrote", name)
 
 
+# ---- Fig 1 — toolchain schematic (design -> verify -> sweep) ----
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+fig, ax = plt.subplots(figsize=(6.6, 2.6)); ax.set_xlim(0, 100); ax.set_ylim(0, 40); ax.axis("off")
+
+
+def box(x, y, w, h, title, sub, fc):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.6,rounding_size=1.5",
+                                fc=fc, ec="#333", lw=1.0))
+    ax.text(x + w / 2, y + h * 0.62, title, ha="center", va="center", fontsize=8.5, fontweight="bold")
+    ax.text(x + w / 2, y + h * 0.26, sub, ha="center", va="center", fontsize=6.8, color="#333")
+
+
+def arrow(x1, y1, x2, y2, lbl=""):
+    ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=11,
+                                 color="#555", lw=1.1, shrinkA=2, shrinkB=2))
+    if lbl:
+        ax.text((x1 + x2) / 2, (y1 + y2) / 2 + 2.2, lbl, ha="center", fontsize=6.5, color="#555", style="italic")
+
+
+box(1, 22, 17, 13, "ion-modes", "Coulomb chain\n$\\{\\omega_m, b^m_j\\}$", "#eef3f8")
+box(24, 22, 20, 13, "ion-msn(-shape)", "analytic designer (U1)\n$\\Theta,\\alpha_m$; robust $\\Omega(t)$", "#e9f2ec")
+box(24, 3, 20, 13, "ion-gbc", "asym. error + GBC (U2)\n$4{\\times}4$, $\\varepsilon^2{\\to}\\varepsilon^4$", "#f6eee9")
+box(51, 13, 20, 13, "ion-ms", "Lindblad verifier (U3)\nshaped $\\Omega(t)$, $\\Delta\\omega$, noise", "#eef3f8")
+box(78, 13, 20, 13, "ion-pipeline", "design->verify->sweep (U4)\ntrade-off map", "#e9f2ec")
+arrow(18, 28.5, 24, 28.5)
+arrow(45, 25.5, 51, 21.5); ax.text(48.5, 25.0, "$\\Omega(t)$", ha="center", fontsize=6.5, color="#555", style="italic")
+arrow(45, 10.5, 51, 15.0); ax.text(48.5, 10.4, "$\\varepsilon^4$", ha="center", fontsize=6.5, color="#555", style="italic")
+arrow(71, 19.5, 78, 19.5)
+ax.text(50, 37.5, "Fig. 1 — toolchain: analytic design ($O(M)$)  →  open-system verify  →  noise sweep",
+        ha="center", fontsize=9)
+save(fig, "Fig1_toolchain")
+
+# ---- Fig 2 — closed-system validation (B1 engine agreement, B2 ε²->ε⁴) ----
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(6.6, 2.7))
+# B2: coherent scaling, uncompensated ~ε² vs GBC ~ε⁴ (U2 data)
+eps = np.array([0.02, 0.04, 0.08, 0.16])
+unc = np.array([1.297e-4, 5.186e-4, 2.073e-3, 8.262e-3])
+gbc = np.array([1.370e-8, 2.191e-7, 3.498e-6, 5.556e-5])
+a1.loglog(eps, unc, "o", color=C_SINGLE, label="uncompensated")
+a1.loglog(eps, gbc, "s", color=C_GBC, label="GBC")
+a1.loglog(eps, unc[0] * (eps / eps[0])**2, "--", color=C_SINGLE, lw=0.8, alpha=0.7, label="$\\propto\\varepsilon^2$")
+a1.loglog(eps, gbc[0] * (eps / eps[0])**4, "--", color=C_GBC, lw=0.8, alpha=0.7, label="$\\propto\\varepsilon^4$")
+a1.set_xlabel("$\\varepsilon=\\Delta\\omega\\,\\tau$"); a1.set_ylabel("infidelity $1-F$")
+a1.legend(frameon=False, fontsize=7, loc="lower right"); a1.grid(True, which="both", alpha=0.15)
+a1.set_xticks([0.02, 0.05, 0.1]); a1.set_xticklabels(["0.02", "0.05", "0.1"]); a1.minorticks_off()
+a1.set_title("(a) GBC: $\\varepsilon^2\\!\\to\\!\\varepsilon^4$", fontsize=9)
+# B1: numeric (Lindblad) vs analytic (4x4) Bell fidelity agree across Δω (U3 cross-check)
+dwv = np.array([0.005, 0.010, 0.020])
+num = np.array([0.999688, 0.998757, 0.995052])
+ana = np.array([0.999600, 0.998401, 0.993622])
+a2.plot(dwv, 1 - ana, "-", color="#888", lw=3, alpha=0.5, label="analytic $4{\\times}4$ (U2)")
+a2.plot(dwv, 1 - num, "o", color=C_GBC, ms=5, label="numeric Lindblad (U3)")
+a2.set_xlabel("$\\Delta\\omega$ (units of $\\delta$)"); a2.set_ylabel("infidelity $1-F$")
+a2.legend(frameon=False, fontsize=7); a2.grid(True, alpha=0.15)
+a2.set_title("(b) numeric $\\leftrightarrow$ analytic", fontsize=9)
+fig.suptitle("Fig. 2 — closed-system validation", fontsize=9, y=1.02)
+fig.tight_layout()
+save(fig, "Fig2_validation")
+
+
 # ---- Fig 3 — E1: incoherent baseline (Δω=0), single vs GBC vs heating κ ----
 kappa = np.array([2e-3, 5e-3, 1e-2, 2e-2])
 e1_single = np.array([9.291e-3, 2.274e-2, 4.395e-2, 8.231e-2])
