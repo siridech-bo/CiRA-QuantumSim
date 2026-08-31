@@ -732,3 +732,45 @@ the analytic framework of Zhang *et al.* [Zhang25].
 | Mode spectrum $\{\omega_m,b^m_j\}$ | James Hessian | `ion-modes` `IonChain.modes` |
 | Open-system evolution | Lindblad $\dot\rho$ | `ion-ms` `MSGate` (U3); multi-mode `ion-ms-mm` |
 | Non-RWA / beyond-LD bound | $\sin(\eta(a{+}a^\dagger))$, $\omega_z a^\dagger a$ | `ion-ms-exact` |
+
+---
+
+### Appendix B — The center-line error $\varepsilon\equiv\Delta\omega\tau$ and the $\varepsilon^2\!\to\!\varepsilon^4$ scaling
+
+The single most-used quantity in the trade-off is the dimensionless **center-line error**
+$$\varepsilon \equiv \Delta\omega\,\tau .$$
+It is the *total unwanted rotation angle* the gate accumulates: $\Delta\omega$ is the asymmetric
+(center-line) drift — a **common $\sigma_z$ rotation on both qubits** at rate $\Delta\omega$ — and
+$\tau$ is the gate duration, so $\varepsilon=\Delta\omega\,\tau$ is that rate integrated over the
+gate, in radians. It is "small" ($\varepsilon\ll1$) in any working device, which is what licenses
+the power-series expansion. (Numerically: a $\delta=2\pi\times50$ kHz gate has $\tau\approx20\,\mu$s,
+so a center-line drift $\Delta\omega=2\pi\times0.4$ kHz gives $\varepsilon\approx0.05$.)
+
+**What the scaling refers to.** From Eq. \eqref{eq:star} the imperfect gate is
+$\hat U_\varepsilon = \hat U_{\rm ideal}\,\exp(-i\varepsilon E)$ with $E=\tfrac12\sum_j\sigma_z^j$.
+The symbol "$\varepsilon^2\!\to\!\varepsilon^4$" is how the **infidelity $1-F$** scales with
+$\varepsilon$, *without* versus *with* GBC:
+
+- **Uncompensated** (single robust gate): a small over-rotation by angle $\varepsilon$ has
+  $F\simeq\cos^2(\varepsilon/2)$, so $1-F\simeq(\varepsilon/2)^2\propto\varepsilon^2$. The *error
+  amplitude* (deviation of $\hat U$ from $\hat U_{\rm ideal}$) is $O(\varepsilon)$.
+- **GBC**: the three-gate echo $\hat U_\varepsilon\,\hat U_{2\varepsilon}^\dagger(\Theta)\,\hat
+  U_\varepsilon$ **cancels the first-order-in-$\varepsilon$ term exactly**, leaving an error
+  amplitude $O(\varepsilon^2)$. Since infidelity is amplitude *squared*, $1-F\propto\varepsilon^4$.
+
+The scaling is literal — **double $\varepsilon$ and the single-gate error rises $4\times$ ($=2^2$),
+the GBC error $16\times$ ($=2^4$)** (measured ratios $3.99$ and $15.95$). Because $\varepsilon<1$,
+$\varepsilon^4\!\ll\!\varepsilon^2$, so GBC sharply suppresses the coherent error:
+
+| $\varepsilon=\Delta\omega\tau$ | $1-F$ single ($\propto\varepsilon^2$) | $1-F$ GBC ($\propto\varepsilon^4$) | suppression |
+|:---:|:---:|:---:|:---:|
+| $0.02$ | $1.3\times10^{-4}$ | $1.4\times10^{-8}$ | $9.5\times10^{3}$ |
+| $0.05$ | $8.1\times10^{-4}$ | $5.4\times10^{-7}$ | $1.5\times10^{3}$ |
+| $0.10$ | $3.2\times10^{-3}$ | $8.5\times10^{-6}$ | $3.8\times10^{2}$ |
+| $0.20$ | $1.3\times10^{-2}$ | $1.3\times10^{-4}$ | $95$ |
+
+**Why it is still a trade-off.** The $\varepsilon^4$ suppression is bought with the GBC sequence's
+$4\tau$ duration (Sec. VI), hence $\approx\!4\times$ the incoherent error. GBC therefore pays off
+only when $\varepsilon$ is *large enough* that removing the $\varepsilon^2$ coherent error outweighs
+the $4\times$ incoherent cost — precisely the crossover $\Delta\omega^\times$ (E2–E3). Below it, the
+plain robust gate ($\varepsilon^2$ error, but $1\times$ time) wins.

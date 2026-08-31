@@ -333,6 +333,52 @@ CiRA QuantumSim (KMITL). Software cross-validated against the analytic framework
 of~\cite{Zhang25}.
 \end{acknowledgments}
 
+\appendix
+
+\section{Notation map (paper $\leftrightarrow$ code)}\label{app:notation}
+\begin{ruledtabular}\begin{tabular}{lll}
+quantity & symbol & module / function \\ \hline
+entangling phase & $\Theta(\tau)$ & \textsf{shapedThetaEnt} \\
+mode displacement & $\alpha_m(\tau)$ & \textsf{envelope} \\
+closure residual & $|\alpha_m(\tau)|$ & \textsf{shapedResiduals} \\
+robust waveform & $A\mathbf x{=}0,\ \mathbf x^{\mathsf T}M\mathbf x{=}\Xi$ & \textsf{solveShapeRobust} \\
+asymmetric error / GBC & $\Delta\omega,\ \hat K_{\mathcal G}$ & \textsf{ion-gbc} (\textsf{gbcUnitaryK}) \\
+mode spectrum & $\{\omega_m,b^m_j\}$ & \textsf{ion-modes} \\
+open-system evolution & Lindblad $\dot\rho$ & \textsf{ion-ms}, \textsf{ion-ms-mm} \\
+non-RWA / beyond-LD & $\sin[\eta(a{+}a^\dagger)]$ & \textsf{ion-ms-exact} \\
+\end{tabular}\end{ruledtabular}
+
+\section{The center-line error $\varepsilon\equiv\Delta\omega\tau$ and the $\varepsilon^2\!\to\!\varepsilon^4$ scaling}\label{app:eps}
+The trade-off is organized by the dimensionless \emph{center-line error}
+$\varepsilon\equiv\Delta\omega\,\tau$: the total unwanted rotation the gate accumulates.
+$\Delta\omega$ is the asymmetric (center-line) drift --- a common $\sigma_z$ rotation on both
+qubits at rate $\Delta\omega$ --- and $\tau$ is the gate time, so $\varepsilon$ is that rate
+integrated over the gate, in radians. It is small ($\varepsilon\ll1$) in any working device,
+which licenses the expansion. (A $\delta=2\pi\times50$~kHz gate has $\tau\approx20~\mu$s, so a
+drift $\Delta\omega=2\pi\times0.4$~kHz gives $\varepsilon\approx0.05$.)
+
+From Eq.~\eqref{eq:star} the imperfect gate is $\hat U_\varepsilon=\hat U_{\rm ideal}\exp(-i\varepsilon E)$,
+$E=\tfrac12\sum_j\sigma_z^j$. The symbol ``$\varepsilon^2\!\to\!\varepsilon^4$'' is how the
+\emph{infidelity} $1-F$ scales, uncompensated versus with GBC. Uncompensated, a small over-rotation
+by $\varepsilon$ has $F\simeq\cos^2(\varepsilon/2)$, so $1-F\simeq(\varepsilon/2)^2\propto\varepsilon^2$
+(error amplitude $O(\varepsilon)$). GBC's three-gate echo cancels the first-order-in-$\varepsilon$
+term exactly, leaving amplitude $O(\varepsilon^2)$; as infidelity is amplitude squared,
+$1-F\propto\varepsilon^4$. Literally: doubling $\varepsilon$ raises the single-gate error $4\times$
+($=2^2$) and the GBC error $16\times$ ($=2^4$) (measured $3.99$, $15.95$). Since $\varepsilon<1$,
+$\varepsilon^4\!\ll\!\varepsilon^2$:
+
+\begin{ruledtabular}\begin{tabular}{cccc}
+$\varepsilon=\Delta\omega\tau$ & $1{-}F$ single ($\propto\varepsilon^2$) & $1{-}F$ GBC ($\propto\varepsilon^4$) & suppression \\ \hline
+$0.02$ & $1.3\times10^{-4}$ & $1.4\times10^{-8}$ & $9.5\times10^{3}$ \\
+$0.05$ & $8.1\times10^{-4}$ & $5.4\times10^{-7}$ & $1.5\times10^{3}$ \\
+$0.10$ & $3.2\times10^{-3}$ & $8.5\times10^{-6}$ & $3.8\times10^{2}$ \\
+$0.20$ & $1.3\times10^{-2}$ & $1.3\times10^{-4}$ & $95$ \\
+\end{tabular}\end{ruledtabular}
+
+This $\varepsilon^4$ gain costs the GBC sequence's $4\tau$ duration ($\approx4\times$ incoherent
+error), so GBC pays off only where $\varepsilon$ is large enough that removing the $\varepsilon^2$
+coherent error outweighs the $4\times$ incoherent cost --- the crossover $\Delta\omega^\times$ (E2--E3).
+
 \bibliographystyle{apsrev4-2}
 \bibliography{references}
 
