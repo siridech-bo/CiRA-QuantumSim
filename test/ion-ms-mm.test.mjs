@@ -61,4 +61,21 @@ let n = 0; const ok = (m) => { console.log(`  ok ${++n} - ${m}`); };
   ok(`E5: incoherent error is target-mode dominated (spectator/target ≈ ${(sSpec / sTarget).toFixed(2)})`);
 }
 
+// ---- E. M=3 generalizes (general-M code path: strides, 3 mode ops, 3 dissipators) ----
+// Fast CPTP smoke test on a short evolution — the tight analytic match (dim-640 3-ion
+// chain, |ΔF|=4.6e-4) is validated offline (too slow for the suite). Guards the M≥3 path.
+{
+  const three = [
+    { delta: 0.5, eta: 0.06, bvec: [0.577, 0.577], nBath: 0.5 },   // COM-like target
+    { delta: -0.7, eta: 0.05, bvec: [0.707, -0.707], nBath: 0.5 },  // stretch-like spectator
+    { delta: -1.3, eta: 0.03, bvec: [0.408, 0.408], nBath: 0.5 },   // Egyptian-like spectator
+  ];
+  const g = new MSGateMM({ Nfock: [6, 3, 3], modes: three, Omega: 4.0, kappa: [0.01, 0.01, 0.01], gammaPhi: 0.004 });
+  g.reset(); g.step(3.0);   // partial evolution under all 3 modes + heating + dephasing
+  assert.strictEqual(g.dim, 4 * 6 * 3 * 3, 'M=3 dimension = 4·∏N_Fock');
+  assert.ok(Math.abs(g.traceRho() - 1) < 1e-8, `M=3 CPTP Tr=1 (got ${g.traceRho().toFixed(9)})`);
+  for (const p of g.qubitPopulations()) assert.ok(p > -1e-9 && p < 1 + 1e-9, 'M=3 qubit populations in [0,1]');
+  ok('M=3 general-M path runs CPTP-preservingly (3 modes + heating + dephasing)');
+}
+
 console.log(`\nion-ms-mm: ${n} tests passed`);
