@@ -66,6 +66,22 @@ DJC ⟨σz⟩ conservation at α=0, and echo-state/fading-memory convergence. Th
 benchmark (STM/PC/Mackey-Glass, ridge readout) is deferred to a **separate Python/QuTiP
 script** (not built yet).
 
+### Trapped-ion MS-gate verifier — SEPARATE research track (`src/ion-*.js`)
+**This is the active work track. It is a research/tool project, kept STRICTLY SEPARATE from
+the NMR educational app — do not touch NMR/JC code or physics when working on ions.**
+A pulse-level Mølmer–Sørensen gate & calibration verifier for 2–4 ions. Modules: `ion-modes.js`
+(N-ion chain normal modes), `ion-msn.js` (analytic multi-mode gate/closure kernel),
+`ion-msn-shape.js` (robust shaped-pulse designer, App-C), `ion-gbc.js` (asymmetric-error +
+generator-based compensation, incl. recursive-depth), `ion-ms.js` (single-mode open-system
+`MSGate` Lindblad integrator), `ion-ms-mm.js` (multi-mode open-system, dim 4·∏N_Fock),
+`ion-ms-exact.js` (full non-RWA + beyond-Lamb-Dicke validator), `ion-pipeline.js` (trade-off
+driver). Manuscript: `docs/robust-ms-gate-manuscript.md` (+ `.tex`). Program U1–U4 + E1–E5 + E4
++ non-RWA all complete.
+- **TEST SCOPE RULE (important):** run ONLY the ion suites — `node test/ion-<name>.test.mjs`
+  (ion-modes, ion-ms, ion-msn, ion-msn-shape, ion-gbc, ion-pipeline, ion-ms-mm, ion-ms-exact).
+  **Do NOT run `npm test`** — it sweeps the slow NMR/homonuclear/JC suites (crotonic dim-16 alone
+  takes minutes) which are irrelevant to ion work and waste time.
+
 Physics is validated by `test/physics.test.mjs`, `test/gates.test.mjs`,
 `test/molecules.test.mjs`, `test/homonuclear.test.mjs`, and `test/jc.test.mjs` (`npm test`
 runs all five, node assert; the homonuclear suite is slow — crotonic is dim-16 with
