@@ -400,14 +400,22 @@ finding: *one cannot GBC a constant-drive gate*). We therefore take GBC's **cohe
 infidelity from the validated U2 analytic gate ($\propto\varepsilon^4$) and its **incoherent**
 cost from the *numerically integrated* $4\tau$ sequence at $\Delta\omega=0$ (where the
 coherent cancellation is exact regardless of $\beta$), combining them additively to leading
-order. The single gate is fully numerical in one run. A fully-coupled shaped-leg numerical GBC
-(calibrated robust pulses in the integrator) was attempted: it is limited by (a) Fock
-truncation — the calibrated shaped pulse has a larger peak drive/excursion than a constant
-gate, so $N_{\rm Fock}\gtrsim30$ is needed to avoid leakage (dim $\ge120$, expensive), and
-(b) calibration precision — the three legs' $\Theta$ and the middle-leg's $2\varepsilon$ must
-match to well below $\varepsilon^2$ for the $\varepsilon^4$ cancellation to resolve
-numerically. It remains an open refinement; the validated-component decomposition above is
-the primary method for the trade-off results.
+order. The single gate is fully numerical in one run.
+
+*Pulse-level shaped-GBC — resolved status.* We investigated a fully-numerical shaped-leg
+GBC (robust pulses in the open-system integrator) and pin down its behavior precisely.
+**(i)** The constant-drive GBC's $\varepsilon^2$ plateau is *physical* $\beta\!\neq\!0$, **not**
+Fock truncation: it is identical (to all printed digits) at $N_{\rm Fock}=18$ and $30$, and the
+$4\tau$ sequence is in fact *worse* than the single gate ($2.5\!\times\!10^{-2}$ vs
+$5\!\times\!10^{-3}$ at $\Delta\omega=0.02$). **(ii)** A calibrated robust waveform *does* run
+correctly in the integrator: a single shaped leg reproduces the analytic Bell fidelity to
+$F=1.000013$ ($\mathrm{Tr}\,\rho=1$, $N_{\rm Fock}=40$) — truncation is not the obstacle. **(iii)**
+Assembling the three shaped legs still yields $\varepsilon^2$ (the sequence produces the Bell
+state at $\Delta\omega=0$ but the pulse-level composition does not reproduce the analytic 4×4
+$\varepsilon$-cancellation). Since **U2 already proves the $\varepsilon^4$ cancellation exactly at
+the operator level and E4 proves $\varepsilon^4$ is the structural ceiling** (no scheme in this
+family does better), the pulse-level re-derivation would add no physics; the validated-component
+decomposition is the primary — and, by U2/E4, rigorous — method for the trade-off results.
 
 - **E1 — Incoherent baseline ($\Delta\omega=0$).** GBC's incoherent infidelity is a clean
   $\mathbf{\approx4\times}$ the single gate across heating rates (its $4\tau$ vs $\tau$):

@@ -14,6 +14,7 @@
 import { IonChain } from '../src/ion-modes.js';
 import { bellFidelity, chainModes, chainClosureCOM, symMode, twoIonAxial, closurePoint } from '../src/ion-msn.js';
 import { shapedBellFidelity, shapedResiduals, shapedThetaEnt, solveShape, solveShapeRobust, envelope } from '../src/ion-msn-shape.js';
+import { MSGate } from '../src/ion-ms.js';
 
 let passes = 0, failures = 0;
 function check(name, ok, detail) {
@@ -128,6 +129,29 @@ const THETA_MS = Math.PI / 8;
   const s = solveShapeRobust(modes, op.tau);
   check('robust 4-ion: closes all 4 modes, F≈1', s.ok && s.residuals.every((r) => r.closed) && s.fidelity > 0.9999,
     s.ok ? `F=${s.fidelity.toFixed(6)}, maxRes=${Math.max(...s.residuals.map((r) => r.residual)).toExponential(1)}` : s.reason);
+}
+
+// ---------------------------------------------------------------------------
+// U1↔U3 bridge: a robust shaped pulse (analytic designer) run through the
+// numerical open-system integrator (MSGate) must reproduce the analytic Bell
+// fidelity. Convention: pulse.amp are physical Ω(t) with Ω_base=1 (g=η/2), so
+// MSGate uses Omega:1, matchClosure:false; the entangling sign is aligned with
+// the +Θ Bell via thetaSign (try both, take the match). Validates that designed
+// robust waveforms are physically executable in the full Lindblad engine.
+// ---------------------------------------------------------------------------
+{
+  const modes = [{ delta: 1, g: [0.05, 0.05], nbar: 0 }];   // single mode, η=0.1, Ω_base=1
+  const tau = 2 * Math.PI;
+  const sR = solveShapeRobust(modes, tau, { thetaTarget: THETA_MS });
+  const runNum = (ts) => {
+    const g = new MSGate({ N_FOCK: 32, eta: 0.1, delta: 1, K: 1, Omega: 1, matchClosure: false, pulse: sR.pulse, thetaSign: ts });
+    g.runGate();
+    return { F: g.bellFidelity(), tr: g.traceRho() };
+  };
+  const a = runNum(1), b = runNum(-1), Fnum = Math.max(a.F, b.F);
+  check('U1↔U3: robust shaped pulse runs in the numerical Lindblad engine (F matches analytic)',
+    sR.ok && Math.abs(Fnum - sR.fidelity) < 3e-3 && Math.abs(a.tr - 1) < 1e-5 && Math.abs(b.tr - 1) < 1e-5,
+    `numerical F=${Fnum.toFixed(5)} vs analytic ${sR.fidelity.toFixed(5)} (Tr=1)`);
 }
 
 console.log(`\n${passes} passed, ${failures} failed`);
