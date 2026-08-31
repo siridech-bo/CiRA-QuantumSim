@@ -300,8 +300,11 @@ for $M=3$ over $\tau\sim100~\mu$s this is a $\sim\!160$~kHz amplitude-update rat
 standard AWG/DDS control of an AOM. The AM peak Rabi frequency exceeds the constant-closure
 value by $\sim\!4\times$; the PM variant removes this. Calibration uses the same inputs as a
 standard MS gate (mode frequencies, $\eta$, one global Rabi scale). Pulse-timing jitter is a
-distinct axis; the palindromic waveform makes first-order boundary-timing errors partially
-self-cancel, and a dedicated study is readily run in the verifier.
+distinct axis, quantified directly (\textsf{ion-jitter}): a common/systematic timing offset is
+strongly suppressed ($\sim\!30\times$), but independent per-boundary jitter is \emph{not}
+self-cancelled --- it degrades fidelity $\propto\sigma_t^2$ and scales with the segment count, so
+a shaped robust waveform carries a genuine timing-jitter cost that a constant-amplitude gate (no
+interior boundaries) does not.
 
 \emph{Limitations.} The analytic operator is second-order Magnus~\cite{Zhang25}. The
 open-system verifier's Hilbert space grows as $4\prod_m N_{\rm Fock}^{(m)}$, run here at

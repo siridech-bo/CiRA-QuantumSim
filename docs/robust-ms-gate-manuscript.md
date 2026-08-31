@@ -617,11 +617,15 @@ $\sim\!160\,$kHz amplitude-update rate, well within standard AWG/DDS control of 
 Rabi frequency exceeds the constant-closure value by a few-fold (we observe $\sim\!4\times$),
 setting a laser-power/Rabi-headroom requirement. Calibration overhead is modest: the design is
 fixed by the *same* physical inputs as a standard MS gate (mode frequencies, Lamb–Dicke $\eta$,
-a global Rabi scale) — there is no per-segment tuning beyond one overall amplitude. Robustness
-to *pulse-timing* jitter is a distinct axis from the frequency robustness we optimize; the
-palindromic symmetry of the App-C waveform makes first-order segment-boundary timing errors
-partially self-cancel, but a dedicated timing-error sensitivity study (readily run in the
-verifier) is left for future work.
+a global Rabi scale) — there is no per-segment tuning beyond one overall amplitude. Pulse-timing
+jitter is a distinct axis from the frequency robustness we optimize, and we quantify it directly
+(`src/ion-jitter.js`): a *common/systematic* timing offset (global clock skew) is strongly
+suppressed ($\sim\!30\times$ below independent jitter — the gate is insensitive to its overall
+timing), but *independent* per-segment-boundary jitter is **not** self-cancelled — it degrades
+fidelity $\propto\sigma_t^2$ and scales with the segment count, so a shaped robust waveform carries
+a genuine timing-jitter cost that a constant-amplitude gate (no interior boundaries) does not. This
+is the one axis on which robust shaping is *less* forgiving than a plain gate, and is a required
+input to any implementation budget.
 
 **Limitations.** The analytic operator is second-order Magnus (third-order bounds in
 [Zhang25 App. A]); single-qubit gates in GBC are taken ideal (or SUPCODE-protected) as in
