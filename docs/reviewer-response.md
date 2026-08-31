@@ -209,3 +209,34 @@ converged.
 
 We believe these revisions address all of the reviewer's concerns and thank them again for
 feedback that materially strengthened the paper.
+
+---
+
+## Response to the second (pre-acceptance) list
+
+We thank the reviewer for the final actionable items and have applied all four to the
+LaTeX source (`docs/robust-ms-gate.tex`), which is now fully synchronized with the
+manuscript (U1–U4, E1–E6, non-RWA/beyond-LD) and mirrored in the markdown.
+
+1. **Explicit experimental mapping.** Added a worked physical example to the abstract and
+   to Sec. VI: a COM mode at $\omega_z=2\pi\times1$ MHz driven at $\delta=2\pi\times50$ kHz
+   gives $\tau\approx20\,\mu$s; a heating rate $\dot{\bar n}\approx1$ phonon/ms corresponds
+   to $\kappa\approx3\times10^{-3}$ (via $\kappa=\dot{\bar n}/\delta$), for which
+   $\Delta\omega^\times\approx0.055\Rightarrow2\pi\times2.7$ kHz. Table III now carries a
+   physical-Hz column, and the Fig. 3 (E3) caption states the Hz span for the reference
+   $\delta$. (We note the crossover value matches the reviewer's suggested $\sim\!2\pi\times2.5$
+   kHz; we corrected the heating-rate figure to the self-consistent $\sim\!1$ phonon/ms, since
+   $10$ phonons/ms would give $\kappa\approx3\times10^{-2}$, an order larger.)
+
+2. **Independent-group citation.** Sec. I now reads: "...the symmetric/asymmetric-robust
+   waveform and GBC construction were recently developed by an *independent group*, Zhang
+   *et al.* [Zhang25], whose coherent-error results we reproduce as validation baselines...".
+
+3. **Figure formatting and captions.** All captions are now self-contained and state their
+   dimensionless units ($\delta\equiv1$); the E3 caption and Table III give the physical-Hz
+   equivalent for the reference $\delta$. Figures are generated as vector PDF (and PNG) by
+   `make_figures.py` and included via `\includegraphics`; the final build uses the PDFs.
+
+4. **Typographical polish.** Added a `\hyphenation{...}` block for the compound/code terms
+   and non-breaking spaces (`gate~time`, `$2\pi\times50$~kHz`, `20~$\mu$s`) at the points the
+   reviewer flagged, so the compiled PDF no longer breaks these awkwardly.

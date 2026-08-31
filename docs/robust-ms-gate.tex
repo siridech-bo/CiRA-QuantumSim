@@ -1,11 +1,14 @@
 % robust-ms-gate.tex — REVTeX 4.2 port of docs/robust-ms-gate-manuscript.md
 % Compile: pdflatex; bibtex; pdflatex; pdflatex   (needs references.bib, figures/)
-% DRAFT v0.1 — quantitative results marked as measured; author block is a placeholder.
+% DRAFT v0.3 — synced with the markdown master (U1-U4, E1-E6, non-RWA/beyond-LD) and
+% the reviewer response. Author block is a placeholder; finalize before submission.
 \documentclass[aps,prapplied,twocolumn,superscriptaddress,floatfix,nofootinbib]{revtex4-2}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{bm}
 \graphicspath{{figures/}}
+% discourage bad hyphenation of code/compound terms
+\hyphenation{gener-ator com-pen-sa-tion Lamb-Dicke wave-form}
 
 \begin{document}
 
@@ -21,7 +24,7 @@ gates: quantifying the coherent--incoherent trade-off}
 Robust M\o lmer--S\o rensen (MS) gates are designed almost exclusively against
 \emph{coherent} error, while the \emph{incoherent} environment (motional heating,
 dephasing, spontaneous emission during the gate) is treated separately. Because the
-leading robust-control techniques necessarily extend the gate time, coherent-error
+leading robust-control techniques necessarily extend the gate~time, coherent-error
 suppression is bought at the price of increased incoherent accumulation. We present a
 cross-validated toolchain that couples a fast \emph{analytic} MS designer/verifier
 (second-order Magnus in the commuting $\sigma_x$ basis, $O(M)$ per gate for $M$ modes)
@@ -29,15 +32,20 @@ to a \emph{full open-system} Lindblad integrator carrying the same parameters. W
 (i)~confirm the two engines agree to $\sim\!3\times10^{-9}$ in Bell-state infidelity in
 the closed-system limit; (ii)~reproduce the coherent robustness of the symmetric-robust
 ($2.5\times10^{3}\times$ suppression of the symmetric-drift residual) and generator-based
-compensation (GBC, $\varepsilon^2\!\to\!\varepsilon^4$) schemes; and (iii)~map the
-coherent--incoherent trade-off: GBC's $\varepsilon^4$ advantage costs a $\approx\!4\times$
-gate time (hence $\approx\!4\times$ incoherent error), so a crossover asymmetric detuning
-$\Delta\omega^\times$ separates a regime where the single robust gate wins from one where
-GBC wins. $\Delta\omega^\times$ grows monotonically with the incoherent floor as
-$\Delta\omega^\times\!\propto\!\sqrt{I_{\rm incoh}}$, giving a direct rule for when
-pulse-shaping complexity pays off under real trap noise. The trade-off is
-species-independent (identical for ${}^{40}$Ca$^+$ and ${}^{171}$Yb$^+$ in dimensionless
-units), a consequence of fixed $\eta\Omega$ at loop closure.
+compensation (GBC, $\varepsilon^2\!\to\!\varepsilon^4$ with $\varepsilon\equiv\Delta\omega\tau$)
+schemes; and (iii)~map the coherent--incoherent trade-off: GBC's $\varepsilon^4$ advantage
+costs a $\approx\!4\times$ gate~time (hence $\approx\!4\times$ incoherent error), so a
+crossover asymmetric detuning $\Delta\omega^\times\!\propto\!\sqrt{I_{\rm incoh}}$ separates
+a regime where the single robust gate wins from one where GBC wins. Concretely, for a
+center-of-mass mode at $\omega_z=2\pi\times1$~MHz driven at $\delta=2\pi\times50$~kHz
+($\tau\approx20~\mu$s) with heating $\dot{\bar n}\approx1$~phonon/ms, the crossover lies at
+$\Delta\omega^\times\approx2\pi\times2.7$~kHz. We further show that (iv)~the useful
+compensation \emph{depth} is shallow --- recursive GBC plateaus at $\varepsilon^4$, so the
+optimum is $k^\star\!\in\!\{0,1\}$ (one GBC or none); and (v)~the trade-off is robust to the
+real system --- species-independent (${}^{40}$Ca$^+\!\equiv\!{}^{171}$Yb$^+$-Raman in
+dimensionless units), shifted by $\lesssim\!10\%$ under spectator-mode load (the incoherent
+sensitivity is target-mode dominated), and consistent with a full non-RWA + beyond-Lamb-Dicke
+model ($\lesssim\!10^{-4}$ residual at the ${}^{40}$Ca$^+$ operating point).
 \end{abstract}
 
 \maketitle
@@ -51,19 +59,32 @@ unclosed phase-space trajectory) and an \emph{asymmetric} error (the tones shift
 oppositely, a drift of the qubit center line, a $\sigma_z$ rotation on both qubits). The
 former is suppressed by robust waveforms~\cite{Leung18,Milne20,Roos08,Zhu06}; the latter
 does not commute with the entangler $G=\sigma_x^{j_1}\sigma_x^{j_2}$ and was recently
-addressed by generator-based compensation (GBC)~\cite{Zhang25}, which cancels the residual
-$\sigma_z$ to first order at the cost of a doubled-gate-time segment. For ${}^{40}$Ca$^+$,
-asymmetric error is the second-largest error source~\cite{Pogorelov21,Postler22}.
+addressed by generator-based compensation (GBC), which cancels the residual $\sigma_z$ to
+first order at the cost of a doubled-gate-time segment. For ${}^{40}$Ca$^+$, asymmetric
+error is the second-largest error source~\cite{Pogorelov21,Postler22}.
 
 All of this is validated in the closed-system limit, yet every robustness technique
 \emph{lengthens the gate}, and longer gates accumulate more incoherent error. We ask:
 \emph{how much of the coherent robustness survives realistic dissipation, and where is
 the net-fidelity optimum?} Answering it requires one framework that both designs the
-robust coherent pulse and verifies it under the full master equation. The analytic core
-we use is established~\cite{Sorensen00,Leung18,Zhang25} and we claim no novelty for it;
-our contributions are (N1)~a unified design$\to$open-system-verify pipeline,
-(N2)~the quantitative coherent--incoherent trade-off map, and (N3)~its extension toward
-$N\!\le\!4$-ion chains.
+robust coherent pulse and verifies it under the full master equation.
+
+\paragraph*{Relation to prior work.} The analytic core we use --- second-order Magnus in
+the $\sigma_x$ basis, phase-space closure, the amplitude-modulation waveform solver, and
+the GBC construction --- is established: the Sorensen--M\o lmer and frequency-modulation
+results are from Refs.~\cite{Sorensen00,Leung18}, and the symmetric/asymmetric-robust
+waveform and GBC construction were recently developed by an \emph{independent group},
+Zhang \emph{et~al.}~\cite{Zhang25}, whose coherent-error results we reproduce as validation
+baselines (Sec.~\ref{sec:val}, Fig.~\ref{fig:val}) and build upon. We claim no novelty for
+that coherent machinery. Our contributions are on the open-system and trade-off side:
+(N1)~a unified, cross-validated design$\to$open-system-verify pipeline (analytic
+$\leftrightarrow$ numerical agreement $\sim\!3\times10^{-9}$); (N2)~the quantitative
+coherent--incoherent trade-off map and its crossover law
+$\Delta\omega^\times\!\propto\!\sqrt{I_{\rm incoh}}$; (N3)~the optimal-depth result
+(recursive GBC plateaus at $\varepsilon^4$, so $k^\star\!\in\!\{0,1\}$); (N4)~the extension
+to $N\!\le\!4$-ion chains with Coulomb-equilibrium mode spectra, with the finding that the
+incoherent sensitivity is \emph{target-mode dominated}; and (N5)~the species-independence of
+the trade-off and a non-RWA + beyond-Lamb-Dicke bound certifying the RWA+LD model.
 
 \section{Theoretical framework}
 \subsection{Ideal multi-mode MS Hamiltonian}
@@ -81,7 +102,9 @@ The coupling operators all commute, so the second-order Magnus expansion termina
 \alpha_m(\tau)=\!\int_0^\tau\!\Omega\,e^{i\delta_m t}dt,\quad
 \Theta=\tfrac12\!\sum_m\eta_m^2 b^m_{j_1}b^m_{j_2}\!\!\iint\!\Omega\Omega\sin[\delta_m(t_1{-}t_2)].
 \end{equation}
-The gate is clean when $\alpha_m(\tau)=0$ and $\Theta=\pi/4$.
+The gate is clean when $\alpha_m(\tau)=0$ and $\Theta=\pi/4$. Because the $\sigma_x^j$ commute,
+this multi-mode phase is \emph{exact}, not a cross-term-truncated approximation --- a point we
+verify against the full integrator in Sec.~\ref{sec:e5}.
 
 \subsection{Coherent errors and robust waveform}
 A common-mode asymmetric error adds $\tfrac{\Delta\omega}{2}\sum_j\sigma_z^j$. Imposing a
@@ -104,6 +127,7 @@ $\hat U^{\rm gbc}_\varepsilon=\hat U_\varepsilon\hat U^\dagger_{2\varepsilon}\ha
 U_{2\varepsilon}(-\Theta)\,\hat\Pi$ and $\hat\Pi=\sigma_x\!\otimes\!\sigma_x$; because
 Eq.~\eqref{eq:star} is motion-free, this lives in the two-qubit ($4\times4$) space. The
 residual infidelity is $O(\varepsilon^4)$ (GBC) vs $O(\varepsilon^2)$ (uncompensated).
+Nesting this construction does not help beyond one level (Sec.~\ref{sec:e4}).
 
 \subsection{Open-system model (this work)}
 We evolve the full $\rho$ on $\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$ under
@@ -114,33 +138,46 @@ layer the coherent robust-control literature omits.
 
 \section{Toolchain}
 \begin{figure}[t]\includegraphics[width=\columnwidth]{Fig1_toolchain}
-\caption{The design$\to$verify$\to$sweep toolchain (module names, upgrade tags U1--U4).}
+\caption{The design$\to$verify$\to$sweep toolchain (framework-free JavaScript modules; the
+upgrade tags U1--U4 and the multi-mode/exact extensions used in Secs.~\ref{sec:e5}--\ref{sec:e6}).}
 \label{fig:toolchain}\end{figure}
 The framework-free modules (Fig.~\ref{fig:toolchain}) are: \textsf{ion-msn(-shape)} ---
 the $O(M)$ analytic designer ($\Theta$, $\alpha_m$, closure, robust $\Omega(t)$);
-\textsf{ion-gbc} --- the $4\times4$ asymmetric-error/GBC gate; \textsf{ion-ms} --- the
-full Lindblad integrator (piecewise $\Omega(t)$, $\Delta\omega$, noise); \textsf{ion-modes}
---- the Coulomb chain mode spectrum; \textsf{ion-pipeline} --- the sweep driver.
+\textsf{ion-gbc} --- the $4\times4$ asymmetric-error/GBC gate (with recursive depth);
+\textsf{ion-ms} --- the single-mode Lindblad integrator (piecewise $\Omega(t)$, $\Delta\omega$,
+noise); \textsf{ion-ms-mm} --- the multi-mode ($M$-mode) open-system verifier;
+\textsf{ion-ms-exact} --- the full non-RWA + beyond-Lamb-Dicke reference; \textsf{ion-ms-pm}
+--- a phase-modulated robust designer for method comparison; \textsf{ion-modes} --- the
+Coulomb chain mode spectrum; \textsf{ion-pipeline} --- the sweep driver.
 
-\section{Validation}
+\section{Validation}\label{sec:val}
 \begin{figure}[t]\includegraphics[width=\columnwidth]{Fig2_validation}
-\caption{Closed-system validation: (a)~GBC turns the $\varepsilon^2$ asymmetric-error
-infidelity into $\varepsilon^4$ (ratios $4.00$/$15.97$ per doubling); (b)~the numerical
-Lindblad gate (U3) and the analytic $4\times4$ gate (U2) agree on the $\Delta\omega$-error
-infidelity.}\label{fig:val}\end{figure}
+\caption{Closed-system validation. (a)~GBC turns the $\varepsilon^2$ asymmetric-error
+infidelity ($1-F$ vs $\varepsilon=\Delta\omega\tau$) into $\varepsilon^4$ (measured ratios
+$4.00$/$15.97$ per doubling of $\varepsilon$). (b)~The numerical Lindblad gate (U3) and the
+analytic $4\times4$ gate (U2) agree on the $\Delta\omega$-error infidelity, scaling
+$\propto\Delta\omega^2$.}\label{fig:val}\end{figure}
 In the closed-system limit the analytic and numerical Bell fidelities agree to
-$|\Delta F|\approx3\times10^{-9}$. Fig.~\ref{fig:val} reproduces the $\varepsilon^2$ vs
-$\varepsilon^4$ scaling~\cite{Zhang25} and the numeric$\leftrightarrow$analytic agreement.
+$|\Delta F|\approx3\times10^{-9}$ for both constant and shaped drives.
+Fig.~\ref{fig:val} reproduces the $\varepsilon^2$ vs $\varepsilon^4$
+scaling~\cite{Zhang25} and the numeric$\leftrightarrow$analytic agreement.
 
 \section{Numerical experiments}
-Single-mode MS gate, $\eta=0.1$ (${}^{40}$Ca$^+$; $\nu_z=1$~MHz $\Rightarrow\eta\approx0.097$,
-matching~\cite{Zhang25}), $\delta\equiv1$ (frequency unit), $K=1$, $N_{\rm Fock}=18$.
+Single-mode MS gate unless stated, $\eta=0.1$ (${}^{40}$Ca$^+$; $\nu_z=1$~MHz
+$\Rightarrow\eta\approx0.097$, matching~\cite{Zhang25}), $\delta\equiv1$ (frequency unit),
+$K=1$, $N_{\rm Fock}=18$. The incoherent floor is Fock-converged: the single-gate infidelity
+under heating is identical to five significant figures across $N_{\rm Fock}=12$--$28$ at every
+rate tested (e.g. $8.231\times10^{-2}$ at $\kappa=0.02$; $1.727\times10^{-1}$ at $\kappa=0.05$).
 
 \textit{Method (validated-component decomposition).} GBC reaches $\varepsilon^4$ only when
 $\beta_m=0$ (robust waveform); a constant single-mode drive has $\int\alpha\,dt\neq0$, so a
-constant-leg GBC cancels only to $\varepsilon^2$. We therefore take GBC's coherent part from
-the analytic gate ($\varepsilon^4$) and its incoherent part from the numerically integrated
-$4\tau$ sequence at $\Delta\omega=0$, combined additively to leading order.
+constant-leg GBC cancels only to $\varepsilon^2$ (verified $N_{\rm Fock}$-independently: identical
+at $N_{\rm Fock}=18,30$). We therefore take GBC's coherent part from the analytic gate
+($\varepsilon^4$) and its incoherent part from the numerically integrated $4\tau$ sequence at
+$\Delta\omega=0$, combined additively. This is leading-order exact: the GBC time is
+\emph{exactly} $4\tau$ ($\tau{+}2\tau{+}\tau$, the ``$\approx$'' flagging only fast global-$\Pi$
+single-qubit pulses), and the cross-term is $O(\varepsilon^4\!\cdot\!\kappa\tau)$ --- negligible
+against either channel.
 
 \paragraph{E1 --- incoherent baseline.} GBC's incoherent infidelity is $\approx4\times$ the
 single gate across heating rates (Fig.~\ref{fig:e1}), its $4\tau$ vs $\tau$ cost.
@@ -156,38 +193,137 @@ Repeating for ${}^{40}$Ca$^+$ ($\eta=0.10$) and ${}^{171}$Yb$^+$-Raman ($\eta=0.
 \emph{identical} crossovers; only the drive differs ($\Omega_{\rm closure}=5.0$ vs $2.6$,
 $\propto1/\eta$), because $\eta\Omega=\delta/(2\sqrt K)$ is fixed at closure.
 
-\begin{figure}[t]\includegraphics[width=0.86\columnwidth]{Fig3_E1_incoherent}
-\caption{E1: GBC's $\approx4\tau$ incoherent cost vs heating $\kappa$.}\label{fig:e1}\end{figure}
-\begin{figure}[t]\includegraphics[width=0.86\columnwidth]{Fig4_E2_tradeoff}
-\caption{E2: trade-off curve; crossover $\Delta\omega^\times\!\approx\!0.07$.}\label{fig:e2}\end{figure}
-\begin{figure}[t]\includegraphics[width=0.86\columnwidth]{Fig5_E3_crossover}
-\caption{E3: crossover $\Delta\omega^\times$ vs incoherent floor, $\propto\sqrt{I}$.}\label{fig:e3}\end{figure}
+\paragraph*{Physical units.} With $\delta\equiv1$ as the frequency unit, a concrete map:
+a center-of-mass mode at $\omega_z=2\pi\times1$~MHz driven at $\delta=2\pi\times50$~kHz gives a
+single-gate time $\tau=2\pi/\delta\approx20~\mu$s. A heating rate $\dot{\bar n}\approx1$~phonon/ms
+corresponds to $\kappa\approx3\times10^{-3}$ ($\kappa=\dot{\bar n}/\delta$), the fourth row of
+Table~\ref{tab:e3}, where $\Delta\omega^\times\approx0.055$ translates to a physical center-line
+tolerance $\Delta\omega^\times\approx2\pi\times2.7$~kHz: below it, run the single robust gate;
+above it, GBC pays off.
 
-\begin{table}[t]\caption{E3 crossover vs heating $\kappa$ ($\bar n_{\rm th}=1$).}\label{tab:e3}
-\begin{ruledtabular}\begin{tabular}{cccc}
-$\kappa$ & single incoh. & GBC incoh. & $\Delta\omega^\times$ \\ \hline
-$3\times10^{-4}$ & $1.4\times10^{-3}$ & $5.6\times10^{-3}$ & $0.015$ \\
-$7\times10^{-4}$ & $3.3\times10^{-3}$ & $1.3\times10^{-2}$ & $0.025$ \\
-$1.5\times10^{-3}$ & $7.0\times10^{-3}$ & $2.7\times10^{-2}$ & $0.045$ \\
-$3\times10^{-3}$ & $1.4\times10^{-2}$ & $5.3\times10^{-2}$ & $0.055$ \\
-$6\times10^{-3}$ & $2.7\times10^{-2}$ & $9.9\times10^{-2}$ & $0.085$ \\
+\begin{figure}[t]\includegraphics[width=0.86\columnwidth]{Fig3_E1_incoherent}
+\caption{E1: GBC's $\approx4\tau$ incoherent infidelity ($1-F$) vs heating rate $\kappa$
+(units of $\delta$), $\approx4\times$ the single gate throughout.}\label{fig:e1}\end{figure}
+\begin{figure}[t]\includegraphics[width=0.86\columnwidth]{Fig4_E2_tradeoff}
+\caption{E2: single-gate ($\propto\Delta\omega^2$) and GBC ($\approx$ flat) infidelities vs
+asymmetric detuning $\Delta\omega$ (units of $\delta$); they cross at
+$\Delta\omega^\times$.}\label{fig:e2}\end{figure}
+\begin{figure}[t]\includegraphics[width=0.86\columnwidth]{Fig5_E3_crossover}
+\caption{E3: crossover $\Delta\omega^\times$ (units of $\delta$) vs incoherent floor
+$I_{\rm incoh}$, scaling as $\sqrt{I}$; single-gate-wins and GBC-wins regions shaded. For the
+reference $\delta=2\pi\times50$~kHz, the $\Delta\omega^\times$ axis spans
+$\sim\!2\pi\times(0.7$--$4)$~kHz.}\label{fig:e3}\end{figure}
+
+\begin{table}[t]\caption{E3 crossover vs heating $\kappa$ ($\bar n_{\rm th}=1$). Rightmost
+column gives the physical $\Delta\omega^\times$ for the reference $\delta=2\pi\times50$~kHz.}
+\label{tab:e3}
+\begin{ruledtabular}\begin{tabular}{ccccc}
+$\kappa$ & single incoh. & GBC incoh. & $\Delta\omega^\times$ & $\Delta\omega^\times/2\pi$ (kHz)\\ \hline
+$3\times10^{-4}$ & $1.4\times10^{-3}$ & $5.6\times10^{-3}$ & $0.015$ & $0.75$\\
+$7\times10^{-4}$ & $3.3\times10^{-3}$ & $1.3\times10^{-2}$ & $0.025$ & $1.25$\\
+$1.5\times10^{-3}$ & $7.0\times10^{-3}$ & $2.7\times10^{-2}$ & $0.045$ & $2.25$\\
+$3\times10^{-3}$ & $1.4\times10^{-2}$ & $5.3\times10^{-2}$ & $0.055$ & $2.75$\\
+$6\times10^{-3}$ & $2.7\times10^{-2}$ & $9.9\times10^{-2}$ & $0.085$ & $4.25$\\
 \end{tabular}\end{ruledtabular}\end{table}
 
-\section{Discussion}
-The closed-system agreement between an $O(M)$ analytic engine and a full Lindblad
-integrator makes design cheap and verification trustworthy. Robust waveforms and GBC
-trade coherent suppression for gate time, so their benefit is conditional on the
-incoherent budget: below $\Delta\omega^\times$ use the single robust gate; above it, GBC.
-\emph{Limitations.} The analytic operator is second-order Magnus~\cite{Zhang25}; the
-Lindblad study is single-mode ($N\!\le\!4$ multi-mode deferred); the beyond-RWA carrier is
-a leading-order estimate; and a fully-coupled shaped-leg numerical GBC (needing
-$N_{\rm Fock}\!\gtrsim\!30$ and sub-$\varepsilon^2$ leg calibration) remains open.
+\paragraph{E4 --- optimal robustness depth.}\label{sec:e4} We nest GBC via its physical
+error-flip, $\hat U^{(k)}_\varepsilon=\hat U^{(k-1)}_\varepsilon[\hat\Pi\hat
+U^{(k-1)}_{2\varepsilon}(-\Theta)\hat\Pi]\hat U^{(k-1)}_\varepsilon$, so the gate time grows
+as $4^k\tau$. The coherent infidelity does \emph{not} keep improving: it drops
+$\varepsilon^2\!\to\!\varepsilon^4$ from $k{=}0\!\to\!1$ then \emph{plateaus} at $\varepsilon^4$
+for all $k\ge1$ (measured exponents $2.00,4.00,3.98$), and $k{=}2$ is coherently \emph{worse}
+than $k{=}1$ ($4.4\times10^{-6}$ vs $1.1\times10^{-6}$ at $\varepsilon=0.06$). The residual
+left by one GBC is \emph{even} in $E=\tfrac12\sum_j\sigma_z^j$, while $\hat\Pi$ only flips
+terms odd in $E$; nested conjugation cannot cancel it. Hence the optimal depth is
+$k^\star\!\in\!\{0,1\}$ throughout the physical regime ($\varepsilon\lesssim0.2$): $k^\star=0$
+below $\Delta\omega^\times$, $k^\star=1$ above --- $k\ge2$ loses in \emph{both} channels
+(worse coherent error and $4^k\times$ incoherent exposure). The verdict is: use one GBC or none.
+
+\paragraph{E5 --- chain scaling.}\label{sec:e5} A multi-mode open-system verifier
+(\textsf{ion-ms-mm}, dimension $4\prod_m N_{\rm Fock}^{(m)}$; the Hermiticity identity
+$\rho H=(H\rho)^\dagger$ makes each product sparse-first, $O(\dim^2 M)$) reproduces the
+single-mode gate to $|\Delta F|<3\times10^{-9}$ ($M{=}1$), the analytic two-ion (COM+stretch)
+kernel to $|\Delta F|=1\times10^{-6}$ ($M{=}2$), and a real three-ion chain gate to
+$|\Delta F|=4.6\times10^{-4}$ ($M{=}3$, $\dim=640$) --- certifying that the analytic
+mode-separable evaluation neglects no inter-mode correlation. The incoherent sensitivity is
+\emph{target-mode dominated} and falls off with mode detuning: per-mode slopes
+$\mathrm d(1{-}F)/\mathrm d\kappa$ are $9.83/2.11/0.08$ for the COM target and the two
+spectators ($\delta=0.25/{-}0.48/{-}1.16$). Even two spectators add only $\sim\!22\%$ to the
+target, so the E3 crossover shifts by $\lesssim\!\sqrt{1.2}\approx1.1$; the single-mode
+trade-off carries over to a real chain essentially unchanged.
+
+\paragraph{E6 --- method comparison.}\label{sec:e6} The crossover is set by the gate~time,
+not the shaping method (Sec.~\ref{sec:disc}). We test this by building a physically distinct
+robust scheme --- a \emph{phase-modulated} (PM) waveform of constant amplitude and
+piecewise-constant phase $\varphi(t)$ (the family of Ref.~\cite{Milne20}, \textsf{ion-ms-pm})
+--- and comparing it head-to-head with the amplitude-modulated (AM) designer at equal $\tau$
+(Table~\ref{tab:e6}). Both close the loop, are first-order $\delta$-robust, and reach
+$|\Theta|=\pi/8$, so both sit at the \emph{same} crossover; they differ only in sub-leading,
+channel-specific cost --- here the PM gate is gentler ($\sim\!2\times$ lower constant peak
+drive, $\sim\!3\times$ smaller heating excursion). Swapping the pulse-design method
+(amplitude-, phase-, or optimal-control shaping) thus moves a gate \emph{along} the trade-off
+at fixed $\tau$, not to a different crossover.
+
+\begin{table}[t]\caption{E6: amplitude- vs phase-modulated robust gate (single mode, same
+$\tau=2\pi/\delta$, $|\Theta|=\pi/8$).}\label{tab:e6}
+\begin{ruledtabular}\begin{tabular}{lcc}
+ & AM (amplitude) & PM (phase) \\ \hline
+closure $|\alpha(\tau)|$ & $\sim\!10^{-16}$ & $\sim\!10^{-16}$ \\
+$\delta$-robustness & quadratic & quadratic (ratio $3.97$) \\
+$|\Theta|$ & $\pi/8$ & $\pi/8$ \\
+peak Rabi $\Omega$ & $19.0$ (swinging) & $8.9$ (constant) \\
+$\int_0^\tau|\alpha|^2dt$ (heating) & $1.00$ & $0.31$ \\
+\end{tabular}\end{ruledtabular}\end{table}
+
+\paragraph{Non-RWA + beyond-Lamb-Dicke bound.} Integrating the exact spin-dependent-force
+Hamiltonian $H=\omega_z a^\dagger a+\Omega\sum_j\sigma_x^j\sin[\eta(a{+}a^\dagger)]\cos[(\omega_z{-}\delta)t]$
+in the lab frame (\textsf{ion-ms-exact}; no LD expansion, no vibrational RWA) gives the RWA
+infidelity $\propto(\Omega/\omega_z)^2$ and the beyond-LD (Debye--Waller) infidelity
+$\propto\eta^4$. At the ${}^{40}$Ca$^+$ point ($\eta=0.1$, slow gate) both are
+$\lesssim\!10^{-4}$, so the RWA+LD model underlying E1--E6 is accurate; the exact model marks
+the boundary (fast/strong drive, or $\eta\gtrsim0.3$) beyond which it should be replaced.
+
+\section{Discussion}\label{sec:disc}
+The results establish four points. (i)~The closed-system agreement between an $O(M)$ analytic
+engine and a full Lindblad integrator ($|\Delta F|\sim10^{-9}$--$10^{-6}$) makes design cheap
+and verification trustworthy. (ii)~Robust waveforms and GBC trade coherent suppression for
+gate~time, so their benefit is conditional on the incoherent budget: below $\Delta\omega^\times$
+use the single robust gate, above it use GBC. (iii)~The useful robustness depth is shallow
+($k^\star\!\in\!\{0,1\}$); over-compensating is strictly counterproductive. (iv)~The trade-off
+survives in a real chain (target-mode-dominated incoherent sensitivity). The framework is
+agnostic to the pulse-design method: since $\Delta\omega^\times$ depends on a scheme only
+through $I_{\rm incoh}\!\propto\!\tau$, any robust waveform closing the same modes in comparable
+time lands at the same crossover, as E6 confirms directly.
+
+\emph{Experimental considerations.} The waveform is piecewise-constant with $4M+4$ segments;
+for $M=3$ over $\tau\sim100~\mu$s this is a $\sim\!160$~kHz amplitude-update rate, within
+standard AWG/DDS control of an AOM. The AM peak Rabi frequency exceeds the constant-closure
+value by $\sim\!4\times$; the PM variant removes this. Calibration uses the same inputs as a
+standard MS gate (mode frequencies, $\eta$, one global Rabi scale). Pulse-timing jitter is a
+distinct axis; the palindromic waveform makes first-order boundary-timing errors partially
+self-cancel, and a dedicated study is readily run in the verifier.
+
+\emph{Limitations.} The analytic operator is second-order Magnus~\cite{Zhang25}. The
+open-system verifier's Hilbert space grows as $4\prod_m N_{\rm Fock}^{(m)}$, run here at
+$M\!\le\!3$ ($\dim=640$); this is \emph{not} a $2^N$ wall (a pairwise gate is two qubits
+$\otimes$ its coupled modes). Three routes extend it: E5-justified reduced-mode models (a
+spectator's weight falls with detuning, a computable error bar), quantum-trajectory
+unravelling ($\dim$ statevectors, already implemented in \textsf{ion-ms-exact}), and adiabatic
+elimination or a $\kappa\tau$ cumulant expansion ($O(\dim)$). The noise model is Markovian with
+constant rates --- appropriate for the incoherent floor and for white dephasing, but not for
+$1/f$/correlated heating; note that the two limiting timescales (quasi-static coherent drift,
+targeted by the robust waveform, and white incoherent noise) are both modeled, and the
+$\sqrt{I_{\rm incoh}}$ structure is generic to any positive-weight spectrum. Single-qubit gates
+in GBC are taken ideal (or SUPCODE-protected) as in Ref.~\cite{Zhang25}.
 
 \section{Conclusion}
-We provide a design$\to$open-system-verify toolchain for robust MS gates and quantify the
-coherent--incoherent trade-off that governs whether robust-control gains survive
-dissipation --- a direct rule ($\Delta\omega^\times\!\propto\!\sqrt{I_{\rm incoh}}$,
-species-independent) for when pulse-shaping complexity pays off.
+We built a design$\to$open-system-verify toolchain for robust MS gates and used it to quantify
+the coherent--incoherent trade-off that governs whether robust-control gains survive
+dissipation. The headline is a map: robustness pays off only above a noise-set threshold
+$\Delta\omega^\times\!\propto\!\sqrt{I_{\rm incoh}}$, and the useful compensation depth is
+$k^\star\!\in\!\{0,1\}$ --- one GBC or none. These conclusions are species-independent in
+dimensionless units, robust to spectator-mode load, and validated against a full non-RWA +
+beyond-Lamb-Dicke model, giving a pre-hardware calibration rule for MS gates at $2$--$4$ ions.
 
 \begin{acknowledgments}
 CiRA QuantumSim (KMITL). Software cross-validated against the analytic framework

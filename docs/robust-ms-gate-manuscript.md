@@ -487,6 +487,15 @@ decomposition is the primary — and, by U2/E4, rigorous — method for the trad
   required drive, $\Omega_{\rm closure}=5.0$ (Ca⁺) vs $2.6$ (Yb⁺), i.e. $\propto1/\eta$. The
   trade-off rule is thus universal across these species in dimensionless units.
 
+  *Physical units (worked example).* With $\delta\equiv1$ the frequency unit, take a
+  center-of-mass mode at $\omega_z=2\pi\times1$ MHz driven at $\delta=2\pi\times50$ kHz: the
+  single-gate time is $\tau=2\pi/\delta\approx20\,\mu$s ($\delta/\omega_z=0.05$). A heating rate
+  $\dot{\bar n}\approx1$ phonon/ms maps to $\kappa\approx3\times10^{-3}$ ($\kappa=\dot{\bar n}/\delta$)
+  — the fourth row of the E3 table, where $\Delta\omega^\times\approx0.055$ becomes a **physical
+  center-line tolerance $\Delta\omega^\times\approx2\pi\times2.7$ kHz**. Below it, run the single
+  robust gate; above it, GBC pays off. The full $\Delta\omega^\times$ column
+  ($0.015$–$0.085$) spans $\sim\!2\pi\times(0.75$–$4.3)$ kHz for this $\delta$.
+
 - **E4 — Optimal robustness depth** *(done).* We nest GBC via its physical error-flip,
   $U^{(k)}_\varepsilon=U^{(k-1)}_\varepsilon\,[\Pi U^{(k-1)}_{2\varepsilon}(-\Theta)\Pi]\,U^{(k-1)}_\varepsilon$
   ($U^{(0)}=U_\varepsilon$, $\Pi=\sigma_x\!\otimes\!\sigma_x$), so total gate time grows as $4^k\tau$.
@@ -565,11 +574,13 @@ decomposition is the primary — and, by U2/E4, rigorous — method for the trad
 | | | |
 |:---:|:---:|:---:|
 | ![E1](figures/Fig3_E1_incoherent.png) | ![E2](figures/Fig4_E2_tradeoff.png) | ![E3](figures/Fig5_E3_crossover.png) |
-| **Fig. 3** — E1: GBC's $\approx4\tau$ incoherent cost | **Fig. 4** — E2: trade-off curve, crossover $\Delta\omega^\times$ | **Fig. 5** — E3: where GBC pays off vs trap noise ($\propto\sqrt{I}$) |
+| **Fig. 3** — E1: GBC's $\approx4\tau$ incoherent cost vs heating $\kappa$ (units of $\delta$) | **Fig. 4** — E2: trade-off curve; single ($\propto\Delta\omega^2$) vs GBC (flat), crossing at $\Delta\omega^\times$ ($\Delta\omega$ in units of $\delta$) | **Fig. 5** — E3: crossover $\Delta\omega^\times$ vs incoherent floor $I_{\rm incoh}$, $\propto\sqrt{I}$; single-wins/GBC-wins regions shaded |
 
-Fig. 1 (toolchain) and Fig. 2 (B1/B2 validation) appear in Secs. III–IV. Data, pulse
-files, and the figure script are released with the code (`src/ion-pipeline.js`,
-`docs/figures/make_figures.py`). All five figures regenerate from the pipeline in one run.
+Axes are dimensionless ($\delta\equiv1$). For the reference $\delta=2\pi\times50$ kHz, the
+$\Delta\omega^\times$ axis of Fig. 5 spans $\sim\!2\pi\times(0.75$–$4.3)$ kHz (see the worked
+example under E3). Fig. 1 (toolchain) and Fig. 2 (B1/B2 validation) appear in Secs. III–IV.
+Data, pulse files, and the figure script are released with the code (`src/ion-pipeline.js`,
+`docs/figures/make_figures.py`); all five regenerate from the pipeline in one run.
 
 ---
 
