@@ -164,7 +164,7 @@ function extractCrossover(dS, dG) {
 }
 
 function renderEps4(d) {
-  const col = clr(), dws = []; for (let e = -1.6; e <= -0.4; e += 0.03) dws.push(Math.pow(10, e));   // 0.025 .. 0.4
+  const col = clr(), dws = []; for (let e = -1.82; e <= -0.82; e += 0.025) dws.push(Math.pow(10, e));   // 0.015 .. 0.15 (clean ε⁴, pre-saturation)
   const tau = gateTau(1, S.K);
   const gbc = dws.map((dw) => ({ x: dw, y: Math.max(1e-14, coherentGBC(dw * tau)) }));
   // reference slopes anchored at the smallest Δω
@@ -172,7 +172,11 @@ function renderEps4(d) {
   const ref2 = dws.map((dw) => ({ x: dw, y: y0 * (dw / x0) ** 2 }));
   const ref4 = dws.map((dw) => ({ x: dw, y: y0 * (dw / x0) ** 4 }));
   const data = parseData($('ta-eps4').value);
-  const spec = { key: 'eps4', xlabel: 'Δω  (units of δ)', ylabel: '1 − F (GBC)', xlog: true, ylog: true, xrange: [0.02, 0.4], yrange: [1e-9, 1e-2],
+  // auto y-range from the GBC theory + data (log decades), so the curve fills the plot
+  const yvals = gbc.map((p) => p.y).concat(data.map((p) => p.y)).filter((y) => y > 0);
+  const ylo = Math.pow(10, Math.floor(Math.log10(Math.min(...yvals))));
+  const yhi = Math.pow(10, Math.ceil(Math.log10(Math.max(...yvals))));
+  const spec = { key: 'eps4', xlabel: 'Δω  (units of δ)', ylabel: '1 − F (GBC)', xlog: true, ylog: true, xrange: [0.012, 0.18], yrange: [ylo, yhi],
     series: [ { kind: 'line', pts: ref2, color: col.muted, width: 1, label: 'ε² slope' }, { kind: 'line', pts: ref4, color: col.violet, width: 1, label: 'ε⁴ slope' }, { kind: 'line', pts: gbc, color: col.orange, label: 'GBC (theory)' } ] };
   if (data.length) spec.series.push({ kind: 'points', pts: data, color: col.orange, label: 'GBC (meas.)' });
   plot($('cv-eps4'), spec);
