@@ -7,7 +7,8 @@
 //   node test/ion-gbc.test.mjs   (or: npm test)
 // =============================================================================
 
-import { msUnitary, gbcUnitary, gateFidelity, asymmetricSweep, THETA_MS } from '../src/ion-gbc.js';
+import { msUnitary, gbcUnitary, gateFidelity, asymmetricSweep, THETA_MS,
+  gbcUnitaryK, piConjugate, gbcTimeFactor, optimalDepth } from '../src/ion-gbc.js';
 
 let passes = 0, failures = 0;
 function check(name, ok, detail) {
@@ -89,6 +90,53 @@ function unitarityErr(U) {
   check('sweep: GBC below uncompensated at every nonzero Δω',
     s.filter((p) => p.deltaOmega !== 0).every((p) => p.gbc < p.uncompensated),
     `Δω=0.2: gbc=${s[4].gbc.toExponential(2)} < unc=${s[4].uncompensated.toExponential(2)}`);
+}
+
+// ---------------------------------------------------------------------------
+// 7. E4 — recursive GBC: k=1 reproduces standard GBC; depth PLATEAUS at ε⁴.
+// ---------------------------------------------------------------------------
+{
+  // k=0 = bare gate, k=1 = standard GBC.
+  const eps = 0.1;
+  check('recursive GBC k=0 = bare MS gate',
+    Math.abs((1 - gateFidelity(gbcUnitaryK(THETA_MS, eps, 0))) - (1 - gateFidelity(msUnitary(THETA_MS, eps)))) < 1e-14);
+  check('recursive GBC k=1 = standard GBC',
+    Math.abs((1 - gateFidelity(gbcUnitaryK(THETA_MS, eps, 1))) - (1 - gateFidelity(gbcUnitary(THETA_MS, eps)))) < 1e-12,
+    `k1=${(1 - gateFidelity(gbcUnitaryK(THETA_MS, eps, 1))).toExponential(2)}`);
+
+  // scaling exponents from doubling ε: k=0 → ε², k=1 → ε⁴, and k=2 STAYS ε⁴ (no ε⁸).
+  const expo = (k) => Math.log2((1 - gateFidelity(gbcUnitaryK(THETA_MS, 0.08, k))) / (1 - gateFidelity(gbcUnitaryK(THETA_MS, 0.04, k))));
+  check('k=0 infidelity ∝ ε²', near(expo(0), 2, 0.1), `ε^${expo(0).toFixed(2)}`);
+  check('k=1 infidelity ∝ ε⁴', near(expo(1), 4, 0.1), `ε^${expo(1).toFixed(2)}`);
+  check('k=2 PLATEAUS at ε⁴ (nesting does NOT reach ε⁸)', near(expo(2), 4, 0.2), `ε^${expo(2).toFixed(2)}`);
+
+  // k=2 is coherently WORSE than k=1 (even-in-E residual not cancelled by Π).
+  const c1 = 1 - gateFidelity(gbcUnitaryK(THETA_MS, 0.06, 1)), c2 = 1 - gateFidelity(gbcUnitaryK(THETA_MS, 0.06, 2));
+  check('k=2 coherent error > k=1 (no benefit from nesting)', c2 > c1, `k2=${c2.toExponential(2)} > k1=${c1.toExponential(2)}`);
+}
+
+// ---------------------------------------------------------------------------
+// 8. E4 — optimal depth is k*∈{0,1} across the physical regime (ε≤0.2).
+// ---------------------------------------------------------------------------
+{
+  check('Π-conjugation is an involution (ΠΠ=I)', (() => {
+    const U = msUnitary(0.3, 0.1), UU = piConjugate(piConjugate(U));
+    let e = 0; for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) e += Math.abs(U.re[i][j] - UU.re[i][j]) + Math.abs(U.im[i][j] - UU.im[i][j]);
+    return e < 1e-15;
+  })());
+  check('gbcTimeFactor(k)=4^k', gbcTimeFactor(0) === 1 && gbcTimeFactor(1) === 4 && gbcTimeFactor(2) === 16);
+
+  // scan the physical regime; k* must be 0 or 1 everywhere, and follow the E3 crossover.
+  let allBinary = true, sawK0 = false, sawK1 = false;
+  for (const I of [1e-5, 1e-4, 1e-3, 1e-2]) for (let dw = 0.02; dw <= 0.2001; dw += 0.02) {
+    const k = optimalDepth(dw, 1, I, { kMax: 3 }).kStar;
+    if (k > 1) allBinary = false;
+    if (k === 0) sawK0 = true; if (k === 1) sawK1 = true;
+  }
+  check('optimal depth k*∈{0,1} for all ε≤0.2, all noise floors', allBinary);
+  check('both k*=0 (low Δω/noisy) and k*=1 (high Δω/quiet) occur', sawK0 && sawK1);
+  // crossover direction: at fixed noise, larger Δω favors GBC (k*=1); at fixed Δω, more noise favors k*=0.
+  check('more incoherent noise pushes k* down (0)', optimalDepth(0.1, 1, 1e-2).kStar <= optimalDepth(0.1, 1, 1e-5).kStar);
 }
 
 console.log(`\n${passes} passed, ${failures} failed`);

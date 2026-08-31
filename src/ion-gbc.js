@@ -104,3 +104,56 @@ export function asymmetricSweep(deltaOmegas, tau, { theta = THETA_MS } = {}) {
     };
   });
 }
+
+// =============================================================================
+// E4 — recursive (nested) GBC and the optimal robustness depth.
+//
+// The physical error-flip in GBC is Π(·)Π with Π=σ_x⊗σ_x (ΠGΠ=G, ΠEΠ=−E). Nest it:
+//     U^{(k)}(Θ,ε) = U^{(k−1)}(Θ,ε) · [ Π U^{(k−1)}(−Θ,2ε) Π ] · U^{(k−1)}(Θ,ε),
+// with U^{(0)}=U(Θ,ε). Each level triples the sub-gates and doubles the middle-leg
+// time, so the TOTAL gate time grows as 4^k·τ.
+//
+// KEY RESULT (measured): the coherent infidelity does NOT keep improving. It drops
+// ε²→ε⁴ from k=0→1, then PLATEAUS at ε⁴ for all k≥1 — and k≥2 is in fact WORSE. The
+// residual left by one GBC is EVEN in E (∼ε²[E,[E,G]]), and Π only sign-flips terms
+// ODD in E, so nested Π-conjugation cannot cancel it. Reaching ε⁸ needs a genuinely
+// higher-order (tuned-angle composite) sequence, not naive nesting — out of scope.
+// Consequence: in the physical regime (ε≲0.2) the optimal depth is k*∈{0,1} (k≥2 loses
+// in BOTH channels — worse coherent error AND 4^k× more incoherent exposure), decided by
+// the E3 crossover. (k=3 wins only in a non-perturbative sliver at ε≳0.34 with a near-ideal
+// trap I≲1e-5 — a 34% center-line error, physically irrelevant.)
+// =============================================================================
+
+// Π U Π (Π=σ_x⊗σ_x): the physical global-π error-flip. Π swaps basis index i↔3−i.
+export function piConjugate(U) {
+  const re = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  const im = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { re[i][j] = U.re[3 - i][3 - j]; im[i][j] = U.im[3 - i][3 - j]; }
+  return { re, im };
+}
+
+// Depth-k recursive GBC (k=0 → bare gate, k=1 → standard GBC).
+export function gbcUnitaryK(theta, eps, k) {
+  if (k <= 0) return msUnitary(theta, eps);
+  const Ue = gbcUnitaryK(theta, eps, k - 1);
+  const mid = piConjugate(gbcUnitaryK(-theta, 2 * eps, k - 1));   // Π U^{(k−1)}(−Θ,2ε) Π
+  return cmul(cmul(Ue, mid), Ue);
+}
+
+// Total gate-time multiple (in units of the bare τ) of depth-k GBC.
+export const gbcTimeFactor = (k) => Math.pow(4, k);
+
+// Optimal robustness depth for a given center-line error and incoherent budget.
+//   deltaOmega  — asymmetric (center-line) drift; ε = Δω·τ.
+//   incohI1     — incoherent infidelity of ONE bare gate (time τ); U^{(k)} pays 4^k·incohI1.
+//   Returns { kStar, rows:[{k, coherent, incoherent, net}] }.
+export function optimalDepth(deltaOmega, tau, incohI1, { kMax = 3, theta = THETA_MS } = {}) {
+  const eps = deltaOmega * tau, rows = [];
+  for (let k = 0; k <= kMax; k++) {
+    const coherent = 1 - gateFidelity(gbcUnitaryK(theta, eps, k), theta);
+    const incoherent = gbcTimeFactor(k) * incohI1;
+    rows.push({ k, coherent, incoherent, net: coherent + incoherent });
+  }
+  const kStar = rows.reduce((best, r) => (r.net < rows[best].net ? r.k : best), 0);
+  return { kStar, rows };
+}
