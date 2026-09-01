@@ -163,11 +163,30 @@ $\varepsilon^4$-coherent-gain / $4\times$-incoherent-cost tension is the trade-o
 Nesting does not help beyond one level (Sec.~\ref{sec:e4}).
 
 \subsection{Open-system model (this work)}
-We evolve the full $\rho$ on $\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$ under
-$\dot\rho=-i[\hat H(t),\rho]+\sum_c(L_c\rho L_c^\dagger-\tfrac12\{L_c^\dagger L_c,\rho\})$
-with heating $L^-=\sqrt{\kappa(\bar n{+}1)}a_m$, $L^+=\sqrt{\kappa\bar n}a_m^\dagger$,
-dephasing $\sqrt{\gamma_\phi/2}\,\sigma_z^j$, and decay $\sqrt{\Gamma}\,\sigma_-^j$ --- the
-layer the coherent robust-control literature omits.
+Everything above --- mode closure, robust shaping, GBC --- is a \emph{coherent} design:
+it optimizes a unitary while treating the environment as absent. This subsection restores the
+environment, and is the crux of the paper. The motivation is the tension built into the
+preceding sections: robustness is bought with \emph{gate time} (a multi-segment waveform, and
+GBC's $4\tau$), and a longer gate sits longer in contact with the bath, so whether a
+coherent-robust gate is truly more faithful cannot be settled by any coherent theory --- it
+requires evolving the \emph{same} pulse sequence under the full master equation. We do exactly
+that: $\rho$ on $\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$ evolves under
+\begin{equation}
+\dot\rho=-i[\hat H(t),\rho]+\sum_c\big(L_c\rho L_c^\dagger-\tfrac12\{L_c^\dagger L_c,\rho\}\big),
+\end{equation}
+with $\hat H(t)$ the \emph{shaped} Hamiltonian of Sec.~II (including the $\Delta\omega\,\sigma_z$
+center-line term, so the integrator sees the identical designed waveform), and collapse operators
+$L_{\rm heat}^{-}=\sqrt{\kappa(\bar n{+}1)}\,a_m$, $L_{\rm heat}^{+}=\sqrt{\kappa\bar n}\,a_m^\dagger$
+(anomalous motional heating from electrode field noise --- the dominant motional decoherence,
+$\dot{\bar n}=\kappa\bar n$, and the channel the gate-time growth most exposes since the gate
+mechanism \emph{is} spin--motion coupling), $L_\phi^{j}=\sqrt{\gamma_\phi/2}\,\sigma_z^{j}$ (qubit
+dephasing from magnetic-field/laser-phase noise, $T_2{=}2/\gamma_\phi$), and
+$L_{\rm se}^{j}=\sqrt{\Gamma}\,\sigma_-^{j}$ (off-resonant scattering during the drive). All three
+are set by directly measured lab quantities ($\dot{\bar n}$, $T_2$, $\Gamma$), not fit constants.
+Evolving a coherent-optimized robust pulse under the complete CPTP master equation --- no secular
+approximation, no adiabatic elimination --- is the layer the robust-control literature omits and
+our verifier supplies (N1): it turns ``how robust is the \emph{unitary}?'' into ``how faithful is
+the \emph{gate}?'', and makes the trade-off of Sec.~VI a measurement rather than an assumption.
 
 \section{Toolchain}
 \begin{figure}[t]\includegraphics[width=\columnwidth]{Fig1_toolchain}

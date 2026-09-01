@@ -295,15 +295,23 @@ which accrues $\approx4\times$ the incoherent error — the tension between the 
 
 ### E. Open-system model (this work)
 
-We evolve the full density matrix $\rho$ on $\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$
-under the Lindblad master equation
+Everything so far — mode closure, robust shaping (C), GBC (D) — is a *coherent* design: it
+optimizes a unitary against control errors while treating the environment as absent. This
+subsection restores the environment, and it is the crux of the paper. The motivation is the
+tension built into the preceding sections: **robustness is bought with gate time** (a
+multi-segment waveform, and GBC's $4\tau$), and a longer gate sits *longer* in contact with the
+dissipative bath. Whether a coherent-robust gate is actually more faithful on hardware therefore
+cannot be settled by any coherent theory — it requires evolving the *same* pulse sequence under
+the full master equation. We do exactly that: the density matrix $\rho$ on
+$\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$ evolves under
 
 $$
 \dot\rho=-i[\hat H(t),\rho]+\sum_c\Big(L_c\rho L_c^\dagger-\tfrac12\{L_c^\dagger L_c,\rho\}\Big),
 $$
 
-with $\hat H(t)$ the *shaped* MS Hamiltonian of Sec. II B (including the $\Delta\omega\,\sigma_z$
-term), and collapse operators
+with $\hat H(t)$ the **shaped** MS Hamiltonian of Sec. II B–C — *including* the
+$\Delta\omega\,\sigma_z$ center-line term — so the integrator sees the identical waveform the
+designer produced, not an idealization of it, and the collapse operators
 
 $$
 L_{\rm heat}^{-}=\sqrt{\kappa(\bar n_{\rm th}+1)}\,a_m,\quad
@@ -312,8 +320,25 @@ L_\phi^{j}=\sqrt{\gamma_\phi/2}\,\sigma_z^{j},\quad
 L_{\rm se}^{j}=\sqrt{\Gamma}\,\sigma_-^{j}.
 $$
 
-The heating rate is $\dot{\bar n}=\kappa\bar n_{\rm th}$. This is the layer that the
-coherent robust-control literature omits and that our verifier supplies.
+Each is a leading incoherent channel of a real trapped-ion gate. The **motional-heating** pair
+$L_{\rm heat}^{\mp}$ is anomalous heating from electric-field noise on the electrodes — the
+dominant motional decoherence — with thermal occupation $\bar n_{\rm th}$ and rate
+$\dot{\bar n}=\kappa\bar n_{\rm th}$; because the gate mechanism *is* transient spin–motion
+coupling, this is the channel that the shaped/GBC gate-time growth most exposes, and it is the
+knob that dominates the trade-off (Sec. VI). **Qubit dephasing** $L_\phi$ ($\sigma_z$) captures
+magnetic-field and laser-phase noise ($T_2=2/\gamma_\phi$); **spontaneous emission** $L_{\rm se}$
+($\sigma_-$) is off-resonant photon scattering during the drive. All three are fixed by
+quantities an experimentalist measures directly ($\dot{\bar n}$, $T_2$, $\Gamma$), so the
+verifier is parametrized by lab numbers, not fit constants.
+
+This layer — a coherent-optimized robust pulse evolved under the *complete* CPTP master equation,
+with no secular approximation or adiabatic elimination — is precisely what the coherent
+robust-control literature omits and what our verifier supplies (contribution N1). It is the step
+that turns the question "how robust is the *unitary*?" into "how faithful is the *gate*?", and it
+is what makes the coherent–incoherent trade-off of Sec. VI a quantitative *measurement* on the
+model rather than a qualitative assumption. Concretely, the coherent designs of C–D fix
+$\hat H(t)$; this equation then supplies the infidelity budget that those designs pay, and the
+remainder of the paper maps how the two balance.
 
 ---
 
