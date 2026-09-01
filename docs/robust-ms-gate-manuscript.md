@@ -138,7 +138,10 @@ $$
 \Big(a_m^\dagger e^{i\delta_m t}+a_m e^{-i\delta_m t}\Big),
 $$
 
-with $\eta_m=k_z\sqrt{\hbar/2M\omega_m}$ the Lamb–Dicke parameter of mode $m$,
+with $\Omega(t)$ the **single-beam carrier Rabi frequency** — so the per-ion sideband coupling is
+$\eta_m b^m_j\,\Omega/2$, i.e. the factor $\tfrac12$ is the usual carrier $\tfrac12$ (each of the two
+bichromatic tones drives one sideband, contributing $\Omega/2$ to the $a$ and $a^\dagger$ terms
+respectively) — $\eta_m=k_z\sqrt{\hbar/2M\omega_m}$ the Lamb–Dicke parameter of mode $m$,
 $b^m_j$ the eigenvector amplitude of mode $m$ on ion $j$, and
 $\delta_m=\omega_m-\omega_d$ the detuning of the drive from mode $m$.
 
@@ -419,22 +422,49 @@ layer alone, rather than to a modeling discrepancy between the two engines.
 
 ## IV. Cross-validation and reproduction of prior results
 
-Before the new trade-off study we establish two baselines:
+Before adding dissipation we validate the coherent physics **two independent ways** — *internally*,
+by cross-checking the two engines against each other, and *externally*, by reproducing the published
+results of Zhang *et al.* [Zhang25]. This step is load-bearing: the entire trade-off study rests on
+attributing any open-system infidelity to the *dissipative* layer, and that attribution is only
+credible if the coherent core is first shown to be correct beyond doubt.
 
-- **B1 — engine agreement (closed system).** *Result:* confirmed — the analytic $O(M)$
-  kernel (`ion-msn`) and the independent numerical Lindblad integrator (`ion-ms`) agree to
-  $|\Delta F|\approx3\times10^{-9}$ on closure, phase-error, and non-closure paths for both
-  constant and shaped drives on a two-ion chain; the multi-mode integrator (`ion-ms-mm`)
-  reproduces the analytic two-ion (COM$+$stretch) result to $|\Delta F|=1\times10^{-6}$ (Sec. VI, E5).
-- **B2 — coherent robustness (reproduce Zhang25).** Reproduce the $\varepsilon^2$
-  (uncompensated) vs $\varepsilon^4$ (GBC) infidelity scaling of the asymmetric error
-  (their Fig. 5). *Result:* confirmed — measured ratios $4.00$ and $15.97$ per doubling
-  of $\varepsilon$ (Fig. 2a).
+**B1 — engine agreement (closed system).** The analytic designer (`ion-msn`) and the numerical
+Lindblad integrator (`ion-ms`) share *nothing* but the physical parameters: one evaluates the
+second-order Magnus operator in the commuting-$\sigma_x$ basis with **no Fock space at all**, the
+other integrates the full $4\!\cdot\!N_{\rm Fock}$ density matrix by RK4 in a *truncated* Fock space.
+They are, in effect, two different physical theories of the same gate. Their Bell-state fidelities
+nonetheless agree to $|\Delta F|\approx\mathbf{3\times10^{-9}}$ across the three physically distinct
+regimes — a **closed** loop (clean gate), a deliberate **phase error** ($\Theta\neq\pi/8$), and an
+**unclosed** loop (residual spin–motion entanglement) — and for *both* constant and shaped drives on
+a two-ion chain. Agreement at this level is a stringent test: it requires both engines to capture the
+geometric phase, the per-mode displacement and its closure, *and* the thermal motional overlap
+identically; an error in any one would surface far above $10^{-9}$. The check extends to the
+multi-mode engine (`ion-ms-mm`), which reproduces the analytic two-ion (COM$+$stretch) result to
+$|\Delta F|=1\times10^{-6}$ and a full three-ion-chain gate to $4.6\times10^{-4}$ (Sec. VI E5) — so
+the agreement is not an artifact of the single-mode case.
+
+**B2 — coherent robustness (reproduces Zhang25).** We reproduce the two central coherent results of
+[Zhang25] before building on them. **(i) Symmetric-error robustness:** the Appendix-C robust waveform
+suppresses the closure residual under a motional-frequency drift $\Delta\delta$ by
+$\mathbf{2.5\times10^{3}\times}$ relative to a non-robust closing pulse, and that residual scales
+**quadratically** in $\Delta\delta$ (measured exponent $\to2$) versus *linear* for the non-robust
+pulse — the direct signature of the first-order insensitivity $\partial_\delta\alpha=0$. **(ii)
+Asymmetric-error / GBC:** the uncompensated infidelity scales as $\varepsilon^2$ (measured ratio
+$\mathbf{4.00}$ per doubling of $\varepsilon$) while the GBC-compensated gate scales as
+$\varepsilon^4$ (ratio $\mathbf{15.97\!\to\!16}$), reproducing their Fig. 5; at $\varepsilon=0.05$ GBC
+lowers the infidelity by $\sim\!1.5\times10^{3}$ and the composed three-gate unitary is unitary to
+$10^{-16}$ (Fig. 2a).
 
 ![Validation](figures/Fig2_validation.png)
-**Fig. 2** — closed-system validation: (a) GBC turns the $\varepsilon^2$ asymmetric-error
-infidelity into $\varepsilon^4$; (b) the numerical Lindblad gate (U3) and the analytic
-$4{\times}4$ gate (U2) agree on the $\Delta\omega$-error infidelity.
+**Fig. 2** — closed-system validation: (a) GBC turns the $\varepsilon^2$ asymmetric-error infidelity
+into $\varepsilon^4$ (measured slopes $4.00$/$15.97$ per doubling of $\varepsilon$); (b) the numerical
+Lindblad gate (U3) and the analytic $4{\times}4$ gate (U2) agree on the $\Delta\omega$-error
+infidelity, both $\propto\Delta\omega^2$.
+
+Together, B1 and B2 fix a common ground truth: the coherent core is verified against an *independent*
+integrator **and** against the *literature*. From here on, any fidelity change we report is therefore
+a property of the open-system model (Sec. VI) — the incoherent layer we add — and not an artifact of
+the coherent design or of either engine.
 
 ---
 

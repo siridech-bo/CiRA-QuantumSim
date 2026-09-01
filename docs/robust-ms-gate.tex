@@ -93,7 +93,11 @@ In the Lamb--Dicke and rotating-wave approximations,
 \hat H_{\rm int}(t)=\tfrac12\Omega(t)\sum_{j,m}\eta_m b^m_j\,\sigma_x^j
 \big(a_m^\dagger e^{i\delta_m t}+a_m e^{-i\delta_m t}\big).
 \end{equation}
-The coupling operators all commute, so the second-order Magnus expansion terminates:
+Here $\Omega(t)$ is the single-beam carrier Rabi frequency --- so the per-ion sideband coupling is
+$\eta_m b^m_j\Omega/2$, the $\tfrac12$ being the usual carrier factor (each of the two bichromatic
+tones drives one sideband) --- $\eta_m$ the mode-$m$ Lamb--Dicke parameter, $b^m_j$ its eigenvector
+amplitude on ion $j$, and $\delta_m$ the drive detuning. The coupling operators all commute, so the
+second-order Magnus expansion terminates:
 \begin{equation}
 \hat U(\tau)=\exp\!\Big[i\Theta\,\sigma_x^{j_1}\sigma_x^{j_2}
 -\tfrac{i}{2}\!\sum_{j,m}(\alpha_m a_m^\dagger+\alpha_m^* a_m)\eta_m b^m_j\sigma_x^j\Big],
@@ -235,10 +239,28 @@ infidelity ($1-F$ vs $\varepsilon=\Delta\omega\tau$) into $\varepsilon^4$ (measu
 $4.00$/$15.97$ per doubling of $\varepsilon$). (b)~The numerical Lindblad gate (U3) and the
 analytic $4\times4$ gate (U2) agree on the $\Delta\omega$-error infidelity, scaling
 $\propto\Delta\omega^2$.}\label{fig:val}\end{figure}
-In the closed-system limit the analytic and numerical Bell fidelities agree to
-$|\Delta F|\approx3\times10^{-9}$ for both constant and shaped drives.
-Fig.~\ref{fig:val} reproduces the $\varepsilon^2$ vs $\varepsilon^4$
-scaling~\cite{Zhang25} and the numeric$\leftrightarrow$analytic agreement.
+We validate the coherent physics two independent ways before adding dissipation --- internally, by
+cross-checking the two engines, and externally, against Zhang \emph{et al.}~\cite{Zhang25} --- since
+the trade-off study rests on attributing any open-system infidelity to the dissipative layer, which
+is credible only if the coherent core is first proven correct.
+
+\emph{B1 (engine agreement).} The analytic designer and the Lindblad integrator share nothing but the
+physical parameters --- one is a Fock-free second-order Magnus evaluation in the $\sigma_x$ basis, the
+other a full density-matrix RK4 in truncated Fock space, effectively two different theories of the
+same gate --- yet their Bell fidelities agree to $|\Delta F|\approx3\times10^{-9}$ across three
+physically distinct regimes (closed loop, deliberate phase error, unclosed loop) and for both
+constant and shaped drives. This is stringent: it demands that both capture the geometric phase, the
+per-mode closure, and the thermal overlap identically. The check extends to the multi-mode integrator,
+which reproduces the analytic two-ion kernel to $10^{-6}$ and a three-ion chain to $4.6\times10^{-4}$
+(E5), so it is not an artifact of the single-mode case.
+
+\emph{B2 (reproduces \cite{Zhang25}).} The App-C robust waveform suppresses the symmetric-drift
+closure residual by $2.5\times10^{3}$ with quadratic (vs.\ linear) scaling --- the signature of
+first-order $\partial_\delta\alpha=0$ insensitivity --- and the asymmetric-error infidelity scales as
+$\varepsilon^2$ uncompensated (measured ratio $4.00$ per doubling) vs.\ $\varepsilon^4$ with GBC
+(ratio $15.97$), reproducing their Fig.~5 (Fig.~\ref{fig:val}a); the composed three-gate unitary is
+unitary to $10^{-16}$. Together, B1 and B2 fix a common ground truth: any fidelity change reported
+below is a property of the open-system model, not of the coherent core or either engine.
 
 \section{Numerical experiments}
 Single-mode MS gate unless stated, $\eta=0.1$ (${}^{40}$Ca$^+$; $\nu_z=1$~MHz
