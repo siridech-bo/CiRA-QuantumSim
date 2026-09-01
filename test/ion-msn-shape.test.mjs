@@ -154,5 +154,33 @@ const THETA_MS = Math.PI / 8;
     `numerical F=${Fnum.toFixed(5)} vs analytic ${sR.fidelity.toFixed(5)} (Tr=1)`);
 }
 
+// ---------------------------------------------------------------------------
+// Entangling-SIGN tracking (regression for a reported issue). The sign of Θ for an
+// amplitude-only palindromic pulse is fixed by the mode geometry — NOT by thetaTarget's
+// sign, and NOT flippable by rescaling Ω (Θ∝Ω²). The solver must (a) honor the requested
+// sign when a matching branch exists, (b) otherwise realize the conjugate gate and
+// REPORT it (signMatched=false, localZForRequested=true) rather than silently return the
+// wrong sign, and (c) keep the pulse's fidelity to its ACHIEVED-sign target ≈1.
+// ---------------------------------------------------------------------------
+{
+  const two = twoIonAxial(0.1, 3.0, 1.3, {}), tau = 2 * Math.PI;
+  const wantP = solveShapeRobust(two, tau, { thetaTarget: THETA_MS });       // request +π/8
+  const wantM = solveShapeRobust(two, tau, { thetaTarget: -THETA_MS });      // request −π/8
+  // this config only admits the −π/8 (conjugate) direction
+  check('sign: +π/8 request on a −-only config is flagged, not silently wrong',
+    wantP.ok && wantP.sign === -1 && wantP.signRequested === 1 && wantP.signMatched === false && wantP.localZForRequested === true,
+    `sign=${wantP.sign}, signMatched=${wantP.signMatched}, localZ=${wantP.localZForRequested}`);
+  check('sign: −π/8 request on the same config matches (no local-Z needed)',
+    wantM.ok && wantM.sign === -1 && wantM.signMatched === true && wantM.localZForRequested === false);
+  check('sign: pulse fidelity is ≈1 against its ACHIEVED-sign target (both cases)',
+    wantP.fidelity > 0.9999 && wantM.fidelity > 0.9999 && Math.abs(wantP.thetaEnt + THETA_MS) < 1e-3,
+    `F(+req)=${wantP.fidelity.toFixed(5)}, thetaEnt=${wantP.thetaEnt.toFixed(5)}`);
+  // a config that DOES admit +π/8 (single mode at 2τ): the request is honored
+  const okPlus = solveShapeRobust([{ delta: 1, g: [0.05, 0.05], nbar: 0 }], 4 * Math.PI, { thetaTarget: THETA_MS });
+  check('sign: +π/8 request is HONORED when a +-branch exists (config-dependent, not stuck)',
+    okPlus.ok && okPlus.sign === 1 && okPlus.signMatched === true && Math.abs(okPlus.thetaEnt - THETA_MS) < 1e-3,
+    `sign=${okPlus.sign}, thetaEnt=${okPlus.thetaEnt.toFixed(5)}`);
+}
+
 console.log(`\n${passes} passed, ${failures} failed`);
 process.exit(failures ? 1 : 0);

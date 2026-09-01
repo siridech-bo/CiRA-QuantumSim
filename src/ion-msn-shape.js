@@ -263,7 +263,16 @@ export function solveShapeRobust(modes, tau, { nSeg, thetaTarget = THETA_MS } = 
           (b < 0 || Math.abs(pvals[i]) > Math.abs(pvals[b]))) b = i;
     return b;
   };
-  let best = pick(Math.sign(thetaTarget)); let sign = Math.sign(thetaTarget);
+  // The entangling SIGN of an amplitude-only palindromic pulse is fixed by the mode
+  // geometry (the phase-space loop orientation) — it is the sign of the projected-form
+  // eigenvalue, NOT a free choice, and it CANNOT be flipped by rescaling Ω (Θ∝Ω²). We
+  // pick the requested sign when a matching eigenvalue exists; otherwise we realize the
+  // opposite (conjugate) gate — which is exactly the requested gate up to a single-qubit
+  // Z on one ion of the pair (a π drive-phase flip; cf. MSGate.thetaSign). We ALWAYS
+  // report the achieved sign and whether it matched the request, so a caller never mistakes
+  // a conjugate for the requested gate. (For GBC's −Θ middle leg, apply that local Z.)
+  const reqSign = Math.sign(thetaTarget) || 1;
+  let best = pick(reqSign); let sign = reqSign;
   if (best < 0) { best = pick(0); sign = best >= 0 ? Math.sign(pvals[best]) : 0; }
   if (best < 0) return { ok: false, reason: 'no entangling closing direction — increase nSeg', nSeg: ns };
   const target = Math.abs(thetaTarget) * sign;
@@ -274,8 +283,12 @@ export function solveShapeRobust(modes, tau, { nSeg, thetaTarget = THETA_MS } = 
   const scale = Math.sqrt(target / lam);
   const amp = new Array(ns).fill(0).map((_, k) => Kv[fold(k)] * scale);
   const pulse = { tau, amp };
+  const signMatched = sign === reqSign;
   return {
-    ok: true, pulse, nSeg: ns, symmetric: true, robust: true, sign, thetaTarget: target,
+    ok: true, pulse, nSeg: ns, symmetric: true, robust: true,
+    sign, thetaTarget: target,                       // sign = ACHIEVED sign; pulse realizes exp[i·sign·|θ|·S²]
+    signRequested: reqSign, signMatched,             // signMatched=false ⇒ pulse is the conjugate gate…
+    localZForRequested: !signMatched,                // …realize the requested sign with a single-qubit Z on one ion
     thetaEnt: shapedThetaEnt(modes, pulse),
     residuals: shapedResiduals(modes, pulse),
     fidelity: shapedBellFidelity(modes, pulse, { thetaTarget: target }),

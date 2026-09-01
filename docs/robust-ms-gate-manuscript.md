@@ -560,7 +560,13 @@ decomposition is the primary — and, by U2/E4, rigorous — method for the trad
   $|\Theta|=\pi/8$ exactly) scores both. Result: at **identical gate time** both close the loop
   ($|\alpha|\sim10^{-16}$), are first-order $\delta$-robust (residual quadratic, ratio $3.97$), and
   reach $|\Theta|=\pi/8$ — so both sit at the **same crossover** $\Delta\omega^\times$, confirming
-  method-agnosticism to leading order. The methods differ only in *sub-leading, channel-specific*
+  method-agnosticism to leading order. (The two waveforms realize *conjugate* entanglers here,
+  $\Theta_{\rm AM}=-\pi/8$ and $\Theta_{\rm PM}=+\pi/8$; the sign of an amplitude-only palindromic
+  pulse is fixed by the mode geometry, and $\pm\Theta$ are the same gate up to a single-qubit $Z$
+  — a local-$Z$ gauge that is absorbed into the surrounding one-qubit gates. Every quantity compared
+  here — $\tau$, closure, $\delta$-robustness, peak $\Omega$, and $\int|\alpha|^2$ — is sign-independent,
+  so the comparison at $|\Theta|=\pi/8$ is exact; the designer tracks and reports the sign explicitly.)
+  The methods differ only in *sub-leading, channel-specific*
   cost: here the PM gate is in fact **gentler**, with a $\sim\!2\times$ lower (and constant) peak
   Rabi drive ($\Omega_{\rm peak}$: $8.9$ vs $19.0$) and a $\sim\!3\times$ smaller motional-excursion
   integral $\int_0^\tau|\alpha(t)|^2dt$ ($0.31$ vs $1.00$) — i.e. a lower *heating* exposure at
