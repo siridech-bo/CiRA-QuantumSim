@@ -107,27 +107,60 @@ this multi-mode phase is \emph{exact}, not a cross-term-truncated approximation 
 verify against the full integrator in Sec.~\ref{sec:e5}.
 
 \subsection{Coherent errors and robust waveform}
-A common-mode asymmetric error adds $\tfrac{\Delta\omega}{2}\sum_j\sigma_z^j$. Imposing a
-symmetric pulse $\Omega(t)=\Omega(\tau-t)$ and $\int_0^\tau\alpha_m\,dt=0$ gives closure,
-first-order insensitivity $\partial_{\delta_m}\alpha_m=0$, and $\beta_m(\tau)=0$, collapsing
-the operator to the motion-free form
+During the gate the spin-dependent force drives each motional mode around a loop in phase
+space; $\alpha_m(t)$ is its spin-dependent displacement and the enclosed area is $\Theta$. Two
+conditions must hold at $\tau$: every loop must \emph{close} ($\alpha_m(\tau)=0$), or the qubits
+stay entangled with the motion and dephase; and closure must survive \emph{slow drift} of the
+mode frequency (the symmetric error). A common-mode asymmetric error separately adds
+$\tfrac{\Delta\omega}{2}\sum_j\sigma_z^j$. Imposing a symmetric pulse $\Omega(t)=\Omega(\tau-t)$
+and zero time-averaged displacement $\int_0^\tau\alpha_m\,dt=0$ achieves both robustness goals
+at once: the time-reversal symmetry makes the trajectory palindromic, forcing
+$\partial_{\delta_m}\alpha_m(\tau)=0$ so the loop reopens only at \emph{second} order in a
+frequency drift (passive suppression of quasi-static motional noise), while
+$\int\alpha_m\,dt=0$ ($\beta_m(\tau)=0$) removes the residual cross term coupling the center-line
+error to leftover motion. With every mode closed and $\beta_m=0$ the operator collapses to the
+motion-free form
 \begin{equation}
 \hat U(\tau)=\exp\!\Big[i\Theta\,\sigma_x^{j_1}\sigma_x^{j_2}-\tfrac{i}{2}\Delta\omega\tau\!\sum_j\sigma_z^j\Big].
 \label{eq:star}
 \end{equation}
-The piecewise-constant robust waveform solves $A\mathbf{x}=\mathbf 0$ (closure),
-$\mathbf{x}^{\mathsf T}M\mathbf{x}=\Xi$ (angle), with the minimum-intensity, sign-correct
-solution $\mathbf{x}=\sqrt{\Xi/\lambda}\,\ker(A)\mathbf v_\lambda$~\cite{Zhang25,Leung18}.
+Equation~\eqref{eq:star} is the linchpin of the analysis: the motion factors out (a spectator),
+so the coherent gate is the ideal entangler plus a residual common-$\sigma_z$ set by the
+center-line error, and \emph{all} coherent-error questions reduce from
+$2^N\!\times\!\prod_m\mathcal F_m$ to the $4\times4$ two-qubit space --- the collapse that makes
+the design/verification analytic at $O(1)$ cost (and the two engines cross-validate to
+$\sim\!10^{-9}$, Sec.~\ref{sec:val}). The piecewise-constant waveform solves $A\mathbf{x}=\mathbf 0$
+(closure, \emph{linear} in the amplitudes) and $\mathbf{x}^{\mathsf T}M\mathbf{x}=\Xi$ (angle,
+\emph{quadratic}), giving the minimum-intensity solution
+$\mathbf{x}=\sqrt{\Xi/\lambda}\,\ker(A)\mathbf v_\lambda$~\cite{Zhang25,Leung18}. Since $\Theta$ is
+a quadratic form, its \emph{sign} is fixed by the mode geometry (loop orientation) and cannot be
+set by rescaling $\Omega$; the solver returns the requested sign when the nullspace admits it and
+otherwise the conjugate gate (a single-qubit $Z$ apart), reporting which.
 
 \subsection{Generator-based compensation}
-The residual $\varepsilon\equiv\Delta\omega\tau$ term in Eq.~\eqref{eq:star} does not
-commute with $G$. GBC realizes the first-order-exact three-gate sequence
+Not every error can be refocused: a trailing single-qubit rotation removes any error commuting
+with the entangler, but the center-line error is a common $\sigma_z$, $\hat E=\tfrac12\sum_j\sigma_z^j$,
+that \emph{anticommutes} with $G=\sigma_x\sigma_x$ ($\{\hat G,\hat E\}=0$) and so cannot be commuted
+through and undone locally --- it is bound into the two-qubit evolution, and is the leading
+\emph{coherent} residual once the motional errors are shaped away~\cite{Pogorelov21,Postler22}.
+GBC realizes the first-order-exact three-gate sequence
 $\hat U^{\rm gbc}_\varepsilon=\hat U_\varepsilon\hat U^\dagger_{2\varepsilon}\hat U_\varepsilon
 =\hat U_{\rm ideal}+o(\varepsilon^2)$, with $\hat U^\dagger_{2\varepsilon}=\hat\Pi\,\hat
-U_{2\varepsilon}(-\Theta)\,\hat\Pi$ and $\hat\Pi=\sigma_x\!\otimes\!\sigma_x$; because
-Eq.~\eqref{eq:star} is motion-free, this lives in the two-qubit ($4\times4$) space. The
-residual infidelity is $O(\varepsilon^4)$ (GBC) vs $O(\varepsilon^2)$ (uncompensated).
-Nesting this construction does not help beyond one level (Sec.~\ref{sec:e4}).
+U_{2\varepsilon}(-\Theta)\,\hat\Pi$, $\hat\Pi=\sigma_x\!\otimes\!\sigma_x$, and
+$\varepsilon\equiv\Delta\omega\tau$. It works because $\hat\Pi\hat G\hat\Pi=+\hat G$ but
+$\hat\Pi\hat E\hat\Pi=-\hat E$: conjugation by $\hat\Pi$ preserves the entangler while flipping
+the sign of the error, so the sequence is a spin echo \emph{on the center-line error that leaves
+the entangling action intact} --- the outer legs accrue $+\Theta,+\varepsilon$; the middle leg,
+conjugated and run for $2\tau$, accrues $-\Theta$ entangling but $-2\varepsilon$ error, so the
+first-order error cancels ($\varepsilon-2\varepsilon+\varepsilon=0$) while the phases sum to the
+target. The residual infidelity is thus $O(\varepsilon^4)$ (GBC) vs $O(\varepsilon^2)$
+(uncompensated), a $10^2$--$10^4\times$ suppression (App.~\ref{app:eps}). GBC is
+\emph{generator-based} --- it needs only $\{\hat G,\hat E\}=0$ and Eq.~\eqref{eq:star}, not the
+microscopic pulse, so it composes with any robust waveform --- and, because Eq.~\eqref{eq:star}
+is motion-free, it lives entirely in the $4\times4$ space (no Fock integration; Sec.~V, U2). Its
+price is the $4\tau$ duration ($\tau+2\tau+\tau$), hence $\approx4\times$ incoherent error: the
+$\varepsilon^4$-coherent-gain / $4\times$-incoherent-cost tension is the trade-off we quantify.
+Nesting does not help beyond one level (Sec.~\ref{sec:e4}).
 
 \subsection{Open-system model (this work)}
 We evolve the full $\rho$ on $\mathbb C^{2^N}\!\otimes\!\prod_m\mathcal F_m$ under
