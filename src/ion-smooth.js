@@ -103,3 +103,55 @@ export function calibrateOmega(protoFactory, Omega0, target = Math.PI / 2) {
   const th = integrateAlpha(protoFactory(Omega0)).theta;
   return Omega0 * Math.sqrt(target / th);
 }
+
+// =============================================================================
+// smooth × GBC — the combining trade-off. Four schemes, all reaching θ_g=π/2:
+//   plain      = DESE (constant δ), no GBC
+//   smooth     = AESE (δ-ramp),     no GBC
+//   gbc        = DESE + GBC
+//   smoothGbc  = AESE + GBC
+// Net infidelity = symmetric-axis (spin-motion from a mode-freq drift Δδ, ∝(2n̄+1)|α_res|²,
+// which AESE crushes) + asymmetric-axis (center-line ε=Δω·τ; ε² uncompensated, ε⁴ with
+// GBC — from ion-validation's exact 4×4 gates) + incoherent (κ·∫|α|²·(2n̄+1)+γ_φτ, ×4 for
+// GBC's 4τ). KEY physics: the smooth gate is long (τ_s≫τ_p), so it is *symmetric*-robust
+// but *asymmetric*-fragile (ε_s=Δω·τ_s is large) — which is exactly why combining it with
+// GBC is natural, and why a threshold in (Δω, Δδ/n̄) decides which scheme wins.
+// All quantities dimensionless (δ_min=1 unit); a leading-order model, labelled as such.
+// =============================================================================
+import { coherentSingle, coherentGBC } from './ion-validation.js';
+
+export function buildContext({ deltaMin = 1, deltaMax = 18, tauD = 40, tauRamp = 3, tc = 0, K = 1, thetaTarget = Math.PI / 2 } = {}) {
+  const dese0 = (Om) => constProtocol({ delta: deltaMin, Omega: Om, K, tauRamp: 0 });
+  const dese = dese0(calibrateOmega(dese0, 0.5 * deltaMin, thetaTarget));
+  const sm0 = (Om) => smoothProtocol({ deltaMax, deltaMin, tauD, tauRamp, tc, Omega: Om });
+  const sm = sm0(calibrateOmega(sm0, 0.5 * deltaMin, thetaTarget));
+  const rd = integrateAlpha(dese), rs = integrateAlpha(sm);
+  return { dese, sm, tauP: dese.tau, tauS: sm.tau, excP: rd.excursion, excS: rs.excursion };
+}
+// residual |α(τ)| for both gates at a given static mode-freq drift Δδ (compute once per Δδ).
+export function residualPair(ctx, deltaDrift) {
+  return { rP: residualUnderOffset(ctx.dese, deltaDrift), rS: residualUnderOffset(ctx.sm, deltaDrift) };
+}
+// the four schemes' net infidelity (pass precomputed residuals for a fast Δω/noise scan).
+export function schemes(ctx, { rP, rS }, { deltaOmega = 0, nbar = 0, kappa = 0, gammaPhi = 0 } = {}) {
+  const th = 2 * nbar + 1;
+  const symP = th * rP * rP, symS = th * rS * rS;                        // spin-motion (AESE crushes symS)
+  const incP = kappa * ctx.excP * th + gammaPhi * ctx.tauP;             // incoherent floor, short gate
+  const incS = kappa * ctx.excS * th + gammaPhi * ctx.tauS;             // incoherent floor, long (smooth) gate
+  return {
+    plain: symP + coherentSingle(deltaOmega * ctx.tauP) + incP,
+    smooth: symS + coherentSingle(deltaOmega * ctx.tauS) + incS,
+    gbc: symP + coherentGBC(deltaOmega * ctx.tauP) + 4 * incP,
+    smoothGbc: symS + coherentGBC(deltaOmega * ctx.tauS) + 4 * incS,
+  };
+}
+const NAMES = ['plain', 'smooth', 'gbc', 'smoothGbc'];
+export function winner(vals) { return NAMES.reduce((b, k) => (vals[k] < vals[b] ? k : b), 'plain'); }
+
+// Threshold in Δω where scheme B overtakes scheme A (A wins below, B above), else null.
+export function crossoverDeltaOmega(ctx, res, base, a, b, { max = 0.02, N = 400 } = {}) {
+  const f = (dw) => { const v = schemes(ctx, res, { ...base, deltaOmega: dw }); return v[a] - v[b]; };
+  let prev = f(0), pdw = 0;
+  for (let i = 1; i <= N; i++) { const dw = max * i / N, d = f(dw); if (prev < 0 && d >= 0) return pdw + prev / (prev - d) * (dw - pdw); prev = d; pdw = dw; }
+  return null;
+}

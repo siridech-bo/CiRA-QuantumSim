@@ -5,7 +5,8 @@
 // mode-frequency offset far better than DESE, with a low-ω filter-function advantage
 // (reproducing Hughes et al., arXiv:2510.17286, Fig. 2).
 import assert from 'node:assert';
-import { smoothProtocol, constProtocol, integrateAlpha, residualUnderOffset, filterFunction, calibrateOmega } from '../src/ion-smooth.js';
+import { smoothProtocol, constProtocol, integrateAlpha, residualUnderOffset, filterFunction, calibrateOmega,
+  buildContext, residualPair, schemes, winner, crossoverDeltaOmega } from '../src/ion-smooth.js';
 
 let n = 0; const ok = (m) => { console.log(`  ok ${++n} - ${m}`); };
 
@@ -48,6 +49,28 @@ const sm = sm0(calibrateOmega(sm0, 0.5));
   const w = 0.05, fD = filterFunction(dese, w), fS = filterFunction(sm, w);
   assert.ok(fS < fD / 100, `AESE F(ω=${w})=${fS.toExponential(2)} ≪ DESE ${fD.toExponential(2)}`);
   ok(`AESE filter function suppressed vs DESE at low ω (${(fD / fS).toExponential(1)}×) — Hughes et al. Fig. 2`);
+}
+
+// ---- E. smooth × GBC combination: complementary axes + a real threshold -------------
+{
+  const ctx = buildContext({});
+  assert.ok(ctx.tauS > 10 * ctx.tauP, 'smooth gate is long (asymmetric-fragile)');
+  const noise = { kappa: 1e-4, gammaPhi: 1e-4, nbar: 3 };
+  // (a) high symmetric error, low asymmetric ⇒ smooth (not plain, not GBC)
+  const rHi = residualPair(ctx, 0.04);
+  const wSym = winner(schemes(ctx, rHi, { ...noise, deltaOmega: 0 }));
+  assert.strictEqual(wSym, 'smooth', `high Δδ, Δω=0 ⇒ smooth (got ${wSym})`);
+  // (b) high symmetric AND high asymmetric ⇒ smooth+GBC (need both)
+  const wBoth = winner(schemes(ctx, rHi, { ...noise, deltaOmega: 0.006 }));
+  assert.strictEqual(wBoth, 'smoothGbc', `high Δδ & Δω ⇒ smooth+GBC (got ${wBoth})`);
+  // (c) low symmetric error ⇒ smooth never wins (its long-gate floor isn't worth it)
+  const rLo = residualPair(ctx, 0);
+  const wLo = winner(schemes(ctx, rLo, { ...noise, deltaOmega: 0.002 }));
+  assert.ok(wLo === 'plain' || wLo === 'gbc', `low Δδ ⇒ plain/gbc, not smooth (got ${wLo})`);
+  // (d) THE threshold: on the smooth gate, GBC starts paying at a finite Δω×
+  const dwx = crossoverDeltaOmega(ctx, residualPair(ctx, 0.02), noise, 'smooth', 'smoothGbc');
+  assert.ok(dwx != null && dwx > 0, `smooth→smooth+GBC threshold exists: Δω×=${dwx?.toExponential(2)}`);
+  ok(`smooth×GBC: complementary axes (smooth↔symmetric, GBC↔asymmetric); combining threshold Δω×≈${dwx.toExponential(2)}`);
 }
 
 console.log(`\nion-smooth: ${n} tests passed`);
