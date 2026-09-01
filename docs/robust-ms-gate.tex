@@ -105,6 +105,12 @@ The coupling operators all commute, so the second-order Magnus expansion termina
 The gate is clean when $\alpha_m(\tau)=0$ and $\Theta=\pi/4$. Because the $\sigma_x^j$ commute,
 this multi-mode phase is \emph{exact}, not a cross-term-truncated approximation --- a point we
 verify against the full integrator in Sec.~\ref{sec:e5}.
+\emph{Convention:} we write the entangler on the pairwise operator $\sigma_x^{j_1}\sigma_x^{j_2}$
+(maximally entangling at $\Theta=\pi/4$); the equivalent collective form $\exp(i\Theta_S S_x^2)$,
+$S_x{=}\sum_j\sigma_x^j$, has $S_x^2{=}2\mathbb I{+}2\sigma_x^{j_1}\sigma_x^{j_2}$ (spectrum
+$\{4,0,0,4\}$), so the \emph{same} gate is $\Theta_S{=}\Theta/2{=}\pi/8$. The shaped-pulse engine
+reports the $S_x^2$ value, so waveform-level results (e.g.\ Table~\ref{tab:e6}) quote $\pi/8$ while
+the GBC/theory sections quote the pairwise $\pi/4$ --- the identical gate.
 
 \subsection{Coherent errors and robust waveform}
 During the gate the spin-dependent force drives each motional mode around a loop in phase
@@ -353,7 +359,7 @@ designer tracks and reports the sign.) Swapping the pulse-design method
 at fixed $\tau$, not to a different crossover.
 
 \begin{table}[t]\caption{E6: amplitude- vs phase-modulated robust gate (single mode, same
-$\tau=2\pi/\delta$, $|\Theta|=\pi/8$).}\label{tab:e6}
+$\tau=2\pi/\delta$, $|\Theta|=\pi/8$ in the $S_x^2$ convention, $=\pi/4$ pairwise).}\label{tab:e6}
 \begin{ruledtabular}\begin{tabular}{lcc}
  & AM (amplitude) & PM (phase) \\ \hline
 closure $|\alpha(\tau)|$ & $\sim\!10^{-16}$ & $\sim\!10^{-16}$ \\

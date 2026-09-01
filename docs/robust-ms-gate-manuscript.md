@@ -162,6 +162,16 @@ $\Theta(\tau)=\pi/4$ (maximally entangling). These are precisely the quantities 
 analytic engine computes (Sec. III A): $\Theta$ is `shapedThetaEnt`/`formP`,
 $\alpha_m$ is `envelope`, and closure is the residual `shapedResiduals`.
 
+> **Convention (the $\pi/4$ vs $\pi/8$ factor of two).** We write the entangler on the *pairwise*
+> operator $\sigma_x^{j_1}\sigma_x^{j_2}$ above, for which the maximally-entangling phase is
+> $\Theta=\pi/4$. The equivalent *collective* form uses $S_x=\sum_j\sigma_x^j$ with
+> $\hat U=\exp(i\Theta_{S}S_x^2)$; since $S_x^2=2\mathbb I+2\,\sigma_x^{j_1}\sigma_x^{j_2}$ (a global
+> phase apart), the *same gate* is $\Theta_S=\Theta/2=\pi/8$. Equivalently, $S_x^2$ has spectrum
+> $\{4,0,0,4\}$ so the Bell-making relative phase is $4\Theta_S=\pi/2$. The shaped-pulse engine
+> (`ion-msn`, `ion-msn-shape`, `ion-ms-pm`) reports the $S_x^2$ value, so waveform-level results —
+> including the E6 table — quote $\Theta=\pi/8$; the GBC/theory sections quote the pairwise $\pi/4$.
+> Both denote the identical maximally-entangling MS gate.
+
 ### B. Coherent error terms
 
 A common-mode asymmetric error $\Delta\omega=\Delta\omega_{\rm level}-\Delta\omega_{\rm laser}$
@@ -688,7 +698,8 @@ decomposition is the primary — and, by U2/E4, rigorous — method for the trad
   waveform on the same single mode at the same $\tau$. The PM designer solves for phases enforcing
   loop closure $\alpha(\tau)=0$ **and** first-order robustness $\partial_\delta\alpha(\tau)=0$; a
   shared complex-weight evaluator (cross-checked to reproduce the AM entangling phase to
-  $|\Theta|=\pi/8$ exactly) scores both. Result: at **identical gate time** both close the loop
+  $|\Theta|=\pi/8$ exactly — the $S_x^2$-convention value, $=\pi/4$ in the pairwise form of Sec. II)
+  scores both. Result: at **identical gate time** both close the loop
   ($|\alpha|\sim10^{-16}$), are first-order $\delta$-robust (residual quadratic, ratio $3.97$), and
   reach $|\Theta|=\pi/8$ — so both sit at the **same crossover** $\Delta\omega^\times$, confirming
   method-agnosticism to leading order. (The two waveforms realize *conjugate* entanglers here,
