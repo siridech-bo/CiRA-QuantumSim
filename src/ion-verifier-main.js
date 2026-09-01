@@ -166,20 +166,28 @@ function drawShaped(st) {
     `(max residual ${maxRes.toExponential(1)}) · gate = ${sol.sign > 0 ? 'exp[+i(π/8)S²]' : 'exp[−i(π/8)S²] (conjugate)'}, ${sol.nSeg} segments`;
 
   // --- Ω(t) step envelope (left) ---
-  const w = cvP.width, h = cvP.height, pad = { l: 40, r: 12, t: 14, b: 26 };
-  const amps = sol.pulse.amp, ns = amps.length, aMax = Math.max(...amps.map(Math.abs)) * 1.15 || 1;
+  const w = cvP.width, h = cvP.height, pad = { l: 50, r: 14, t: 22, b: 30 };
+  const amps = sol.pulse.amp, ns = amps.length, peak = Math.max(...amps.map(Math.abs)) || 1, aMax = peak * 1.15;
   const x0 = pad.l, x1 = w - pad.r, y0 = pad.t, y1 = h - pad.b, mid = (y0 + y1) / 2;
-  ctxP.strokeStyle = col.border; ctxP.globalAlpha = 0.6; ctxP.beginPath(); ctxP.moveTo(x0, mid); ctxP.lineTo(x1, mid); ctxP.stroke(); ctxP.globalAlpha = 1;
   const yOf = (a) => mid - a / aMax * (y1 - y0) / 2;
+  // frame + y-axis ticks/gridlines (amplitude in units of Ω₀)
+  ctxP.lineWidth = 1; ctxP.strokeStyle = col.border; ctxP.globalAlpha = 1; ctxP.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  ctxP.font = '9px system-ui'; ctxP.textAlign = 'right';
+  for (const a of [peak, peak / 2, 0, -peak / 2, -peak]) {
+    const yy = yOf(a);
+    ctxP.strokeStyle = col.border; ctxP.globalAlpha = a === 0 ? 0.65 : 0.22; ctxP.beginPath(); ctxP.moveTo(x0, yy); ctxP.lineTo(x1, yy); ctxP.stroke(); ctxP.globalAlpha = 1;
+    ctxP.fillStyle = col.muted; ctxP.fillText((a > 0 ? '+' : '') + a.toFixed(1), x0 - 5, yy + 3);
+  }
+  ctxP.textAlign = 'left';
   const bw = (x1 - x0) / ns;
   amps.forEach((a, k) => {
     const bx = x0 + k * bw, by = yOf(a);
     ctxP.fillStyle = a >= 0 ? col.accent : col.red; ctxP.globalAlpha = 0.85;
     ctxP.fillRect(bx + 1, Math.min(mid, by), bw - 2, Math.abs(by - mid)); ctxP.globalAlpha = 1;
   });
-  label(ctxP, 'Ω(t) / Ω₀  (segment amplitudes)', x0, 10, col.muted, 'left', '10px system-ui');
-  label(ctxP, '0', x0 - 4, mid + 3, col.muted, 'right', '9px system-ui');
-  label(ctxP, 'gate time τ →', x1, y1 + 16, col.muted, 'right', '9px system-ui');
+  label(ctxP, 'Ω(t) / Ω₀', x0, 13, col.muted, 'left', '10px system-ui');
+  label(ctxP, `${ns} segments`, x1, 13, col.muted, 'right', '9px system-ui');
+  label(ctxP, 'gate time  (0 → τ)', (x0 + x1) / 2, y1 + 19, col.muted, 'center', '9px system-ui');
 
   // --- shaped loops all closing (right) ---
   const W = cvSL.width, H = cvSL.height, cx = W / 2, cy = H / 2, NP = 200;
@@ -190,9 +198,11 @@ function drawShaped(st) {
   });
   let mR = 1e-9; for (const p of trajs) for (const q of p) mR = Math.max(mR, Math.hypot(q.re, q.im));
   const sc = Math.min(W, H) * 0.42 / mR;
-  ctxSL.strokeStyle = col.border; ctxSL.globalAlpha = 0.5; ctxSL.beginPath();
+  ctxSL.strokeStyle = col.border; ctxSL.globalAlpha = 0.6; ctxSL.lineWidth = 1; ctxSL.beginPath();
   ctxSL.moveTo(14, cy); ctxSL.lineTo(W - 14, cy); ctxSL.moveTo(cx, 10); ctxSL.lineTo(cx, H - 10); ctxSL.stroke(); ctxSL.globalAlpha = 1;
   ctxSL.fillStyle = col.muted; ctxSL.beginPath(); ctxSL.arc(cx, cy, 3, 0, 7); ctxSL.fill();
+  label(ctxSL, 'Re⟨α⟩', W - 16, cy - 6, col.muted, 'right', '9px system-ui');
+  label(ctxSL, 'Im⟨α⟩', cx + 6, 22, col.muted, 'left', '9px system-ui');
   st.modes.forEach((m, p) => {
     const color = MC[p % MC.length], pts = trajs[p];
     ctxSL.strokeStyle = color; ctxSL.lineWidth = 1.6; ctxSL.globalAlpha = 0.85; ctxSL.beginPath();
