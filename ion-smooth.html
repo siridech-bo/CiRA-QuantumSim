@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Smooth gate × GBC — combining playground · CiRA QuantumSim</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%8C%80%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/style.css" />
+  <script type="importmap">
+  { "imports": { "mathjs": "https://cdn.jsdelivr.net/npm/mathjs@12.4.3/+esm" } }
+  </script>
+  <style>
+    html, body { height: auto; overflow: auto; }
+    .sg-top { display: flex; align-items: center; gap: 14px; padding: 13px 22px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(6px); }
+    .sg-top .logo { font-size: 22px; } .sg-top h1 { font-size: 16px; margin: 0; } .sg-top .sub { font-size: 11.5px; color: var(--muted); }
+    .sg-top .spacer { flex: 1; }
+    .sg-top a { font-size: 12.5px; color: var(--accent); text-decoration: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; background: var(--btn); }
+    .sg-wrap { max-width: 1060px; margin: 0 auto; padding: 18px 22px 110px; }
+    .sg-intro { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 2px 2px 12px; } .sg-intro b { color: var(--text); }
+    .sg-ctrls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 16px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; position: sticky; top: 56px; z-index: 9; }
+    .sg-row { display: flex; flex-direction: column; gap: 3px; }
+    .sg-row label { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+    .sg-row label .v { color: var(--accent); font-weight: 650; }
+    .sg-row input[type=range] { width: 100%; }
+    .sg-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; margin: 14px 2px 4px; padding: 16px 20px;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+    .sg-rec .verdict { font-size: 24px; font-weight: 800; } .sg-rec .k { color: var(--text); font-weight: 700; } .sg-rec span { font-size: 13px; color: var(--muted); }
+    .sg-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 15px 18px; margin-top: 16px; }
+    .sg-panel h2 { font-size: 14.5px; margin: 0 0 3px; } .sg-panel .desc { font-size: 12px; color: var(--muted); line-height: 1.55; margin: 4px 0 10px; }
+    .sg-panel canvas { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 8px; }
+    .sg-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 780px) { .sg-grid2 { grid-template-columns: 1fr; } }
+    .sg-legend { font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height: 1.9; }
+    .sg-legend .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin: 0 4px 0 12px; vertical-align: middle; }
+    .tip { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; border: 1px solid var(--border);
+      border-radius: 50%; font-size: 8.5px; font-weight: 700; color: var(--muted); cursor: help; position: relative; }
+    .tip:hover { color: var(--accent); border-color: var(--accent); }
+    .tip:hover::after { content: attr(data-tip); position: absolute; left: -4px; top: 155%; z-index: 60; width: 230px; background: var(--panel);
+      border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; font: 400 11px/1.5 system-ui, sans-serif; color: var(--text); box-shadow: 0 6px 22px rgba(0,0,0,.5); }
+    .sg-row label > span:first-child { display: inline-flex; align-items: center; gap: 3px; }
+  </style>
+</head>
+<body>
+  <header class="sg-top">
+    <span class="logo">🌀</span>
+    <div><h1>Smooth gate × GBC — combining playground</h1><div class="sub">adiabatic (AESE) motional robustness + generator-based center-line compensation — where does combining pay off?</div></div>
+    <span class="spacer"></span>
+    <a href="ion-validation.html">Validation</a>
+    <a href="ion-verifier.html">Verifier</a>
+  </header>
+
+  <div class="sg-wrap">
+    <p class="sg-intro">Two robustness tools act on <b>different error axes</b>. The <b>smooth gate</b> (Hughes <i>et al.</i> 2025) ramps the detuning δ(t)
+      <b>adiabatically</b> so residual spin–motion entanglement is eliminated — robustness to the <b>symmetric</b> (mode-frequency / temperature) axis.
+      <b>GBC</b> cancels the <b>asymmetric</b> (center-line σ_z) error to ε⁴. This page combines them and shows <b>which of the four schemes wins</b>
+      (plain / smooth / GBC / smooth+GBC) as you dial the two error axes — and the <b>threshold</b> at which combining becomes worth it. All quantities
+      are dimensionless (δ_min ≡ 1); a leading-order model built on the validated <code>ion-smooth</code>/<code>ion-gbc</code> engines.</p>
+
+    <div class="sg-ctrls">
+      <div class="sg-row"><label><span>δ_max / δ_min <span class="tip" data-tip="Detuning-ramp range of the smooth gate (units of δ_min). Larger ratio = more adiabatic headroom; sets how far δ(t) sweeps. θ_g is auto-calibrated to π/2.">ⓘ</span></span><span class="v" id="v-dmax">18</span></label><input id="c-dmax" type="range" min="4" max="40" step="1" value="18" /></div>
+      <div class="sg-row"><label><span>τ_d ramp time <span class="tip" data-tip="Detuning-ramp duration (units of 1/δ_min). Longer = more adiabatic (better AESE / lower spin-motion) but a longer gate (more incoherent error). The core adiabaticity knob.">ⓘ</span></span><span class="v" id="v-taud">40</span></label><input id="c-taud" type="range" min="10" max="120" step="5" value="40" /></div>
+      <div class="sg-row"><label><span>Δω center-line (asymmetric) <span class="tip" data-tip="Common σ_z drift on both qubits (qubit-frequency / B-field miscalibration), units of δ_min. GBC's target axis. ε=Δω·τ, so the long smooth gate is very sensitive to it.">ⓘ</span></span><span class="v" id="v-dw">0.004</span></label><input id="c-dw" type="range" min="0" max="0.012" step="0.0002" value="0.004" /></div>
+      <div class="sg-row"><label><span>Δδ mode-freq (symmetric) <span class="tip" data-tip="Static mode-frequency offset (units of δ_min) causing residual spin-motion entanglement. The smooth gate's (AESE) target axis; DESE/plain is sensitive to it.">ⓘ</span></span><span class="v" id="v-dd">0.02</span></label><input id="c-dd" type="range" min="0" max="0.05" step="0.002" value="0.02" /></div>
+      <div class="sg-row"><label><span>n̄ per mode <span class="tip" data-tip="Mean phonon occupation. Spin-motion error ∝(2n̄+1), so temperature amplifies the symmetric-axis error — the regime where the smooth gate shines.">ⓘ</span></span><span class="v" id="v-nbar">3.0</span></label><input id="c-nbar" type="range" min="0" max="10" step="0.5" value="3" /></div>
+      <div class="sg-row"><label><span>heating κ <span class="tip" data-tip="Motional heating rate (units of δ_min). Incoherent cost ∝ κ·∫|α|²·(2n̄+1); the long smooth gate and 4τ GBC accrue more.">ⓘ</span></span><span class="v" id="v-kappa">1.0</span></label><input id="c-kappa" type="range" min="0" max="10" step="0.25" value="1" /></div>
+      <div class="sg-row"><label><span>dephasing γ_φ <span class="tip" data-tip="Qubit dephasing rate (×10⁻⁴, units of δ_min). Incoherent cost ∝ γ_φ·τ — the dominant penalty for the long smooth gate and the 4τ GBC sequence.">ⓘ</span></span><span class="v" id="v-gphi">1.0</span></label><input id="c-gphi" type="range" min="0" max="10" step="0.25" value="1" /></div>
+    </div>
+
+    <div class="sg-rec" id="sg-rec"></div>
+
+    <div class="sg-panel">
+      <h2>1 · Combining win-map — which scheme wins over (Δδ, Δω)</h2>
+      <div class="desc">The headline. For every symmetric error Δδ (x) and asymmetric error Δω (y), the color shows the <b>lowest-infidelity scheme</b>. The ✕ is your
+        operating point. Plain wins when both errors are small; <b>smooth</b> when the symmetric/temperature axis dominates; <b>GBC</b> when the center-line axis
+        dominates; <b>smooth+GBC</b> only in the corner where <b>both</b> are large enough to beat the combined gate-time penalty — the combining region.</div>
+      <canvas id="cv-map" width="960" height="380"></canvas>
+      <div class="sg-legend" id="lg-map"></div>
+    </div>
+
+    <div class="sg-panel">
+      <h2>2 · Net infidelity vs Δω (center-line error) — the thresholds</h2>
+      <div class="desc">A vertical slice of the map at your current Δδ, n̄, and noise: the four schemes vs the center-line error Δω. Where two curves cross is a
+        <b>threshold</b> — e.g. the Δω at which adding GBC to the smooth gate starts to pay off. Because the smooth gate is long, its center-line error grows fast,
+        so GBC-on-smooth crosses in at a smaller Δω than GBC-on-plain.</div>
+      <canvas id="cv-curve" width="960" height="360"></canvas>
+      <div class="sg-legend" id="lg-curve"></div>
+    </div>
+
+    <div class="sg-grid2">
+      <div class="sg-panel">
+        <h2>3 · δ(t) &amp; Ω(t) schedule</h2>
+        <div class="desc">The smooth-gate ramp: Ω on at δ_max, sweep δ→δ_min (fast near δ_max, slow near δ_min), hold, sweep back, Ω off.</div>
+        <canvas id="cv-sched" width="470" height="230"></canvas>
+      </div>
+      <div class="sg-panel">
+        <h2>4 · Phase-space α(t) — DESE vs AESE</h2>
+        <div class="desc">The forced-state displacement. DESE (diabatic) traces a loop; the smooth gate (AESE) collapses to a narrow line and returns to the
+          origin — and stays closed under a Δδ offset (dashed), the robustness.</div>
+        <canvas id="cv-phase" width="470" height="230"></canvas>
+      </div>
+    </div>
+
+    <div class="sg-panel">
+      <h2>5 · Filter function F(ω) — motional-noise sensitivity</h2>
+      <div class="desc">Sensitivity to a mode-frequency fluctuation at frequency ω (lower = more robust). The smooth gate (AESE) is orders of magnitude below the
+        constant-δ (DESE) gate at low ω — the mechanism behind its temperature/motional robustness (Hughes <i>et al.</i> Fig. 2).</div>
+      <canvas id="cv-filter" width="960" height="320"></canvas>
+      <div class="sg-legend" id="lg-filter"></div>
+    </div>
+  </div>
+
+  <script type="module" src="src/ion-smooth-main.js"></script>
+</body>
+</html>
