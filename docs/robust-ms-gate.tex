@@ -174,14 +174,34 @@ layer the coherent robust-control literature omits.
 \caption{The design$\to$verify$\to$sweep toolchain (framework-free JavaScript modules; the
 upgrade tags U1--U4 and the multi-mode/exact extensions used in Secs.~\ref{sec:e5}--\ref{sec:e6}).}
 \label{fig:toolchain}\end{figure}
-The framework-free modules (Fig.~\ref{fig:toolchain}) are: \textsf{ion-msn(-shape)} ---
-the $O(M)$ analytic designer ($\Theta$, $\alpha_m$, closure, robust $\Omega(t)$);
-\textsf{ion-gbc} --- the $4\times4$ asymmetric-error/GBC gate (with recursive depth);
-\textsf{ion-ms} --- the single-mode Lindblad integrator (piecewise $\Omega(t)$, $\Delta\omega$,
-noise); \textsf{ion-ms-mm} --- the multi-mode ($M$-mode) open-system verifier;
-\textsf{ion-ms-exact} --- the full non-RWA + beyond-Lamb-Dicke reference; \textsf{ion-ms-pm}
---- a phase-modulated robust designer for method comparison; \textsf{ion-modes} --- the
-Coulomb chain mode spectrum; \textsf{ion-pipeline} --- the sweep driver.
+The toolchain follows one philosophy --- \emph{design cheaply, verify honestly, sweep to map}
+--- with two independent engines carrying the same physical parameters (Fig.~\ref{fig:toolchain}).
+All modules are framework-free JavaScript, node-importable and browser-runnable, each covered by
+a \textsf{node:assert} suite and sharing one flat interleaved-complex RK4 core, so every number
+below regenerates from the released code with no build step.
+
+\emph{(A) Analytic designer/verifier} --- \textsf{ion-msn(-shape)}: in the commuting-$\sigma_x$
+basis where the Magnus series terminates, it evaluates $\Theta$, the displacements $\alpha_m$ and
+their closure residuals, and the Bell fidelity as the geometric phase times the thermal
+decoherence factor $C_{ij}=\exp[-\sum_m(2\bar n_m{+}1)|\Delta\alpha_m|^2/2]$ (so an unclosed loop
+is penalized), and solves the robust waveform of Sec.~II. Cost $O(M)$, no Fock tensor ---
+milliseconds for a full chain. \emph{(B) Open-system verifiers} --- \textsf{ion-ms} integrates
+the $4N_{\rm Fock}$ single-mode density matrix under the full master equation (CPTP-preserving,
+$\mathrm{Tr}\,\rho{=}1$, $\rho\succeq0$ asserted); \textsf{ion-ms-mm} generalizes to $M$ modes
+(dimension $4\prod_m N_{\rm Fock}^{(m)}$) with the Hermiticity identity $\rho H=(H\rho)^\dagger$
+making each product sparse-first, $O(\dim^2 M)$ not $O(\dim^3)$; \textsf{ion-ms-exact} is a
+statevector reference keeping the full $\sin[\eta(a{+}a^\dagger)]$ and lab-frame $\omega_z
+a^\dagger a$ (no LD, no vibrational RWA). \emph{(C) Chain modes} --- \textsf{ion-modes}: Coulomb
+equilibrium by Newton iteration and axial modes from the James Hessian; the eigenvectors $b^m_j$
+feed the per-ion couplings $\eta_m b^m_j$ that (A) and (B) share, so both see the same real chain.
+\emph{(D) Compensation, driver, comparators} --- \textsf{ion-gbc} (the $4\times4$
+asymmetric-error/GBC gate, recursively nestable), \textsf{ion-pipeline} (the design$\to$verify$\to$noise-scan
+driver), \textsf{ion-ms-pm} (phase-modulated comparator, E6), \textsf{ion-jitter} (timing-jitter
+model). \emph{(E) Cross-validation}: analytic and numerical Bell fidelities agree to
+$|\Delta F|\approx3\times10^{-9}$ (closed system), and the multi-mode integrator reproduces the
+analytic two-ion kernel to $10^{-6}$ (E5) --- a common ground truth fixed \emph{before} dissipation
+is switched on, which is what lets us attribute the open-system results to the incoherent layer
+alone.
 
 \section{Validation}\label{sec:val}
 \begin{figure}[t]\includegraphics[width=\columnwidth]{Fig2_validation}
@@ -212,16 +232,27 @@ $\Delta\omega=0$, combined additively. This is leading-order exact: the GBC time
 single-qubit pulses), and the cross-term is $O(\varepsilon^4\!\cdot\!\kappa\tau)$ --- negligible
 against either channel.
 
-\paragraph{E1 --- incoherent baseline.} GBC's incoherent infidelity is $\approx4\times$ the
-single gate across heating rates (Fig.~\ref{fig:e1}), its $4\tau$ vs $\tau$ cost.
+\paragraph{E1 --- incoherent baseline.} With no coherent error, GBC's infidelity is purely its
+incoherent cost, and it is a clean $\approx4\times$ the single gate across heating rates
+(Fig.~\ref{fig:e1}), its $4\tau$ vs $\tau$ cost. The penalty is real and dominant --- the price
+\emph{any} gate-lengthening scheme must pay, and the reason a trade-off exists at all --- and its
+rate-independence validates the additive decomposition: the incoherent error tracks gate time
+linearly, so the two floors stay in fixed $4{:}1$ proportion regardless of the heating magnitude.
 
 \paragraph{E2 --- trade-off curve.} At fixed noise the single gate rises $\propto\Delta\omega^2$
-while GBC sits at its incoherent floor; they cross at $\Delta\omega^\times$
-(Fig.~\ref{fig:e2}).
+(uncompensated coherent error) while GBC stays flat at its $4\times$ incoherent floor (its
+$\varepsilon^4$ term negligible); the two \emph{cross} at $\Delta\omega^\times$
+(Fig.~\ref{fig:e2}). This rising-vs-flat crossing is the signature of the result: GBC buys
+immunity to center-line drift for a fixed incoherent surcharge, and wins only once the drift is
+large enough to push the single gate above that surcharge --- $\Delta\omega^\times$ is where the
+experimentalist's choice flips.
 
-\paragraph{E3 --- trade-off map.} $\Delta\omega^\times$ grows monotonically with the
-incoherent floor (Table~\ref{tab:e3}, Fig.~\ref{fig:e3}), scaling as
-$\sqrt{I_{\rm incoh}}$ since $\varepsilon^2(\Delta\omega^\times)\!\sim\!3I_{\rm incoh}$.
+\paragraph{E3 --- trade-off map.} Sweeping the noise floor turns E2 into a decision boundary:
+$\Delta\omega^\times$ grows monotonically with the incoherent floor (Table~\ref{tab:e3},
+Fig.~\ref{fig:e3}), scaling as $\sqrt{I_{\rm incoh}}$ since equating the single gate's coherent
+error to GBC's extra $3\tau$ incoherent cost gives $\varepsilon^2(\Delta\omega^\times)\!\sim\!3I_{\rm incoh}$.
+The practical reading: the crossover tracks the trap and does so gently ($4\times$ lower noise
+lowers it only $2\times$), so a quieter trap makes GBC pay off sooner.
 Repeating for ${}^{40}$Ca$^+$ ($\eta=0.10$) and ${}^{171}$Yb$^+$-Raman ($\eta=0.19$) gives
 \emph{identical} crossovers; only the drive differs ($\Omega_{\rm closure}=5.0$ vs $2.6$,
 $\propto1/\eta$), because $\eta\Omega=\delta/(2\sqrt K)$ is fixed at closure.

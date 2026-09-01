@@ -322,29 +322,63 @@ coherent robust-control literature omits and that our verifier supplies.
 ![Toolchain](figures/Fig1_toolchain.png)
 **Fig. 1** — the design→verify→sweep toolchain (module names, upgrade tags U1–U4).
 
-All modules are framework-free JavaScript (node-importable, browser-runnable),
-validated by `node:assert` suites; the flat interleaved-complex RK4 core is shared
-across engines.
+The toolchain follows one philosophy — **design cheaply, verify honestly, sweep to map** —
+with two independent physics engines that carry the *same* physical parameters. The analytic
+engine designs and scores a gate in closed form (no Fock space), so the design step is
+effectively free; the open-system engine then stress-tests that exact pulse sequence under the
+full master equation, where nothing is assumed away. Their agreement in the closed-system limit
+(E below) fixes a common ground truth; their *disagreement* once dissipation is switched on is
+exactly the quantity we are after. All modules are framework-free JavaScript (node-importable
+and browser-runnable), each covered by a `node:assert` suite, and share one flat
+interleaved-complex RK4 core — a deliberate choice for reproducibility and auditability: every
+number below regenerates from the released code with no build step.
 
-**(A) Analytic designer — `ion-msn` / `ion-msn-shape`.** Evaluates $\Theta$, $\alpha_m$,
-per-mode closure residuals, the Bell-state fidelity via the σ_x-basis phase +
-motional-overlap decoherence factor $C_{ij}=\exp[-\sum_m(2\bar n_m+1)|\Delta\alpha_m|^2/2]$,
-and — with the shaped extension — the piecewise-constant robust-waveform solver.
-Cost $O(M)$ per gate; no Fock tensor.
+**(A) Analytic designer/verifier — `ion-msn` / `ion-msn-shape`.** Working in the
+commuting-$\sigma_x$ basis where the second-order Magnus series terminates, it evaluates the
+entangling phase $\Theta$, the per-mode displacements $\alpha_m$ and their closure residuals,
+and the Bell-state fidelity as the geometric-phase term times the motional-overlap decoherence
+factor $C_{ij}=\exp[-\sum_m(2\bar n_m+1)|\Delta\alpha_m|^2/2]$ — the thermal dephasing incurred
+by any residual spin–motion entanglement, so an unclosed loop is *penalized* rather than
+silently ignored. Its shaped extension solves the piecewise-constant robust waveform of
+Sec. II C. Cost is $O(M)$ per gate for $M$ modes — no $2^N\!\times\!\prod_m\mathcal F_m$ tensor —
+so designing a full $N$-ion-chain gate takes milliseconds on a laptop (a point the manuscript
+returns to when discussing calibration overhead).
 
-**(B) Open-system verifier — `ion-ms`.** Integrates the $4\!\cdot\!\prod_m N_{\rm Fock}$
-density matrix under the full master equation (Sec. II E), returning the Bell-state
-fidelity, populations, and phase-space trajectories. Cost $O(\dim^2)$ per RK4 stage.
+**(B) Open-system verifier(s) — `ion-ms`, `ion-ms-mm`, `ion-ms-exact`.** `ion-ms` integrates
+the $4\!\cdot\!N_{\rm Fock}$ single-mode density matrix under the full master equation
+(Sec. II E), returning Bell fidelity, populations, and phase-space trajectories, and preserves
+complete positivity throughout ($\mathrm{Tr}\,\rho=1$ and $\rho\succeq0$ asserted as invariants,
+even with heating, dephasing, and $\Delta\omega$ all on). `ion-ms-mm` generalizes it to $M$
+motional modes (dimension $4\prod_m N_{\rm Fock}^{(m)}$); exploiting the Hermiticity of $\rho$
+and $H$ to write every right-multiply as $\rho H=(H\rho)^\dagger$ makes each product a
+sparse-first matrix multiply, giving $O(\dim^2 M)$ instead of $O(\dim^3)$ (a $12\times$ speed-up
+at $M{=}2$; Sec. VI E5). `ion-ms-exact` is a closed-system statevector reference that keeps the
+*full* $\sin[\eta(a+a^\dagger)]$ coupling and the lab-frame $\omega_z a^\dagger a$ — no
+Lamb–Dicke expansion and no vibrational RWA — used to bound both approximations against the
+RWA+LD engines.
 
-**(C) Chain-mode solver — `ion-modes`.** Coulomb equilibrium by Newton iteration;
-axial normal modes from the James Hessian ($\omega_{\rm COM}=\omega_z$, stretch
-$=\sqrt3\,\omega_z$, …); eigenvectors $b^m_j$ feed the per-ion Lamb–Dicke couplings
-$\eta_m b^m_j$ used by (A) and (B).
+**(C) Chain-mode solver — `ion-modes`.** Finds the Coulomb equilibrium of an $N$-ion string
+by Newton iteration and the axial normal modes from the James Hessian
+($\omega_{\rm COM}=\omega_z$, stretch $=\sqrt3\,\omega_z$, …); the eigenvectors $b^m_j$ supply
+the per-ion Lamb–Dicke couplings $\eta_m b^m_j$ that both (A) and (B) consume, so the designer
+and the verifier see the *same* real mode structure a laboratory chain would — the basis for
+the $N\!\le\!4$ chain results (E5).
 
-**(D) Cross-validation.** In the closed-system limit the analytic (A) and numerical
-(B) Bell-state fidelities agree to $|\Delta F|\approx$ **[TBD, current suites: $3\times10^{-9}$]**
-on the closure, phase-error, and non-closure paths, establishing a common ground
-truth before dissipation is switched on.
+**(D) Compensation, sweep driver, and comparators — `ion-gbc`, `ion-pipeline`, `ion-ms-pm`,
+`ion-jitter`.** Because the closed-loop gate ($\star$) is motion-free, `ion-gbc` builds the
+asymmetric-error gate and the (recursively nestable) GBC sequence entirely in the $4\times4$
+two-qubit space by real-symmetric eigendecomposition — the fast path for all coherent-robustness
+questions. `ion-pipeline` is the driver that chains design→verify→noise-scan to produce the
+trade-off maps of Sec. VI. `ion-ms-pm` designs the phase-modulated robust comparator (E6) and
+`ion-jitter` supplies the timing-jitter model — both let the framework benchmark *alternative*
+schemes on identical footing rather than in isolation.
+
+**(E) Cross-validation.** In the closed-system limit the analytic (A) and numerical (B)
+Bell-state fidelities agree to $|\Delta F|\approx3\times10^{-9}$ on the closure, phase-error, and
+non-closure paths, and the multi-mode integrator reproduces the analytic two-ion kernel to
+$|\Delta F|=1\times10^{-6}$ (E5). Establishing this common ground truth *before* any dissipation
+is switched on is what licenses attributing every open-system result below to the incoherent
+layer alone, rather than to a modeling discrepancy between the two engines.
 
 ---
 
@@ -506,21 +540,32 @@ the operator level and E4 proves $\varepsilon^4$ is the structural ceiling** (no
 family does better), the pulse-level re-derivation would add no physics; the validated-component
 decomposition is the primary — and, by U2/E4, rigorous — method for the trade-off results.
 
-- **E1 — Incoherent baseline ($\Delta\omega=0$).** GBC's incoherent infidelity is a clean
-  $\mathbf{\approx4\times}$ the single gate across heating rates (its $4\tau$ vs $\tau$):
-  $\kappa=0$: $3\!\times\!10^{-9}/7\!\times\!10^{-9}$; $\kappa=2\!\times\!10^{-3}$:
-  $9.3\!\times\!10^{-3}/3.6\!\times\!10^{-2}$ ($3.9\times$); $\kappa=2\!\times\!10^{-2}$:
-  $8.2\!\times\!10^{-2}/2.5\!\times\!10^{-1}$ ($3.1\times$). The $4\times$ gate-time penalty
-  is real and dominant.
+- **E1 — Incoherent baseline ($\Delta\omega=0$).** With no coherent error, GBC's infidelity is
+  purely its incoherent cost, and it comes out a clean $\mathbf{\approx4\times}$ the single gate
+  across heating rates (its $4\tau$ vs $\tau$): $\kappa=0$: $3\!\times\!10^{-9}/7\!\times\!10^{-9}$;
+  $\kappa=2\!\times\!10^{-3}$: $9.3\!\times\!10^{-3}/3.6\!\times\!10^{-2}$ ($3.9\times$);
+  $\kappa=2\!\times\!10^{-2}$: $8.2\!\times\!10^{-2}/2.5\!\times\!10^{-1}$ ($3.1\times$). Two things
+  matter here. The penalty is **real and dominant** — it is the price *any* coherent-suppression
+  scheme that lengthens the gate must pay, and is the reason a trade-off exists at all rather than
+  GBC being universally better. And that the ratio is a rate-independent $\approx4$ **validates the
+  additive-decomposition premise** (method note): the incoherent error tracks gate time linearly,
+  so the single gate's $\tau$ and GBC's $4\tau$ set floors in fixed $4{:}1$ proportion, independent
+  of how large the heating happens to be.
 
 - **E2 — Trade-off curve.** At fixed noise, the single-gate infidelity rises $\propto\Delta\omega^2$
-  while GBC sits at its (much larger) incoherent floor plus a negligible $\varepsilon^4$ term;
-  they cross at $\Delta\omega^\times$. Example ($\kappa=3\!\times\!10^{-3}$, $\bar n_{\rm th}=1$,
+  (its uncompensated coherent error) while GBC stays essentially flat — pinned at its $4\times$
+  incoherent floor, its $\varepsilon^4$ coherent term negligible — so the two curves *cross* at
+  $\Delta\omega^\times$. Example ($\kappa=3\!\times\!10^{-3}$, $\bar n_{\rm th}=1$,
   $\gamma_\phi=2\!\times\!10^{-3}$): single $2.2\!\times\!10^{-2}\to6.4\!\times\!10^{-2}$ over
   $\Delta\omega\in[0,0.06]$; GBC $\approx8.2\!\times\!10^{-2}$ (flat); $\Delta\omega^\times\approx0.07$.
+  The rising-vs-flat crossing is the visual signature of the whole result: GBC trades a fixed
+  incoherent surcharge for immunity to center-line drift, so it only wins once that drift is large
+  enough to push the single gate above the surcharge. $\Delta\omega^\times$ is the operating point
+  where an experimentalist's choice flips.
 
-- **E3 — Trade-off map (the headline).** The crossover **grows monotonically with the
-  incoherent floor** — below $\Delta\omega^\times$ use the single robust gate, above it use GBC:
+- **E3 — Trade-off map (the headline).** Sweeping the noise floor traces how the crossover moves,
+  turning the single curve of E2 into an actionable **decision boundary** — below
+  $\Delta\omega^\times$ use the single robust gate, above it use GBC:
 
   | heating $\kappa$ | single incoh. | GBC incoh. | $\Delta\omega^\times$ |
   |---|---|---|---|
@@ -532,8 +577,14 @@ decomposition is the primary — and, by U2/E4, rigorous — method for the trad
 
   The GBC/single incoherent ratio is $\approx4$ throughout (confirming the $4\tau$ cost), and
   $\Delta\omega^\times$ scales roughly as $\sqrt{I_{\rm incoh}}$ — expected, since the crossover
-  is set by $\varepsilon^2(\Delta\omega^\times)\!\sim\!3\,I_{\rm incoh}$ (single's coherent
-  error $=$ GBC's extra $3\tau$ incoherent cost) with $\varepsilon=\Delta\omega\,\tau$.
+  is set by equating the single gate's coherent error to GBC's extra $3\tau$ incoherent cost,
+  $\varepsilon^2(\Delta\omega^\times)\!\sim\!3\,I_{\rm incoh}$ with $\varepsilon=\Delta\omega\,\tau$.
+  This $\sqrt{I}$ law is the practical takeaway: the crossover is not a fixed number but tracks the
+  trap, and gently — a $4\times$ improvement in the incoherent floor lowers $\Delta\omega^\times$
+  by only $2\times$, so **a quieter trap makes GBC pay off sooner** (a smaller center-line drift
+  suffices to justify it), while a noisier trap tolerates more drift before compensation helps. An
+  experimentalist reads their own $\Delta\omega^\times$ off this map from their measured heating
+  and dephasing, then compares it to their center-line stability.
 
   *Species independence (confirmed).* Repeating the map for ⁴⁰Ca⁺ ($\eta=0.10$) and
   ¹⁷¹Yb⁺-Raman ($\eta=0.19$) gives **identical** infidelities and crossovers to the displayed
