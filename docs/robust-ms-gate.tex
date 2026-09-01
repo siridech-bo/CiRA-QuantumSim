@@ -215,8 +215,11 @@ their closure residuals, and the Bell fidelity as the geometric phase times the 
 decoherence factor $C_{ij}=\exp[-\sum_m(2\bar n_m{+}1)|\Delta\alpha_m|^2/2]$ (so an unclosed loop
 is penalized), and solves the robust waveform of Sec.~II. Cost $O(M)$, no Fock tensor ---
 milliseconds for a full chain. \emph{(B) Open-system verifiers} --- \textsf{ion-ms} integrates
-the $4N_{\rm Fock}$ single-mode density matrix under the full master equation (CPTP-preserving,
-$\mathrm{Tr}\,\rho{=}1$, $\rho\succeq0$ asserted); \textsf{ion-ms-mm} generalizes to $M$ modes
+the $4N_{\rm Fock}$ single-mode density matrix under the full master equation, kept CPTP by an
+adaptive RK4 sub-step bounded per segment by the fastest active scale
+$\max(\Omega_0,\delta_m,|\omega_z{-}\delta|,\kappa,\gamma_\phi)$ plus a per-step Hermitization, with
+$\mathrm{Tr}\,\rho{=}1$ and $\rho\succeq0$ asserted as invariants even with all noise on (the
+numerical rigor the open-system results depend on); \textsf{ion-ms-mm} generalizes to $M$ modes
 (dimension $4\prod_m N_{\rm Fock}^{(m)}$) with the Hermiticity identity $\rho H=(H\rho)^\dagger$
 making each product sparse-first, $O(\dim^2 M)$ not $O(\dim^3)$; \textsf{ion-ms-exact} is a
 statevector reference keeping the full $\sin[\eta(a{+}a^\dagger)]$ and lab-frame $\omega_z

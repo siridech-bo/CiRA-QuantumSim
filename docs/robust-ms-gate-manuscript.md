@@ -468,48 +468,42 @@ the coherent design or of either engine.
 
 ---
 
-## V. Toolchain upgrades (all implemented)
+## V. Implementation and numerical-methods validation
 
-| # | Upgrade | Module | Purpose | Cost | Status |
-|---|---------|--------|---------|------|--------|
-| **U1** | App-C waveform solver: $\mathbf{x}=\sqrt{\Xi/\lambda}\ker(A)\mathbf v_\lambda$; symmetric-pulse + $\int\alpha\,dt=0$ constraints | `ion-msn-shape` | Minimum-intensity, sign-correct, symmetric-robust waveforms | small | **✓ done** (`solveShapeRobust`) |
-| **U2** | $4\times4$ asymmetric-error + GBC module (Eq. $\star$ + 3-gate sequence) | `ion-gbc` (new) | Coherent infidelity vs $\Delta\omega$, with/without GBC | small | **✓ done** (`ion-gbc.js`) |
-| **U3** | Time-dependent (piecewise) $\Omega(t)$ in the Lindblad integrator | `ion-ms` | Run *shaped* pulses under open-system noise | moderate | **✓ done** (`MSGate` pulse/Δω/carrier) |
-| **U4** | Pipeline driver: design (U1/U2) → integrate (U3) → sweep noise | `ion-pipeline` | Generate the trade-off maps | small | **✓ done** (`ion-pipeline.js`; E1–E3 run) |
+Section III introduced the toolchain's modules; here we record how the capabilities were built on
+the analytic/numerical core and — more important for a reviewer — how the *numerics* are made
+trustworthy, since the open-system results are only as good as the integrator that produces them.
 
-*U1 validation:* on a two-ion axial chain, the robust waveform reduces
-the closure residual under a symmetric detuning drift $\Delta\delta$ by **[2.5×10³]×**
-relative to a non-robust closing pulse, and the residual scales **quadratically** in
-$\Delta\delta$ (measured exponent from res$(2\Delta)/$res$(\Delta)\approx3.3\!\to\!4$)
-versus linear ($\approx1.8\!\to\!2$) for the non-robust pulse — confirming first-order
-$\partial_\delta\alpha=0$ insensitivity. Fidelity $=1.0$, loops closed to $\sim\!10^{-14}$.
+**What was built.** Four capabilities extend the core, each released with a `node:assert` suite.
+**U1** — the Appendix-C robust-waveform solver
+$\mathbf{x}=\sqrt{\Xi/\lambda}\,\ker(A)\mathbf v_\lambda$ (`ion-msn-shape`/`solveShapeRobust`), which
+returns the minimum-intensity symmetric-robust pulse and tracks its entangling sign (Sec. II C).
+**U2** — the motion-free $4\times4$ asymmetric-error/GBC gate (`ion-gbc`), the fast path for every
+coherent-robustness question (Sec. II D). **U3** — a time-dependent piecewise $\Omega(t)$, the
+$\Delta\omega\,\sigma_z$ error, and per-mode dissipators added to the Lindblad integrator (`ion-ms`),
+so a *designed* pulse can be run under open-system noise. **U4** — the pipeline driver
+(`ion-pipeline`) that chains design→verify→noise-sweep into the trade-off maps of Sec. VI. Their
+*coherent* behavior is validated in Sec. IV (B1/B2 — engine agreement to $3\times10^{-9}$ and the
+reproduction of the $\varepsilon^2\!\to\!\varepsilon^4$ and $2.5\times10^3\times$ symmetric-drift
+results); the remainder of this section covers the two numerical-methods points on which the
+*open-system* results specifically depend.
 
-*U2 validation (reproduces Zhang25 Fig. 5):* in the motion-free 4×4 space,
-the uncompensated asymmetric-error infidelity scales as $\varepsilon^2$ (measured ratio
-$4.00$ per doubling of $\varepsilon=\Delta\omega\tau$), while the GBC-compensated gate
-scales as $\varepsilon^4$ (measured ratio $\mathbf{15.97\to16}$) — the first-order
-cancellation $U^{\rm gbc}=U_{\rm ideal}+o(\varepsilon^2)$. At $\varepsilon=0.05$ GBC
-lowers the infidelity by $\sim\!1.5\times10^{3}$; composed gate unitary to $10^{-16}$.
-These are the *closed-system* baselines; the trade-off study (Sec. VI) asks how much of
-this $\varepsilon^4$ advantage survives once the doubled GBC gate time accrues
-incoherent error.
+**Numerical rigor — CPTP preservation.** A shaped $\Omega(t)$ steps discontinuously in amplitude
+between segments, and the master equation is stiff (the drive, the mode detunings $\delta_m$, the
+trap $\omega_z$, and the noise rates span decades). A naive integrator would leak trace or
+positivity and quietly corrupt the very infidelities we report. The integrator therefore takes an
+adaptive RK4 sub-step bounded *per segment* by the fastest active scale
+$\max(\Omega_0,\delta_m,|\omega_z-\delta|,\kappa,\gamma_\phi)$, with a Hermitization after each step,
+and asserts $\mathrm{Tr}\,\rho=1$ and positivity ($\min\mathrm{eig}\,\rho\ge-\varepsilon$) as
+*invariants* in the test suite — enforced even with heating, dephasing, and $\Delta\omega$ all
+active. As an independent open-system check, the numerical $\Delta\omega$-error fidelity matches the
+analytic $4\times4$ gate (U2) to $\sim\!10^{-3}$ and scales $\propto\Delta\omega^2$ (ratio $3.98$),
+the numeric$\leftrightarrow$analytic agreement of Fig. 2(b).
 
-*U3 validation:* the Lindblad integrator accepts a piecewise $\Omega(t)$,
-the common-mode $\Delta\omega\,\sigma_z$ error, and a leading beyond-RWA carrier, all
-CPTP-preserving ($\mathrm{Tr}\,\rho=1$ and $\rho\succeq0$ asserted throughout, even with
-heating + dephasing + $\Delta\omega$ on). Cross-checks: (i) a constant-amplitude pulse
-reproduces the constant drive to $|\Delta F|\!=\!3\times10^{-9}$; (ii) the numerical
-$\Delta\omega$-error fidelity matches the **U2 analytic 4×4 gate** to $\sim\!10^{-3}$ and
-scales $\propto\Delta\omega^2$ (ratio $3.98$) — an independent numeric↔analytic check of
-the asymmetric-error term; (iii) the carrier gap is $\sim\!10^{-10}$ at $\Omega\!\ll\!\omega_z$
-and grows monotonically ($\sim\!10^{-5}$ by $\Omega/\omega_z=4$). *Scope note:* the carrier
-is the **leading-order** off-resonant term (rotating at $\omega_z-\delta$, amplitude
-$\tfrac{\Omega}{2}e^{-\eta^2/2}$); the **full non-RWA / beyond-Lamb-Dicke** model is now built
-separately (`src/ion-ms-exact.js`) and quantifies both approximations exactly — see below.
-
-**Full non-RWA + beyond-Lamb-Dicke validation** (`src/ion-ms-exact.js`). To bound both
-approximations rigorously we integrate the *exact* spin-dependent-force Hamiltonian in the
-lab-motional frame, making **no** Lamb–Dicke expansion and **no** vibrational RWA:
+**Validity of the RWA + Lamb–Dicke approximations** (`src/ion-ms-exact.js`). The `ion-ms`
+Hamiltonian is the standard Lamb–Dicke, sideband-RWA form, valid for $\Omega\ll\omega_z$. Rather
+than leave this as a caveat, we bound it exactly by integrating the *exact* spin-dependent-force
+Hamiltonian in the lab-motional frame, making **no** Lamb–Dicke expansion and **no** vibrational RWA:
 $$H(t)=\omega_z a^\dagger a+\Omega\sum_j\sigma_x^{(j)}\,\sin\!\big(\eta(a+a^\dagger)\big)\,\cos\!\big((\omega_z-\delta)t\big).$$
 Expanding $\sin\to\eta(a+a^\dagger)$ and dropping the $2\omega_z$ components recovers the
 interaction-picture RWA+LD engine exactly, so $1-F$ at LD-closure *is* the combined error.
@@ -521,30 +515,12 @@ $\omega_z$, raising $\eta$ *lowers* $\Omega=\delta/2\eta$ (less RWA error) yet *
 isolating the **beyond-LD (Debye–Waller) infidelity $\propto\eta^4$** ($2.8\times10^{-5}$,
 $1.5\times10^{-4}$, $3.6\times10^{-3}$ at $\eta=0.05,0.1,0.2$). At the physical ⁴⁰Ca⁺ point
 ($\eta=0.1$) with any slow gate ($\Omega\ll\omega_z$) **both errors are $\lesssim10^{-4}$**, so
-the RWA+LD engine underlying E1–E5 is accurate there; the exact model pins the boundary where
+the RWA+LD engine underlying E1–E6 is accurate there; the exact model pins the boundary where
 it breaks (fast/strong drive $\Omega\!\to\!\omega_z$, or heavy Lamb–Dicke $\eta\!\gtrsim\!0.3$).
-
-All four upgrades are implemented and validated (test suites `ion-msn-shape`, `ion-gbc`,
-`ion-ms`, `ion-pipeline`, plus the multi-mode `ion-ms-mm` and non-RWA `ion-ms-exact`); the
-experiments in Sec. VI are built on them.
-
-**Design requirements for U3 (numerical fidelity).** Two effects must be handled
-correctly, or the open-system results are unreliable:
-*(i) CPTP preservation across shaped transitions.* The integrator must resolve the
-rapid amplitude/phase steps of a segmented $\Omega(t)$ with sufficiently small
-adaptive sub-steps that trace and positivity are preserved ($\mathrm{Tr}\,\rho=1$,
-$\rho\succeq0$) — the sub-step is bounded per segment by the fastest scale
-$\max(\Omega_0,\delta_m,\kappa,\gamma_\phi)$, and a per-step Hermitization is applied.
-Positivity ($\min\mathrm{eig}\,\rho\ge-\varepsilon$) is asserted as an invariant in
-the test suite.
-*(ii) Beyond-RWA carrier terms at high peak drive.* The `ion-ms` (E1–E5) Hamiltonian
-is the Lamb–Dicke, sideband-RWA form, valid for $\Omega_0\ll\omega_z$. Rather than leave
-this as a caveat, we quantify it exactly with the **full non-RWA + beyond-LD integrator**
-`src/ion-ms-exact.js` (Sec. V): the RWA infidelity scales $\propto(\Omega/\omega_z)^2$ and
-the beyond-Lamb-Dicke (Debye–Waller) infidelity $\propto\eta^4$, and at the physical ⁴⁰Ca⁺
-point ($\eta=0.1$, slow gate) **both are $\lesssim10^{-4}$** — so the E1–E5 conclusions are
-not artificially optimistic. The exact model marks the boundary (fast/strong drive, or
-$\eta\gtrsim0.3$) beyond which the RWA+LD form should be replaced by it.
+This *promotes* U3's beyond-RWA carrier — a single leading-order off-resonant tone at
+$\omega_z-\delta$ of amplitude $\tfrac{\Omega}{2}e^{-\eta^2/2}$ — from an estimate to an exact
+bound, and confirms the E1–E6 open-system results are not artificially optimistic at the physical
+operating point.
 
 ---
 
