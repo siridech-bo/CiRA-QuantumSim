@@ -80,8 +80,8 @@ export function integrateAlpha(proto, { N = 4000, deltaShift = null } = {}) {
 }
 
 // Residual |α(τ)| under a STATIC mode-frequency offset Δδ (robustness probe).
-export function residualUnderOffset(proto, dDelta) {
-  return integrateAlpha(proto, { deltaShift: () => dDelta }).residual;
+export function residualUnderOffset(proto, dDelta, N = 4000) {
+  return integrateAlpha(proto, { N, deltaShift: () => dDelta }).residual;
 }
 
 // Filter function F(ω) for oscillatory mode-freq noise ε cos(ωt+φ): ⟨|α(τ)|²⟩_φ/ε²
@@ -129,8 +129,8 @@ export function buildContext({ deltaMin = 1, deltaMax = 18, tauD = 40, tauRamp =
   return { dese, sm, tauP: dese.tau, tauS: sm.tau, excP: rd.excursion, excS: rs.excursion };
 }
 // residual |α(τ)| for both gates at a given static mode-freq drift Δδ (compute once per Δδ).
-export function residualPair(ctx, deltaDrift) {
-  return { rP: residualUnderOffset(ctx.dese, deltaDrift), rS: residualUnderOffset(ctx.sm, deltaDrift) };
+export function residualPair(ctx, deltaDrift, N = 4000) {
+  return { rP: residualUnderOffset(ctx.dese, deltaDrift, N), rS: residualUnderOffset(ctx.sm, deltaDrift, N) };
 }
 // the four schemes' net infidelity (pass precomputed residuals for a fast Δω/noise scan).
 export function schemes(ctx, { rP, rS }, { deltaOmega = 0, nbar = 0, kappa = 0, gammaPhi = 0 } = {}) {

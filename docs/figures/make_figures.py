@@ -57,6 +57,39 @@ ax.text(50, 37.5, "Fig. 1 — toolchain: analytic design ($O(M)$)  →  open-sys
         ha="center", fontsize=9)
 save(fig, "Fig1_toolchain")
 
+# ---- Fig 1 (Option A, v2.1) — two robustness-axis recast -------------------
+# Design stage now shows BOTH robustness families on orthogonal error axes:
+#   symmetric (motional) axis  -> ion-msn-shape (AM waveform) + ion-smooth (AESE)
+#   asymmetric (center-line)   -> ion-gbc (GBC)
+# both feeding one open-system verifier, then the sweep driver.
+fig, ax = plt.subplots(figsize=(7.2, 3.5)); ax.set_xlim(0, 100); ax.set_ylim(0, 46); ax.axis("off")
+C_SYM, C_ASYM = "#eaf2fb", "#fbeee8"   # symmetric-axis / asymmetric-axis tints
+# chain
+box(1, 18, 14, 10, "ion-modes", "Coulomb chain\n$\\{\\omega_m,b^m_j\\}$", "#eef3f8")
+# symmetric (motional) axis — two design methods
+box(20, 32, 21, 9.5, "ion-msn-shape", "AM robust $\\Omega(t)$ (U1)\nclose $\\alpha_m$, $\\partial_\\delta\\alpha{=}0$", C_SYM)
+box(20, 20.5, 21, 9.5, "ion-smooth", "smooth gate / AESE\nadiabatic $\\delta(t)$ ramp", C_SYM)
+# asymmetric (center-line) axis
+box(20, 6, 21, 9.5, "ion-gbc", "center-line $\\sigma_z$ + GBC (U2)\n$\\varepsilon^2\\!\\to\\!\\varepsilon^4$", C_ASYM)
+# verifier + sweep
+box(48, 18, 22, 12, "ion-ms / -mm", "open-system Lindblad (U3)\nshaped $\\Omega(t)$, $\\Delta\\omega$, heating", "#eef3f8")
+box(77, 18, 22, 12, "ion-pipeline", "design$\\to$verify$\\to$sweep (U4)\ntrade-off + smooth$\\times$GBC map", "#e9f2ec")
+ax.text(59, 15.2, "$+$ ion-ms-exact: non-RWA / beyond-LD bound", ha="center", fontsize=6.3, color="#777", style="italic")
+# axis grouping labels
+ax.text(30.5, 43.4, "symmetric (motional) axis", ha="center", fontsize=7.3, color="#2f6fb0", fontweight="bold")
+ax.text(30.5, 3.4, "asymmetric (center-line) axis", ha="center", fontsize=7.3, color="#b5651d", fontweight="bold")
+# arrows: chain -> each design box
+arrow(15, 25, 20, 36.5); arrow(15, 23.5, 20, 25.2); arrow(15, 22, 20, 10.7)
+# design -> verifier (converging)
+arrow(41, 36.5, 48, 26); ax.text(45, 33.0, "$\\Omega(t)$", ha="center", fontsize=6.3, color="#555", style="italic")
+arrow(41, 25.2, 48, 24)
+arrow(41, 10.7, 48, 22); ax.text(45, 13.6, "$\\varepsilon^4$", ha="center", fontsize=6.3, color="#555", style="italic")
+arrow(70, 24, 77, 24)
+ax.text(50, 45, "Fig. 1 (v2.1) — two robustness axes: symmetric shaping (AM / smooth-AESE) "
+        "$\\;\\oplus\\;$ asymmetric GBC  $\\to$  one open-system verifier  $\\to$  combining map",
+        ha="center", fontsize=8)
+save(fig, "Fig1_toolchain_v2")
+
 # ---- Fig 2 — closed-system validation (B1 engine agreement, B2 ε²->ε⁴) ----
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(6.6, 2.7))
 # B2: coherent scaling, uncompensated ~ε² vs GBC ~ε⁴ (U2 data)
@@ -136,5 +169,46 @@ ax.set_ylim(0, 0.11)
 ax.legend(frameon=False, fontsize=8, loc="upper left"); ax.grid(True, which="both", alpha=0.15)
 ax.set_title("E3 — where GBC pays off vs trap noise", fontsize=9)
 save(fig, "Fig5_E3_crossover")
+
+# ---- Fig 6 (v2.1) — smooth gate × GBC: win-map + filter function (E7) ------
+# Data: docs/figures/smooth_data.json, emitted by export_smooth_data.mjs from the
+# validated ion-smooth engine (playground defaults: δ_max=18, τ_d=40, n̄=3, κ=γ_φ=1e-4).
+import json
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
+_sd_path = OUT / "smooth_data.json"
+if _sd_path.exists():
+    sd = json.loads(_sd_path.read_text())
+    SCH_C = {"plain": "#8b949e", "smooth": "#4A90D9", "gbc": "#FF8C00", "smoothGbc": "#50C878"}
+    SCH_L = {"plain": "plain (DESE)", "smooth": "smooth (AESE)", "gbc": "GBC", "smoothGbc": "smooth+GBC"}
+    names = sd["names"]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.2, 2.9))
+    # (a) win-map over (Δδ, Δω)
+    cmap = ListedColormap([SCH_C[n] for n in names])
+    wm = np.array(sd["winMap"])                      # [iy][ix], iy=0 is smallest Δω
+    a1.imshow(wm, origin="lower", aspect="auto", cmap=cmap, vmin=0, vmax=len(names) - 1,
+              extent=[0, sd["params"]["DD_MAX"], 0, sd["params"]["DW_MAX"]], interpolation="nearest", alpha=0.9)
+    a1.set_xlabel("$\\Delta\\delta$  mode-frequency (symmetric) error")
+    a1.set_ylabel("$\\Delta\\omega$  center-line (asymmetric)")
+    a1.set_title("(a) which scheme wins", fontsize=9)
+    present = [names[i] for i in np.unique(wm)]
+    a1.legend(handles=[Patch(fc=SCH_C[n], label=SCH_L[n]) for n in present],
+              frameon=False, fontsize=6.6, loc="upper left")
+    # (b) filter function F(ω), DESE vs AESE
+    fD, fS = sd["filterD"], sd["filterS"]
+    a2.loglog([p["x"] for p in fD], [p["y"] for p in fD], "-", color=SCH_C["plain"], lw=1.8, label="constant-$\\delta$ (DESE)")
+    a2.loglog([p["x"] for p in fS], [p["y"] for p in fS], "-", color=SCH_C["smooth"], lw=1.8, label="smooth (AESE)")
+    a2.set_xlabel("$\\omega$  mode-freq-noise frequency (units of $\\delta_{\\min}$)")
+    a2.set_ylabel("filter $F(\\omega)$  sensitivity")
+    a2.set_title("(b) motional-noise filter", fontsize=9)
+    a2.legend(frameon=False, fontsize=7, loc="lower right"); a2.grid(True, which="both", alpha=0.15)
+    sc = sd["scalars"]
+    fig.suptitle("Fig. 6 — smooth$\\times$GBC: orthogonal robustness axes  "
+                 "($\\tau_s/\\tau_p\\!=\\!%.0f$, AESE suppression $\\sim\\!%.0f\\times$)"
+                 % (sd["tau"]["ratio"], sc["suppression_at_dd0p02"]), fontsize=8.5, y=1.03)
+    fig.tight_layout()
+    save(fig, "Fig6_smooth_gbc")
+else:
+    print("skip Fig6 — run:  node docs/figures/export_smooth_data.mjs")
 
 print("done ->", OUT)
