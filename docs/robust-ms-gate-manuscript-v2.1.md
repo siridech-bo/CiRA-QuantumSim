@@ -1035,9 +1035,9 @@ the analytic framework of Zhang *et al.* [Zhang25].
 - [Zhang25] W. Zhang, G. Tang, K. Liu, X. Yuan, Y. Shen, Y. Wu, X.-M. Zhang,
   *Robust Mølmer–Sørensen Gate Against Symmetric and Asymmetric Errors*,
   arXiv:2501.02847 (2025).
-- [Hughes25] A. C. Hughes *et al.*, *Smooth trapped-ion entangling gates robust to motional
-  frequency errors via adiabatic elimination of spin–motion entanglement*,
-  arXiv:2510.17286 (2025).
+- [Hughes25] A. C. Hughes, R. Srinivas, C. M. Löschnauer, H. M. Knaack, R. Matt, C. J. Ballance,
+  M. Malinowski, T. P. Harty, R. T. Sutherland, *Trapped-ion two-qubit gates with >99.99% fidelity
+  without ground-state cooling* (the "smooth gate"), arXiv:2510.17286 (2025).
 - [Sutherland16] *(placeholder — confirm before submission)* the laser-free / electronic-drive
   MS-gate lineage that the smooth gate's temperature-insensitive variant builds on
   (e.g. Sutherland *et al.*; see [Hughes25] and references therein for the exact citation).

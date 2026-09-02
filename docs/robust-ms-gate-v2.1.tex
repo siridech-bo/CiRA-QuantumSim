@@ -93,7 +93,7 @@ waveform and GBC construction were recently developed by an \emph{independent gr
 Zhang \emph{et~al.}~\cite{Zhang25}, whose coherent-error results we reproduce as validation
 baselines (Sec.~\ref{sec:val}, Fig.~\ref{fig:val}) and build upon. The \emph{smooth gate} we compare
 and combine with GBC is that of Hughes \emph{et~al.}~\cite{Hughes25}, likewise an independent group;
-we reproduce its motional-robustness signatures (Sec.~\ref{sec:smooth}, \ref{sec:e7}) and use it as
+we reproduce its motional-robustness signatures (Sec.~\ref{sec:smooth}, E7) and use it as
 the second robustness axis. We claim no novelty for that coherent machinery, nor for either robust
 construction --- only for their open-system comparison and combining. Our contributions are on the
 open-system and trade-off side:
@@ -107,7 +107,7 @@ incoherent sensitivity is \emph{target-mode dominated}; (N5)~the species-indepen
 the trade-off and a non-RWA + beyond-Lamb-Dicke bound certifying the RWA+LD model; and
 (N6)~the integration of the \emph{smooth gate} (AESE~\cite{Hughes25}) as a second, orthogonal
 robustness axis, with the resulting smooth$\times$GBC combining map --- a four-scheme decision
-boundary with an add-GBC threshold $\Delta\omega^\times\!\approx\!3.5\times10^{-3}$ (Sec.~\ref{sec:e7}),
+boundary with an add-GBC threshold $\Delta\omega^\times\!\approx\!3.5\times10^{-3}$ (E7),
 showing where two robust-control techniques should be \emph{combined} rather than chosen between.
 
 \section{Theoretical framework}
@@ -127,12 +127,14 @@ second-order Magnus expansion terminates:
 -\tfrac{i}{2}\!\sum_{j,m}(\alpha_m a_m^\dagger+\alpha_m^* a_m)\eta_m b^m_j\sigma_x^j\Big],
 \end{equation}
 \begin{equation}
-\alpha_m(\tau)=\!\int_0^\tau\!\Omega\,e^{i\delta_m t}dt,\quad
-\Theta=\tfrac12\!\sum_m\eta_m^2 b^m_{j_1}b^m_{j_2}\!\!\iint\!\Omega\Omega\sin[\delta_m(t_1{-}t_2)].
+\begin{aligned}
+\alpha_m(\tau)&=\int_0^\tau\!\Omega(t)\,e^{i\delta_m t}\,dt,\\
+\Theta&=\tfrac12\sum_m\eta_m^2 b^m_{j_1}b^m_{j_2}\!\iint\!\Omega\Omega\,\sin[\delta_m(t_1{-}t_2)].
+\end{aligned}
 \end{equation}
 The gate is clean when $\alpha_m(\tau)=0$ and $\Theta=\pi/4$. Because the $\sigma_x^j$ commute,
 this multi-mode phase is \emph{exact}, not a cross-term-truncated approximation --- a point we
-verify against the full integrator in Sec.~\ref{sec:e5}.
+verify against the full integrator in E5.
 \emph{Convention:} we write the entangler on the pairwise operator $\sigma_x^{j_1}\sigma_x^{j_2}$
 (maximally entangling at $\Theta=\pi/4$); the equivalent collective form $\exp(i\Theta_S S_x^2)$,
 $S_x{=}\sum_j\sigma_x^j$, has $S_x^2{=}2\mathbb I{+}2\sigma_x^{j_1}\sigma_x^{j_2}$ (spectrum
@@ -194,7 +196,7 @@ microscopic pulse, so it composes with any robust waveform --- and, because Eq.~
 is motion-free, it lives entirely in the $4\times4$ space (no Fock integration; Sec.~V, U2). Its
 price is the $4\tau$ duration ($\tau+2\tau+\tau$), hence $\approx4\times$ incoherent error: the
 $\varepsilon^4$-coherent-gain / $4\times$-incoherent-cost tension is the trade-off we quantify.
-Nesting does not help beyond one level (Sec.~\ref{sec:e4}).
+Nesting does not help beyond one level (E4).
 
 \subsection{Open-system model (this work)}
 Everything above --- mode closure, robust shaping, GBC --- is a \emph{coherent} design:
@@ -248,9 +250,9 @@ function $F(\omega)=\langle|\alpha(\tau)|^2\rangle_\varphi/\varepsilon^2$ for an
 mode-frequency noise (\cite{Hughes25} App.~B). AESE acts \emph{only} on the symmetric axis (it does
 nothing to the center-line $\sigma_z$), so it is orthogonal and complementary to GBC --- their
 leading infidelities add. But the adiabatic sweep makes the gate \emph{long}
-($\tau_{\rm smooth}\!\approx\!14\tau$ at the parameters of Sec.~\ref{sec:e7}), and since the
+($\tau_{\rm smooth}\!\approx\!14\tau$ at the parameters of E7), and since the
 center-line error enters as $\varepsilon=\Delta\omega\tau$, the smooth gate is \emph{more} exposed to
-the asymmetric axis than a short gate --- exactly the case where appending GBC pays (Sec.~\ref{sec:e7}).
+the asymmetric axis than a short gate --- exactly the case where appending GBC pays (E7).
 
 \section{Toolchain}
 \begin{figure}[t]\includegraphics[width=\columnwidth]{Fig1_toolchain_v2}
@@ -290,7 +292,7 @@ asymmetric-error/GBC gate, recursively nestable), \textsf{ion-pipeline} (the des
 driver), \textsf{ion-ms-pm} (phase-modulated comparator, E6), \textsf{ion-jitter} (timing-jitter
 model), and \textsf{ion-smooth} (the smooth gate / AESE of Sec.~\ref{sec:smooth}: integrates the
 semiclassical $\alpha(t)$ under a ramped $\delta(t)$, returning the static-drift residual and filter
-function, and drives the four-scheme combining map of Sec.~\ref{sec:e7}). \emph{(E) Cross-validation}: analytic and numerical Bell fidelities agree to
+function, and drives the four-scheme combining map of E7). \emph{(E) Cross-validation}: analytic and numerical Bell fidelities agree to
 $|\Delta F|\approx3\times10^{-9}$ (closed system), and the multi-mode integrator reproduces the
 analytic two-ion kernel to $10^{-6}$ (E5) --- a common ground truth fixed \emph{before} dissipation
 is switched on, which is what lets us attribute the open-system results to the incoherent layer
@@ -401,7 +403,7 @@ $3\times10^{-3}$ & $1.4\times10^{-2}$ & $5.3\times10^{-2}$ & $0.055$ & $2.75$\\
 $6\times10^{-3}$ & $2.7\times10^{-2}$ & $9.9\times10^{-2}$ & $0.085$ & $4.25$\\
 \end{tabular}\end{ruledtabular}\end{table}
 
-\paragraph{E4 --- optimal robustness depth.}\label{sec:e4} We nest GBC via its physical
+\paragraph{E4 --- optimal robustness depth.} We nest GBC via its physical
 error-flip, $\hat U^{(k)}_\varepsilon=\hat U^{(k-1)}_\varepsilon[\hat\Pi\hat
 U^{(k-1)}_{2\varepsilon}(-\Theta)\hat\Pi]\hat U^{(k-1)}_\varepsilon$, so the gate time grows
 as $4^k\tau$. The coherent infidelity does \emph{not} keep improving: it drops
@@ -414,7 +416,7 @@ $k^\star\!\in\!\{0,1\}$ throughout the physical regime ($\varepsilon\lesssim0.2$
 below $\Delta\omega^\times$, $k^\star=1$ above --- $k\ge2$ loses in \emph{both} channels
 (worse coherent error and $4^k\times$ incoherent exposure). The verdict is: use one GBC or none.
 
-\paragraph{E5 --- chain scaling.}\label{sec:e5} A multi-mode open-system verifier
+\paragraph{E5 --- chain scaling.} A multi-mode open-system verifier
 (\textsf{ion-ms-mm}, dimension $4\prod_m N_{\rm Fock}^{(m)}$; the Hermiticity identity
 $\rho H=(H\rho)^\dagger$ makes each product sparse-first, $O(\dim^2 M)$) reproduces the
 single-mode gate to $|\Delta F|<3\times10^{-9}$ ($M{=}1$), the analytic two-ion (COM+stretch)
@@ -427,7 +429,7 @@ spectators ($\delta=0.25/{-}0.48/{-}1.16$). Even two spectators add only $\sim\!
 target, so the E3 crossover shifts by $\lesssim\!\sqrt{1.2}\approx1.1$; the single-mode
 trade-off carries over to a real chain essentially unchanged.
 
-\paragraph{E6 --- method comparison.}\label{sec:e6} The crossover is set by the gate~time,
+\paragraph{E6 --- method comparison.} The crossover is set by the gate~time,
 not the shaping method (Sec.~\ref{sec:disc}). We test this by building a physically distinct
 robust scheme --- a \emph{phase-modulated} (PM) waveform of constant amplitude and
 piecewise-constant phase $\varphi(t)$ (the family of Ref.~\cite{Milne20}, \textsf{ion-ms-pm})
@@ -463,7 +465,7 @@ $\propto\eta^4$. At the ${}^{40}$Ca$^+$ point ($\eta=0.1$, slow gate) both are
 $\lesssim\!10^{-4}$, so the RWA+LD model underlying E1--E6 is accurate; the exact model marks
 the boundary (fast/strong drive, or $\eta\gtrsim0.3$) beyond which it should be replaced.
 
-\paragraph{E7 --- smooth gate $\times$ GBC.}\label{sec:e7} E6 compared two robust waveforms on the
+\paragraph{E7 --- smooth gate $\times$ GBC.} E6 compared two robust waveforms on the
 \emph{same} (symmetric) axis, so they share a crossover. We now cross to a different axis: the smooth
 gate (AESE, Sec.~\ref{sec:smooth}, \textsf{ion-smooth}). Integrating the semiclassical $\alpha(t)$
 under the ramped $\delta(t)$ (auto-calibrated to $\theta_g=\pi/2$), the smooth gate closes the loop
@@ -475,9 +477,11 @@ mechanism of Ref.~\cite{Hughes25}. The cost is gate~time: $\tau_{\rm smooth}\!\a
 Because AESE and GBC act on orthogonal axes, their leading infidelities add; we score all four
 schemes --- plain (DESE), smooth (AESE), GBC, smooth+GBC --- with one net-infidelity model,
 \begin{equation}
-1{-}F=\underbrace{(2\bar n{+}1)|\alpha_{\rm res}(\Delta\delta)|^2}_{\text{symmetric (AESE)}}
-+\underbrace{c(\Delta\omega\tau)}_{\text{asymmetric (GBC)}}
-+\underbrace{\big[\kappa\!\textstyle\int|\alpha|^2(2\bar n{+}1)+\gamma_\phi\tau\big]}_{\times4\text{ for GBC}},
+\begin{split}
+1{-}F={}&\underbrace{(2\bar n{+}1)\,|\alpha_{\rm res}(\Delta\delta)|^2}_{\text{symmetric (AESE)}}
+\;+\;\underbrace{c(\Delta\omega\tau)}_{\text{asymmetric (GBC)}}\\[2pt]
+&+\;\underbrace{\big[\kappa\!\textstyle\int|\alpha|^2(2\bar n{+}1)+\gamma_\phi\tau\big]}_{\times4\text{ for GBC}},
+\end{split}
 \end{equation}
 with $c(\varepsilon)$ the validated U2 term ($\varepsilon^2$ without GBC, $\varepsilon^4$ with).
 Sweeping $(\Delta\delta,\Delta\omega)$ at fixed noise gives the decision map of Fig.~\ref{fig:e7}a:
@@ -566,21 +570,25 @@ of~\cite{Zhang25}.
 \appendix
 
 \section{Notation map (paper $\leftrightarrow$ code)}\label{app:notation}
-\begin{ruledtabular}\begin{tabular}{lll}
-quantity & symbol & module / function \\ \hline
+{\scriptsize
+\begin{ruledtabular}
+\begin{tabular}{@{}p{0.27\columnwidth}p{0.24\columnwidth}p{0.33\columnwidth}@{}}
+quantity & symbol & module:function \\ \hline
 entangling phase & $\Theta(\tau)$ & \textsf{shapedThetaEnt} \\
 mode displacement & $\alpha_m(\tau)$ & \textsf{envelope} \\
 closure residual & $|\alpha_m(\tau)|$ & \textsf{shapedResiduals} \\
-robust waveform & $A\mathbf x{=}0,\ \mathbf x^{\mathsf T}M\mathbf x{=}\Xi$ & \textsf{solveShapeRobust} \\
-asymmetric error / GBC & $\Delta\omega,\ \hat K_{\mathcal G}$ & \textsf{ion-gbc} (\textsf{gbcUnitaryK}) \\
+robust waveform & $A\mathbf x{=}0$, $\mathbf x^{\mathsf T}\!M\mathbf x{=}\Xi$ & \textsf{solveShapeRobust} \\
+asymmetric err.\ / GBC & $\Delta\omega$, $\hat K_{\mathcal G}$ & \textsf{ion-gbc:gbcUnitaryK} \\
 mode spectrum & $\{\omega_m,b^m_j\}$ & \textsf{ion-modes} \\
 open-system evolution & Lindblad $\dot\rho$ & \textsf{ion-ms}, \textsf{ion-ms-mm} \\
 non-RWA / beyond-LD & $\sin[\eta(a{+}a^\dagger)]$ & \textsf{ion-ms-exact} \\
-smooth-gate displacement & $\dot\alpha=-i(\delta(t)\alpha+\Omega(t))$ & \textsf{ion-smooth} (\textsf{integrateAlpha}) \\
-adiabatic ramp & $\delta(s)=(b{+}c\,g(s))^{-1/j}$ & \textsf{ion-smooth} (\textsf{smoothProtocol}) \\
-motional-noise filter & $F(\omega)$ & \textsf{ion-smooth} (\textsf{filterFunction}) \\
-smooth$\times$GBC map & $1{-}F(\Delta\delta,\Delta\omega)$ & \textsf{ion-smooth} (\textsf{schemes}, \textsf{winner}) \\
-\end{tabular}\end{ruledtabular}
+smooth-gate displ. & $\dot\alpha{=}{-}i(\delta\alpha{+}\Omega)$ & \textsf{ion-smooth:integrateAlpha} \\
+adiabatic ramp & $\delta(s){=}(b{+}cg)^{-1/j}$ & \textsf{ion-smooth:smoothProtocol} \\
+motional-noise filter & $F(\omega)$ & \textsf{ion-smooth:filterFunction} \\
+smooth$\times$GBC map & $1{-}F(\Delta\delta,\Delta\omega)$ & \textsf{ion-smooth:schemes} \\
+\end{tabular}
+\end{ruledtabular}
+}
 
 \section{The center-line error $\varepsilon\equiv\Delta\omega\tau$ and the $\varepsilon^2\!\to\!\varepsilon^4$ scaling}\label{app:eps}
 The trade-off is organized by the dimensionless \emph{center-line error}
@@ -601,8 +609,9 @@ $1-F\propto\varepsilon^4$. Literally: doubling $\varepsilon$ raises the single-g
 ($=2^2$) and the GBC error $16\times$ ($=2^4$) (measured $3.99$, $15.95$). Since $\varepsilon<1$,
 $\varepsilon^4\!\ll\!\varepsilon^2$:
 
+The columns below are the infidelity $1{-}F$ (single gate and GBC):
 \begin{ruledtabular}\begin{tabular}{cccc}
-$\varepsilon=\Delta\omega\tau$ & $1{-}F$ single ($\propto\varepsilon^2$) & $1{-}F$ GBC ($\propto\varepsilon^4$) & suppression \\ \hline
+$\varepsilon{=}\Delta\omega\tau$ & single $\propto\varepsilon^2$ & GBC $\propto\varepsilon^4$ & suppression \\ \hline
 $0.02$ & $1.3\times10^{-4}$ & $1.4\times10^{-8}$ & $9.5\times10^{3}$ \\
 $0.05$ & $8.1\times10^{-4}$ & $5.4\times10^{-7}$ & $1.5\times10^{3}$ \\
 $0.10$ & $3.2\times10^{-3}$ & $8.5\times10^{-6}$ & $3.8\times10^{2}$ \\
