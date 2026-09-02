@@ -2,7 +2,7 @@
   "source": "https://quantenoptik.physik.uni-siegen.de/research/publikationen/quantum-information-science-and-trapped-ions/",
   "group": "Wunderlich group, University of Siegen — Quantum Information Science & Trapped Ions",
   "note": "PDFs are freely-available author/institutional or arXiv copies. Kept local (git-ignored). For personal/educational use.",
-  "count": 102,
+  "count": 113,
   "papers": [
     {
       "rank": 1,
@@ -1578,6 +1578,173 @@
       ],
       "approach": "general",
       "rank": 102
+    },
+    {
+      "rank": 103,
+      "title": "Robust Mølmer–Sørensen Gate Against Symmetric and Asymmetric Errors",
+      "authors": "Zhang, Tang, Liu, Yuan, Shen, Wu & Zhang",
+      "venue": "arXiv:2501.02847 (2025)",
+      "year": "2025",
+      "arxiv": "2501.02847",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2501.02847",
+      "modules": [
+        "M7"
+      ],
+      "approach": "general",
+      "file": "ref-2025-zhang-robust-molmer-sorensen-gate-against-symmetric-and.pdf"
+    },
+    {
+      "rank": 104,
+      "title": "Trapped-ion two-qubit gates with >99.99% fidelity without ground-state cooling",
+      "authors": "Hughes, Srinivas, Löschnauer, Knaack, Matt, Ballance, Malinowski, Harty, Sutherland et al.",
+      "venue": "arXiv:2510.17286 (2025)",
+      "year": "2025",
+      "arxiv": "2510.17286",
+      "doi": null,
+      "url": "https://arxiv.org/pdf/2510.17286",
+      "modules": [
+        "M7"
+      ],
+      "approach": "general",
+      "file": "ref-2025-hughes-trapped-ion-two-qubit-gates-with-99.pdf"
+    },
+    {
+      "rank": 105,
+      "title": "Multiparticle entanglement of hot trapped ions",
+      "authors": "Mølmer & Sørensen",
+      "venue": "Phys. Rev. Lett. 82, 1835 (1999)",
+      "year": "1999",
+      "arxiv": "quant-ph/9810040",
+      "doi": "10.1103/PhysRevLett.82.1835",
+      "url": "https://arxiv.org/pdf/quant-ph/9810040",
+      "modules": [
+        "M7",
+        "Ref"
+      ],
+      "approach": "general",
+      "file": "ref-1999-molmer-multiparticle-entanglement-of-hot-trapped-ions.pdf"
+    },
+    {
+      "rank": 106,
+      "title": "Robust 2-Qubit Gates in a Linear Ion Crystal Using a Frequency-Modulated Driving Force",
+      "authors": "Leung, Landsman, Figgatt, Linke, Monroe & Brown",
+      "venue": "Phys. Rev. Lett. 120, 020501 (2018)",
+      "year": "2018",
+      "arxiv": "1708.08039",
+      "doi": "10.1103/PhysRevLett.120.020501",
+      "url": "https://arxiv.org/pdf/1708.08039",
+      "modules": [
+        "M7"
+      ],
+      "approach": "raman",
+      "file": "ref-2018-leung-robust-2-qubit-gates-in-a-linear.pdf"
+    },
+    {
+      "rank": 107,
+      "title": "Ion trap quantum gates with amplitude-modulated laser beams",
+      "authors": "Roos",
+      "venue": "New J. Phys. 10, 013002 (2008)",
+      "year": "2008",
+      "arxiv": "0710.1204",
+      "doi": "10.1088/1367-2630/10/1/013002",
+      "url": "https://arxiv.org/pdf/0710.1204",
+      "modules": [
+        "M7"
+      ],
+      "approach": "optical",
+      "file": "ref-2008-roos-ion-trap-quantum-gates-with-amplitude-modulated.pdf"
+    },
+    {
+      "rank": 108,
+      "title": "Arbitrary-speed quantum gates within large ion crystals through minimum control of laser beams",
+      "authors": "Zhu, Monroe & Duan",
+      "venue": "Europhys. Lett. 73, 485 (2006)",
+      "year": "2006",
+      "arxiv": "quant-ph/0508037",
+      "doi": "10.1209/epl/i2005-10424-4",
+      "url": "https://arxiv.org/pdf/quant-ph/0508037",
+      "modules": [
+        "M7"
+      ],
+      "approach": "general",
+      "file": "ref-2006-zhu-arbitrary-speed-quantum-gates-within-large-ion.pdf"
+    },
+    {
+      "rank": 109,
+      "title": "Phase-Modulated Entangling Gates Robust to Static and Time-Varying Errors",
+      "authors": "Milne, Edmunds, Hempel, Roy, Mavadia & Biercuk",
+      "venue": "Phys. Rev. Applied 13, 024022 (2020)",
+      "year": "2020",
+      "arxiv": "1808.10462",
+      "doi": "10.1103/PhysRevApplied.13.024022",
+      "url": "https://arxiv.org/pdf/1808.10462",
+      "modules": [
+        "M7"
+      ],
+      "approach": "raman",
+      "file": "ref-2020-milne-phase-modulated-entangling-gates-robust-to-static.pdf"
+    },
+    {
+      "rank": 110,
+      "title": "High-Fidelity Universal Gate Set for ⁹Be⁺ Ion Qubits",
+      "authors": "Gaebler, Tan, Lin, Wan, Bowler, Keith, Glancy, Coakley, Knill, Leibfried & Wineland",
+      "venue": "Phys. Rev. Lett. 117, 060505 (2016)",
+      "year": "2016",
+      "arxiv": "1604.00032",
+      "doi": "10.1103/PhysRevLett.117.060505",
+      "url": "https://arxiv.org/pdf/1604.00032",
+      "modules": [
+        "M7"
+      ],
+      "approach": "general",
+      "file": "ref-2016-gaebler-high-fidelity-universal-gate-set-for-be.pdf"
+    },
+    {
+      "rank": 111,
+      "title": "High-Fidelity Bell-State Preparation with ⁴⁰Ca⁺ Optical Qubits",
+      "authors": "Clark, Tinkey, Sawyer, Meier, Burkhardt, Seck, Highstrete, Fortier, Deslauriers, Stick & Maunz",
+      "venue": "Phys. Rev. Lett. 127, 130505 (2021)",
+      "year": "2021",
+      "arxiv": "2105.05828",
+      "doi": "10.1103/PhysRevLett.127.130505",
+      "url": "https://arxiv.org/pdf/2105.05828",
+      "modules": [
+        "M7"
+      ],
+      "approach": "optical",
+      "file": "ref-2021-clark-high-fidelity-bell-state-preparation-with-40ca.pdf"
+    },
+    {
+      "rank": 112,
+      "title": "Demonstration of fault-tolerant universal quantum gate operations",
+      "authors": "Postler, Heußen, Pogorelov, Rispler, Feldker, Meth, Marciniak, Stricker, Ringbauer, Blatt, Schindler, Müller & Monz",
+      "venue": "Nature 605, 675 (2022)",
+      "year": "2022",
+      "arxiv": "2111.12654",
+      "doi": "10.1038/s41586-022-04721-1",
+      "url": "https://arxiv.org/pdf/2111.12654",
+      "modules": [
+        "M7",
+        "Other"
+      ],
+      "approach": "optical",
+      "file": "ref-2022-postler-demonstration-of-fault-tolerant-universal-quantum-gat.pdf"
+    },
+    {
+      "rank": 113,
+      "title": "Analytical and experimental study of center-line miscalibrations in Mølmer–Sørensen gates",
+      "authors": "Martínez-García, Gerster, Vodola, Hrmo, Monz, Schindler & Müller",
+      "venue": "Phys. Rev. A 105, 032437 (2022)",
+      "year": "2022",
+      "arxiv": "2112.05447",
+      "doi": "10.1103/PhysRevA.105.032437",
+      "url": "https://arxiv.org/pdf/2112.05447",
+      "modules": [
+        "M7"
+      ],
+      "approach": "optical",
+      "file": "ref-2022-martinez-garcia-analytical-and-experimental-study-of-center-l.pdf"
     }
   ]
 }
