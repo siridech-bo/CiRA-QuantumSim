@@ -11,7 +11,7 @@
 > **Changelog vs v0.2 (all new content is the smooth-gate / two-axis thread):**
 > - **Abstract / Intro:** new contribution **N6** — the smooth gate brought into the same
 >   open-system framework, and the smooth×GBC *combining* map with its threshold.
-> - **Sec. II.F (new)** — *Adiabatic elimination of spin–motion entanglement (the smooth gate)*:
+> - **Sec. II.D (new)** — *Adiabatic elimination of spin–motion entanglement (the smooth gate)*:
 >   the semiclassical $\dot\alpha=-i(\delta(t)\alpha+\Omega(t))$ picture, DESE vs AESE, the
 >   filter function, and why AESE and GBC act on **orthogonal** error axes.
 > - **Sec. III (Methods)** — `ion-smooth` added to the module set; **Fig. 1 recast (Option A)**
@@ -151,7 +151,7 @@ amplitude-modulation waveform solver, and the generator-based-compensation (GBC)
 as validation baselines (Sec. IV, Fig. 2) and build upon. The **smooth gate** we compare and
 combine with GBC is that of **Hughes *et al.* (arXiv:2510.17286)**, likewise an independent group;
 we reproduce its motional-robustness signatures (spin–motion suppression and filter function,
-Sec. II.F / E7) and use it as the second robustness axis, claiming novelty only for the *open-system
+Sec. II.D / E7) and use it as the second robustness axis, claiming novelty only for the *open-system
 comparison and combining* of the two schemes, not for either construction. We claim no novelty for
 that coherent machinery. Our contributions are all on the *open-system* and *trade-off* side:
 **(N1)** a unified, cross-validated *design→open-system-verify* pipeline that carries a robust
@@ -276,7 +276,7 @@ motion factors out — every mode returns to itself and acts as a spectator — 
 is nothing but the ideal entangler $\exp(i\Theta\sigma_x\sigma_x)$ plus a residual
 common-$\sigma_z$ rotation set by the center-line error $\Delta\omega\tau$. The full
 $2^N\!\times\!\prod_m\mathcal F_m$-dimensional spin$\times$motion problem therefore reduces to a
-$4\times4$ two-qubit one for *all* coherent-error questions (Sec. II D). This collapse is what
+$4\times4$ two-qubit one for *all* coherent-error questions (Sec. II E). This collapse is what
 makes the design and verification analytically tractable at $O(1)$ cost, with no Fock-space
 integration — and it is the reason the fast analytic engine and the numerical Lindblad engine
 can be cross-validated to $\sim\!10^{-9}$ (Sec. IV).
@@ -301,15 +301,75 @@ orientation) and cannot be changed by rescaling $\Omega$ ($\Theta\propto\Omega^2
 returns the requested sign when the closing nullspace admits it and otherwise realizes the
 conjugate gate — physically identical up to a single-qubit $Z$ — flagging which case occurred.
 
-### D. Generator-based compensation (GBC)
+### D. Adiabatic elimination of spin–motion entanglement (the smooth gate)
 
-**Why the center-line error is special.** Not every error can be refocused. A trailing
+Section II C suppresses the *symmetric* (motional) error axis by amplitude/phase **shaping**. A
+structurally different route to the **same axis** was introduced by Hughes *et al.* [Hughes25]:
+keep the drive envelope $\Omega$ essentially constant and instead ramp the **detuning** $\delta(t)$
+*slowly*, so the spin-dependent displacement is eliminated **adiabatically** rather than by a
+designed closure. It is (i) the current state of the art on the symmetric axis and (ii) — as we show
+in E7 — *complementary* to the asymmetric-axis compensation (GBC, Sec. II E, introduced next), so
+the natural question a unified framework should answer is not "which robust gate?" but "when to
+combine them?"
+
+**Semiclassical picture.** In the forced ($\pm$) spin sector, the single-mode MS Hamiltonian in
+the interaction frame of the drive is $\hat H=\delta(t)\,a^\dagger a+\Omega(t)(a+a^\dagger)$, and
+the spin-dependent coherent displacement $\alpha(t)$ obeys the driven-oscillator equation
+$$\dot\alpha=-i\big(\delta(t)\,\alpha+\Omega(t)\big),$$
+with the geometric (entangling) phase accumulating as $\dot\theta_g=\Omega^2/\delta$
+(so $\theta_g=\int_0^\tau\Omega^2/\delta\,dt$, the [Hughes25] Eq. (14) form). A clean gate needs
+$\alpha(\tau)=0$ (no residual spin–motion entanglement) at the target $\theta_g$. Two limits close
+the loop:
+
+- **DESE (diabatic).** Hold $\delta$ constant and ramp $\Omega$ fast: $\alpha$ traces a circle and
+  returns to the origin only at the discrete closure time $\tau=2\pi K/\delta$ — the standard MS
+  gate. The closure is *resonant*, so a static detuning error $\delta\!\to\!\delta+\Delta\delta$
+  reopens the loop at first order.
+- **AESE (adiabatic / smooth).** Hold $\Omega$ (roughly) constant and ramp $\delta(t)$ **slowly**
+  from a large value to $\delta_{\min}$ and back. If the sweep is adiabatic, $\alpha(t)$ tracks its
+  instantaneous forced equilibrium $-\Omega/\delta(t)$ and is dragged back to the origin as
+  $\Omega\!\to\!0$ at the ends — **independently of a small $\Delta\delta$**, because the endpoint
+  is set by $\Omega\!\to\!0$, not by a resonance condition. This is the source of the motional
+  robustness.
+
+We implement the $\delta(t)$ ramp of [Hughes25] Eq. (18),
+$\delta(s)=\big(b+c\,g(s)\big)^{-1/j}$ with $g(s)$ a smooth $0\!\to\!1$ interpolant and $b,c$ set so
+$\delta(0)=\delta_{\max}$, $\delta(1)=\delta_{\min}$, and $\Omega$ auto-calibrated to $\theta_g=\pi/2$
+(the Bell condition). The module `ion-smooth` (Sec. III) integrates $\alpha(t)$ by the same
+flat-complex RK4 as the rest of the toolchain, working entirely with the *classical* trajectory —
+no Fock space — which is exact for the coherent quantities (residual $|\alpha(\tau)|$, filter
+function) and fast enough to sweep the combining map of E7.
+
+**Robustness diagnostics.** Two quantities characterize the symmetric-axis robustness, both
+computed by `ion-smooth`. The **static-drift residual** $|\alpha(\tau)|$ under
+$\delta\!\to\!\delta+\Delta\delta$ measures leftover spin–motion entanglement (its square, weighted
+by $2\bar n+1$, is the thermal infidelity). The **filter function**
+$F(\omega)=\langle|\alpha(\tau)|^2\rangle_\varphi/\varepsilon^2$ for an oscillatory mode-frequency
+noise $\varepsilon\cos(\omega t+\varphi)$ measures the gate's sensitivity to motional noise at
+frequency $\omega$ ([Hughes25] App. B). For the AESE gate both are orders of magnitude below the
+DESE value at low frequency (E7, Fig. 6b) — the mechanism behind its temperature insensitivity.
+
+**Why it is orthogonal to GBC, and why combining is natural.** AESE acts *only* on the symmetric
+(motional-frequency) axis: it does nothing about the center-line $\sigma_z$ error, which is set by
+the qubit/laser frame and is untouched by how $\delta(t)$ is ramped. GBC (Sec. II E) does the opposite.
+So the two are **complementary**, and their leading infidelities *add* rather than trade. There is,
+however, a coupling through *gate time*: the adiabatic sweep makes the smooth gate **long**
+($\tau_{\rm smooth}\!\approx\!14\tau$ at the parameters of E7), and since the center-line error
+enters as $\varepsilon=\Delta\omega\,\tau$, the smooth gate is *more* exposed to the asymmetric axis
+than a short gate is. A long, symmetric-robust but asymmetric-fragile gate is exactly the case where
+appending GBC should pay — which is what E7 quantifies.
+
+### E. Generator-based compensation (GBC)
+
+**Why the center-line error is special.** The two methods above (Sec. II C–D) handle the
+*symmetric* axis; the *asymmetric* (center-line) axis is harder, because not every error can be
+refocused. A trailing
 single-qubit rotation removes any error that *commutes* with the entangler; the center-line
 (asymmetric) error, however, is a **common** $\sigma_z$, $\hat E=\tfrac12\sum_j\sigma_z^j$, that
 **anticommutes** with the entangler $G=\sigma_x\sigma_x$ ($\{\hat G,\hat E\}=0$). Because it
 anticommutes, it cannot be commuted through the gate and undone by a local rotation — it is
 genuinely bound into the two-qubit evolution. This is why, once the motional (symmetric) errors
-are shaped away by Sec. II C, the residual $\epsilon\equiv\Delta\omega\tau$ term in ($\star$) is
+are shaped away by the symmetric-axis methods (Sec. II C–D), the residual $\epsilon\equiv\Delta\omega\tau$ term in ($\star$) is
 the leading *coherent* error [Pogorelov21, Postler22], and why it requires a dedicated
 construction rather than a recalibration. GBC builds that construction from the tangent-space
 generator
@@ -351,10 +411,10 @@ which accrues $\approx4\times$ the incoherent error — the tension between the 
 *coherent* gain and the $4\times$ *incoherent* cost is exactly the trade-off this paper quantifies
 (Sec. VI).
 
-### E. Open-system model (this work)
+### F. Open-system model (this work)
 
-Everything so far — mode closure, robust shaping (C), GBC (D) — is a *coherent* design: it
-optimizes a unitary against control errors while treating the environment as absent. This
+Everything so far — mode closure, robust shaping (C), the smooth gate (D), GBC (E) — is a *coherent*
+design: it optimizes a unitary against control errors while treating the environment as absent. This
 subsection restores the environment, and it is the crux of the paper. The motivation is the
 tension built into the preceding sections: **robustness is bought with gate time** (a
 multi-segment waveform, and GBC's $4\tau$), and a longer gate sits *longer* in contact with the
@@ -394,67 +454,9 @@ with no secular approximation or adiabatic elimination — is precisely what the
 robust-control literature omits and what our verifier supplies (contribution N1). It is the step
 that turns the question "how robust is the *unitary*?" into "how faithful is the *gate*?", and it
 is what makes the coherent–incoherent trade-off of Sec. VI a quantitative *measurement* on the
-model rather than a qualitative assumption. Concretely, the coherent designs of C–D fix
+model rather than a qualitative assumption. Concretely, the coherent designs of C–E fix
 $\hat H(t)$; this equation then supplies the infidelity budget that those designs pay, and the
 remainder of the paper maps how the two balance.
-
-### F. Adiabatic elimination of spin–motion entanglement (the smooth gate)
-
-Sections II C–D suppress the two *coherent* error axes with **shaping in amplitude/phase** (C,
-symmetric) and an **echo sequence** (D, asymmetric). A structurally different route to the
-symmetric axis was introduced by Hughes *et al.* [Hughes25]: keep the drive envelope $\Omega$
-essentially constant and instead ramp the **detuning** $\delta(t)$ *slowly*, so the spin-dependent
-displacement is eliminated **adiabatically** rather than by a designed closure. We include it here
-because it is (i) the current state of the art on the symmetric axis and (ii) — as we show in E7 —
-*complementary* to GBC, so the natural question a unified framework should answer is not "which
-robust gate?" but "when to combine them?"
-
-**Semiclassical picture.** In the forced ($\pm$) spin sector, the single-mode MS Hamiltonian in
-the interaction frame of the drive is $\hat H=\delta(t)\,a^\dagger a+\Omega(t)(a+a^\dagger)$, and
-the spin-dependent coherent displacement $\alpha(t)$ obeys the driven-oscillator equation
-$$\dot\alpha=-i\big(\delta(t)\,\alpha+\Omega(t)\big),$$
-with the geometric (entangling) phase accumulating as $\dot\theta_g=\Omega^2/\delta$
-(so $\theta_g=\int_0^\tau\Omega^2/\delta\,dt$, the [Hughes25] Eq. (14) form). A clean gate needs
-$\alpha(\tau)=0$ (no residual spin–motion entanglement) at the target $\theta_g$. Two limits close
-the loop:
-
-- **DESE (diabatic).** Hold $\delta$ constant and ramp $\Omega$ fast: $\alpha$ traces a circle and
-  returns to the origin only at the discrete closure time $\tau=2\pi K/\delta$ — the standard MS
-  gate. The closure is *resonant*, so a static detuning error $\delta\!\to\!\delta+\Delta\delta$
-  reopens the loop at first order.
-- **AESE (adiabatic / smooth).** Hold $\Omega$ (roughly) constant and ramp $\delta(t)$ **slowly**
-  from a large value to $\delta_{\min}$ and back. If the sweep is adiabatic, $\alpha(t)$ tracks its
-  instantaneous forced equilibrium $-\Omega/\delta(t)$ and is dragged back to the origin as
-  $\Omega\!\to\!0$ at the ends — **independently of a small $\Delta\delta$**, because the endpoint
-  is set by $\Omega\!\to\!0$, not by a resonance condition. This is the source of the motional
-  robustness.
-
-We implement the $\delta(t)$ ramp of [Hughes25] Eq. (18),
-$\delta(s)=\big(b+c\,g(s)\big)^{-1/j}$ with $g(s)$ a smooth $0\!\to\!1$ interpolant and $b,c$ set so
-$\delta(0)=\delta_{\max}$, $\delta(1)=\delta_{\min}$, and $\Omega$ auto-calibrated to $\theta_g=\pi/2$
-(the Bell condition). The module `ion-smooth` (Sec. III) integrates $\alpha(t)$ by the same
-flat-complex RK4 as the rest of the toolchain, working entirely with the *classical* trajectory —
-no Fock space — which is exact for the coherent quantities (residual $|\alpha(\tau)|$, filter
-function) and fast enough to sweep the combining map of E7.
-
-**Robustness diagnostics.** Two quantities characterize the symmetric-axis robustness, both
-computed by `ion-smooth`. The **static-drift residual** $|\alpha(\tau)|$ under
-$\delta\!\to\!\delta+\Delta\delta$ measures leftover spin–motion entanglement (its square, weighted
-by $2\bar n+1$, is the thermal infidelity). The **filter function**
-$F(\omega)=\langle|\alpha(\tau)|^2\rangle_\varphi/\varepsilon^2$ for an oscillatory mode-frequency
-noise $\varepsilon\cos(\omega t+\varphi)$ measures the gate's sensitivity to motional noise at
-frequency $\omega$ ([Hughes25] App. B). For the AESE gate both are orders of magnitude below the
-DESE value at low frequency (E7, Fig. 6b) — the mechanism behind its temperature insensitivity.
-
-**Why it is orthogonal to GBC, and why combining is natural.** AESE acts *only* on the symmetric
-(motional-frequency) axis: it does nothing about the center-line $\sigma_z$ error, which is set by
-the qubit/laser frame and is untouched by how $\delta(t)$ is ramped. GBC (II D) does the opposite.
-So the two are **complementary**, and their leading infidelities *add* rather than trade. There is,
-however, a coupling through *gate time*: the adiabatic sweep makes the smooth gate **long**
-($\tau_{\rm smooth}\!\approx\!14\tau$ at the parameters of E7), and since the center-line error
-enters as $\varepsilon=\Delta\omega\,\tau$, the smooth gate is *more* exposed to the asymmetric axis
-than a short gate is. A long, symmetric-robust but asymmetric-fragile gate is exactly the case where
-appending GBC should pay — which is what E7 quantifies.
 
 ---
 
@@ -493,7 +495,7 @@ returns to when discussing calibration overhead).
 
 **(B) Open-system verifier(s) — `ion-ms`, `ion-ms-mm`, `ion-ms-exact`.** `ion-ms` integrates
 the $4\!\cdot\!N_{\rm Fock}$ single-mode density matrix under the full master equation
-(Sec. II E), returning Bell fidelity, populations, and phase-space trajectories, and preserves
+(Sec. II F), returning Bell fidelity, populations, and phase-space trajectories, and preserves
 complete positivity throughout ($\mathrm{Tr}\,\rho=1$ and $\rho\succeq0$ asserted as invariants,
 even with heating, dephasing, and $\Delta\omega$ all on). `ion-ms-mm` generalizes it to $M$
 motional modes (dimension $4\prod_m N_{\rm Fock}^{(m)}$); exploiting the Hermiticity of $\rho$
@@ -519,7 +521,7 @@ questions. `ion-pipeline` is the driver that chains design→verify→noise-scan
 trade-off maps of Sec. VI. `ion-ms-pm` designs the phase-modulated robust comparator (E6) and
 `ion-jitter` supplies the timing-jitter model — both let the framework benchmark *alternative*
 schemes on identical footing rather than in isolation. `ion-smooth` implements the smooth
-gate / AESE (Sec. II.F): it integrates the semiclassical displacement $\alpha(t)$ under a ramped
+gate / AESE (Sec. II.D): it integrates the semiclassical displacement $\alpha(t)$ under a ramped
 detuning $\delta(t)$, returning the static-drift residual and the motional-noise filter function,
 and drives the four-scheme (plain / smooth / GBC / smooth+GBC) combining map of E7 — bringing a
 *second* robustness family onto the same footing as the AM/GBC machinery.
@@ -592,7 +594,7 @@ trustworthy, since the open-system results are only as good as the integrator th
 $\mathbf{x}=\sqrt{\Xi/\lambda}\,\ker(A)\mathbf v_\lambda$ (`ion-msn-shape`/`solveShapeRobust`), which
 returns the minimum-intensity symmetric-robust pulse and tracks its entangling sign (Sec. II C).
 **U2** — the motion-free $4\times4$ asymmetric-error/GBC gate (`ion-gbc`), the fast path for every
-coherent-robustness question (Sec. II D). **U3** — a time-dependent piecewise $\Omega(t)$, the
+coherent-robustness question (Sec. II E). **U3** — a time-dependent piecewise $\Omega(t)$, the
 $\Delta\omega\,\sigma_z$ error, and per-mode dissipators added to the Lindblad integrator (`ion-ms`),
 so a *designed* pulse can be run under open-system noise. **U4** — the pipeline driver
 (`ion-pipeline`) that chains design→verify→noise-sweep into the trade-off maps of Sec. VI. Their
@@ -838,7 +840,7 @@ decomposition is the primary — and, by U2/E4, rigorous — method for the trad
 
 - **E7 — Smooth gate × GBC: orthogonal axes and the combining threshold** *(done).* E6 compared two
   robust waveforms that live on the *same* (symmetric) axis and therefore land at the same crossover.
-  Here we cross to a genuinely *different* axis. We brought the smooth gate (AESE, Sec. II.F) into the
+  Here we cross to a genuinely *different* axis. We brought the smooth gate (AESE, Sec. II.D) into the
   framework (`src/ion-smooth.js`) and ask two questions: does it reproduce the motional robustness of
   [Hughes25], and — since it is symmetric-robust but long — how does it combine with the
   asymmetric-axis GBC?
@@ -1125,7 +1127,7 @@ plain robust gate ($\varepsilon^2$ error, but $1\times$ time) wins.
 
 ### Appendix C — The smooth gate (AESE): semiclassical model and combining logic
 
-This appendix records the semiclassical model behind Sec. II.F and E7, as implemented in
+This appendix records the semiclassical model behind Sec. II.D and E7, as implemented in
 `src/ion-smooth.js`.
 
 **Displacement ODE.** In the forced ($\pm$) spin sector the single-mode MS interaction is
